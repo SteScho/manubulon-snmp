@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_load #################
-# Version : 1.2 
-# Date : Dec 14 2005
+# Version : 1.2.1 
+# Date : Mar 21 2005
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # Changelog : HP Procurve, Netscreen NS204,N5X, Fortigate VPN, Catalyst 6000
-# Contributors : "kaya kaya" and many others !!!
+# Contributors : F. Lacroix and many others !!!
 #################################################################
 #
 # Help : ./check_snmp_load.pl -h
@@ -427,7 +427,7 @@ exit $exit_val;
 
 ############## Cisco Catalyst CPU check ################
 
-if ($o_check_type eq "ciscocata") {
+if ($o_check_type eq "cata") {
 my @oidlists = ($ciscocata_cpu_5m, $ciscocata_cpu_1m, $ciscocata_cpu_5s);
 my $resultat = (Net::SNMP->VERSION < 4) ?
 	  $session->get_request(@oidlists)
