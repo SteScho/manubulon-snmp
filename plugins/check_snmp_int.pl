@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-# Version : 1.3
-# Date : Mar 16 2004
+# Version : 1.4
+# Date : Jun 15 2006
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -41,14 +41,15 @@ my $out_octet_table = '1.3.6.1.2.1.2.2.1.16.';
 my $out_error_table = '1.3.6.1.2.1.2.2.1.20.';
 my $out_discard_table = '1.3.6.1.2.1.2.2.1.19.';
 
-my %status=(1=>'UP',2=>'DOWN',3=>'TESTING'); 
+my %status=(1=>'UP',2=>'DOWN',3=>'TESTING',4=>'UNKNOWN',5=>'DORMANT',6=>'NotPresent',7=>'lowerLayerDown');
 
 # Globals
 
-my $Version='1.3';
+my $Version='1.4';
 
 my $o_host = 		undef; 	# hostname
 my $o_community = 	undef; 	# community
+my $o_version2	= undef;	#use snmp v2c
 my $o_port = 		161; 	# port
 my $o_descr = 		undef; 	# description filter
 my $o_help=		undef; 	# wan't some help ?
@@ -64,6 +65,7 @@ my $o_delta=		300;	# delta of time of perfcheck (default 5min)
 my $o_ext_checkperf=	undef;  # extended perf checks (+error+discard) 
 my $o_warn_opt=		undef;  # warning options
 my $o_crit_opt=		undef;  # critical options
+my $o_kbits=	undef;	# Warn and critical in Kbits instead of KBytes
 my @o_warn=		undef;  # warning levels of perfcheck
 my @o_crit=		undef;  # critical levels of perfcheck
 my $o_short=		undef;	# set maximum of n chars to be displayed
@@ -72,6 +74,10 @@ my $o_timeout=  5;		# Default 5s Timeout
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
 my $o_passwd=	undef;		# Pass for snmpv3
+my $v3protocols=undef;	# V3 protocol list.
+my $o_authproto='md5';		# Auth protocol
+my $o_privproto='des';		# Priv protocol
+my $o_privpass= undef;		# priv password
 
 # functions
 
@@ -125,12 +131,12 @@ sub write_file {
 sub p_version { print "check_snmp_int version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> | (-l login -x passwd)  [-p <port>] -n <name in desc_oid> [-i] [-a] [-r] [-f[e]] [-k -q -w<warn levels> -c<crit levels> -d<delta>] [-t <timeout>] [-s] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-i] [-a] [-r] [-f[e]] [-k[qB] -w<warn levels> -c<crit levels> -d<delta>] [-t <timeout>] [-s] [-V]\n";
 }
 
 sub help {
    print "\nSNMP Network Interface Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004 to my cat Ratoune - Author : Patrick Proy\n\n";
+   print "(c)2004-2006 to my cat Ratoune - Author : Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -141,10 +147,15 @@ sub help {
    name or IP address of host to check
 -C, --community=COMMUNITY NAME
    community name for the host's SNMP agent (implies v1 protocol)
--l, --login=LOGIN
-   Login for snmpv3 authentication (implies v3 protocol with MD5)
--x, --passwd=PASSWD
-   Password for snmpv3 authentication
+-l, --login=LOGIN ; -x, --passwd=PASSWD, -2, --v2c
+   Login and auth password for snmpv3 authentication 
+   If no priv password exists, implies AuthNoPriv 
+   -2 : use snmp v2c
+-X, --privpass=PASSWD
+   Priv password for snmpv3 (AuthPriv protocol)
+-L, --protocols=<authproto>,<privproto>
+   <authproto> : Authentication protocol (md5|sha : default md5)
+   <privproto> : Priv protocole (des|aes : default des) 
 -P, --port=PORT
    SNMP port (Default 161)
 -n, --name=NAME
@@ -161,12 +172,13 @@ sub help {
    Add error & discard to Perfparse output
 -r, --noregexp
    Do not use regexp to match NAME in description OID
--k, --perfcheck
-   check the input/ouput bandwidth of the interface
--q, --extperfcheck
-   also check the error and discard input/output
+-k, --perfcheck ; -q, --extperfcheck
+   -k check the input/ouput bandwidth of the interface
+   -q also check the error and discard input/output
 -d, --delta=seconds
    make an average of <delta> seconds (default 300=5min)
+-B, --kbits
+   Make the warning and critical levels in KBits/s instead of KBytes/s
 -w, --warning=input,output[,error in,error out,discard in,discard out]
    warning level for input / output bandwidth in KBytes/s (0 for no warning)
    warning for error & discard input / output in error/min (need -q)
@@ -197,8 +209,11 @@ sub check_options {
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
 	'n:s'   => \$o_descr,           'name:s'        => \$o_descr,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
+		'2'	=> \$o_version2,	'v2c'		=> \$o_version2,		
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
 	'x:s'	=> \$o_passwd,		'passwd:s'	=> \$o_passwd,
+	'X:s'	=> \$o_privpass,		'privpass:s'	=> \$o_privpass,
+	'L:s'	=> \$v3protocols,		'protocols:s'	=> \$v3protocols,   
         't:i'   => \$o_timeout,    	'timeout:i'	=> \$o_timeout,
 	'i'	=> \$o_inverse,		'inverse'	=> \$o_inverse,
 	'a'	=> \$o_admin,		'admin'		=> \$o_admin,
@@ -210,6 +225,7 @@ sub check_options {
         'q'     => \$o_ext_checkperf,   'extperfcheck'  => \$o_ext_checkperf,
         'w:s'   => \$o_warn_opt,       	'warning:s'   	=> \$o_warn_opt,
         'c:s'   => \$o_crit_opt,      	'critical:s'   	=> \$o_crit_opt,
+        'B'     => \$o_kbits,   'kbits'  => \$o_kbits,		
         's:i'   => \$o_short,      	'short:i'   	=> \$o_short,
         'd:i'   => \$o_delta,           'delta:i'     	=> \$o_delta
     );
@@ -220,6 +236,16 @@ sub check_options {
     # check snmp information
     if ( !defined($o_community) && (!defined($o_login) || !defined($o_passwd)) )
 	{ print "Put snmp login info!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (defined($o_login) || defined($o_passwd) && (defined($o_community) || defined($o_version2)) )
+	{ print "Can't mix snmp v1,2c,3 protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (defined ($v3protocols)) {
+	  if (!defined($o_login)) { print "Put snmp V3 login info with protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	  my @v3proto=split(/,/,$v3protocols);
+	  if ((defined ($v3proto[0])) && ($v3proto[0] ne "")) {$o_authproto=$v3proto[0];	}	# Auth protocol
+	  if (defined ($v3proto[1])) {$o_privproto=$v3proto[1];	}	# Priv  protocol
+	  if ((defined ($v3proto[1])) && (!defined($o_privpass))) {
+	    print "Put snmp V3 priv login info with priv protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	}
     # check if -e without -f
     if ( defined($o_perfe) && !defined($o_perf))
         { print "Cannot output error without -f option!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
@@ -272,24 +298,50 @@ if (defined($TIMEOUT)) {
 my ($session,$error);
 if ( defined($o_login) && defined($o_passwd)) {
   # SNMPv3 login
-  verb("SNMPv3 login");
-  ($session, $error) = Net::SNMP->session(
+  if (!defined ($o_privpass)) {
+  verb("SNMPv3 AuthNoPriv login : $o_login, $o_authproto");
+    ($session, $error) = Net::SNMP->session(
       -hostname   	=> $o_host,
       -version		=> '3',
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
-      -authprotocol	=> 'md5',
-      -privpassword	=> $o_passwd,
+      -authprotocol	=> $o_authproto,
       -timeout          => $o_timeout
-   );
+    );  
+  } else {
+    verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
+    ($session, $error) = Net::SNMP->session(
+      -hostname   	=> $o_host,
+      -version		=> '3',
+      -username		=> $o_login,
+      -authpassword	=> $o_passwd,
+      -authprotocol	=> $o_authproto,
+      -privpassword	=> $o_privpass,
+	  -privprotocol => $o_privproto,
+      -timeout          => $o_timeout
+    );
+  }
 } else {
-  # SNMPV1 login
-  ($session, $error) = Net::SNMP->session(
-     -hostname  => $o_host,
-     -community => $o_community,
-     -port      => $o_port,
-     -timeout   => $o_timeout
-  );
+  if (defined ($o_version2)) {
+    # SNMPv2c Login
+	verb("SNMP v2c login");
+	($session, $error) = Net::SNMP->session(
+       -hostname  => $o_host,
+	   -version   => 2,
+       -community => $o_community,
+       -port      => $o_port,
+       -timeout   => $o_timeout
+    );
+  } else {
+    # SNMPV1 login
+	verb("SNMP v1 login");
+    ($session, $error) = Net::SNMP->session(
+       -hostname  => $o_host,
+       -community => $o_community,
+       -port      => $o_port,
+       -timeout   => $o_timeout
+    );
+  }
 }
 if (!defined($session)) {
    printf("ERROR opening session: %s.\n", $error);
@@ -418,12 +470,13 @@ for (my $i=0;$i < $num_int; $i++) {
 	  if ($file_values[$j][0] > $trigger_low) {
 	    # check if the counter is back to 0 after 2^32.
 	    my $overfl = ($$resultf{$oid_perf_inoct[$i]} >= $file_values[$j][1] ) ? 0 : 4294967296;
+		my $speed_metric = (defined($o_kbits))? 128 : 1024;
 	    $checkperf_out[0] = ( ($overfl + $$resultf{$oid_perf_inoct[$i]} - $file_values[$j][1])/
-	      			      ($timenow - $file_values[$j][0] ))/1024;
+	      			      ($timenow - $file_values[$j][0] ))/$speed_metric;
 	    
 	    $overfl = ($$resultf{$oid_perf_outoct[$i]} >= $file_values[$j][2] ) ? 0 : 4294967296;
 	    $checkperf_out[1] = ( ($$resultf{$oid_perf_outoct[$i]} - $file_values[$j][2])/
-				      ($timenow - $file_values[$j][0] ))/1024;
+				      ($timenow - $file_values[$j][0] ))/$speed_metric;
 	    
 	    if (defined($o_ext_checkperf)) {
 	      $checkperf_out[2] = ( ($$resultf{$oid_perf_inerr[$i]} - $file_values[$j][3])/
@@ -473,7 +526,7 @@ for (my $i=0;$i < $num_int; $i++) {
       my $num_checkperf=(defined($o_ext_checkperf))?6:2;
       for (my $l=0;$l < $num_checkperf;$l++) {
         if ($l!=0) {$print_out.="/";}
-	if (($o_crit[$l]!=0) && ($checkperf_out[$l]>$o_crit[$l])) { 
+	    if (($o_crit[$l]!=0) && ($checkperf_out[$l]>$o_crit[$l])) { 
           $final_status=2;
           $print_out.= sprintf("CRIT : %.1f",$checkperf_out[$l]); 
         } elsif (($o_warn[$l]!=0) && ($checkperf_out[$l]>$o_warn[$l])) { 
@@ -500,18 +553,18 @@ for (my $i=0;$i < $num_int; $i++) {
   }
   # Get rid of special caracters for performance in description
   $descr[$i] =~ s/'/_/g;
-  if ( $int_status == $ok_val) { 
-    if (defined ($o_perf)) {
-      $perf_out .= "'" . $descr[$i] ."_in_octet'=". $$resultf{$oid_perf_inoct[$i]} ."c ";  
-      $perf_out .= "'" . $descr[$i] ."_out_octet'=". $$resultf{$oid_perf_outoct[$i]} ."c";  
-      if (defined ($o_perfe)) {
-        $perf_out .= " '" . $descr[$i] ."_in_error'=". $$resultf{$oid_perf_inerr[$i]} ."c ";
-	$perf_out .= "'" . $descr[$i] ."_in_discard'=". $$resultf{$oid_perf_indisc[$i]} ."c ";
-	$perf_out .= "'" . $descr[$i] ."_out_error'=". $$resultf{$oid_perf_outerr[$i]} ."c ";
-	$perf_out .= "'" . $descr[$i] ."_out_discard'=". $$resultf{$oid_perf_outdisc[$i]} ."c";
-      }
-    }
+  if ( $int_status == $ok_val) {
     $num_ok++;
+  }
+  if (( $int_status == 1 ) && defined ($o_perf)) {
+    $perf_out .= "'" . $descr[$i] ."_in_octet'=". $$resultf{$oid_perf_inoct[$i]} ."c ";  
+    $perf_out .= "'" . $descr[$i] ."_out_octet'=". $$resultf{$oid_perf_outoct[$i]} ."c";  
+    if (defined ($o_perfe)) {
+      $perf_out .= " '" . $descr[$i] ."_in_error'=". $$resultf{$oid_perf_inerr[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_in_discard'=". $$resultf{$oid_perf_indisc[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_out_error'=". $$resultf{$oid_perf_outerr[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_out_discard'=". $$resultf{$oid_perf_outdisc[$i]} ."c";
+    }
   } 
 }
 
