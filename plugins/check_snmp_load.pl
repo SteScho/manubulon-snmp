@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_load #################
-# Version : 1.2.1 
-# Date : Mar 21 2005
+# Version : 1.2.2 
+# Date : Jun 27 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -88,7 +88,7 @@ my %cpu_oid = ("netsc",$ns_cpu_idle,"as400",$as400_cpu,"bc",$bluecoat_cpu,"nokia
 
 # Globals
 
-my $Version='1.2';
+my $Version='1.2.2';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -361,8 +361,8 @@ for (my $i=0;$i<3;$i++) {
 }
 print " OK" if ($exit_val eq $ERRORS{"OK"});
 if (defined($o_perf)) { 
-   print " | load_1_min=$load[0];$o_warnL[0];$o_critL[0],";
-   print "load_5_min=$load[1];$o_warnL[1];$o_critL[1],";
+   print " | load_1_min=$load[0];$o_warnL[0];$o_critL[0] ";
+   print "load_5_min=$load[1];$o_warnL[1];$o_critL[1] ";
    print "load_15_min=$load[2];$o_warnL[2];$o_critL[2]\n";
 } else {
  print "\n";
