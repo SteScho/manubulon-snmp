@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_mem ##############
 # Version : 1.1
-# Date : Jun 15 2006
+# Date : Jun 30 2006
 # Author  : Patrick Proy (nagios at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -78,7 +78,7 @@ my $o_critR=	undef;		# critical level for Real memory
 my $o_critS=	undef;		# critical level for swap
 my $o_perf=	undef;		# Performance data option
 my $o_cache=	undef;		# Include cached memory as used memory
-my $o_timeout=  5;             	# Default 5s Timeout
+my $o_timeout=  undef; 		# Timeout (Default 5)
 my $o_version2= undef;          # use snmp v2c
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
@@ -167,7 +167,7 @@ $SIG{'ALRM'} = sub {
 
 sub check_options {
     Getopt::Long::Configure ("bundling");
-    GetOptions(
+	GetOptions(
    	'v'	=> \$o_verb,		'verbose'	=> \$o_verb,
         'h'     => \$o_help,    	'help'        	=> \$o_help,
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
@@ -205,7 +205,10 @@ sub check_options {
 	  if ((defined ($v3proto[1])) && (!defined($o_privpass))) {
 	    print "Put snmp V3 priv login info with priv protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
 	}
-    #Check Warning and crit are present
+	if (defined($o_timeout) && (isnnum($o_timeout) || ($o_timeout < 2) || ($o_timeout > 60))) 
+	  { print "Timeout must be >1 and <60 !\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (!defined($o_timeout)) {$o_timeout=5;}
+	#Check Warning and crit are present
     if ( ! defined($o_warn) || ! defined($o_crit))
  	{ print "Put warning and critical values!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
     # Get rid of % sign
