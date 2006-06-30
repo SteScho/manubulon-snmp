@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
 # Version : 1.4
-# Date : Jun 15 2006
+# Date : Jun 30 2006
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -70,7 +70,7 @@ my @o_warn=		undef;  # warning levels of perfcheck
 my @o_crit=		undef;  # critical levels of perfcheck
 my $o_short=		undef;	# set maximum of n chars to be displayed
 
-my $o_timeout=  5;		# Default 5s Timeout
+my $o_timeout=  undef; 		# Timeout (Default 5)
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
 my $o_passwd=	undef;		# Pass for snmpv3
@@ -202,7 +202,7 @@ sub verb { my $t=shift; print $t,"\n" if defined($o_verb) ; }
 
 sub check_options {
     Getopt::Long::Configure ("bundling");
-    GetOptions(
+	GetOptions(
    	'v'	=> \$o_verb,		'verbose'	=> \$o_verb,
         'h'     => \$o_help,    	'help'        	=> \$o_help,
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
@@ -236,7 +236,7 @@ sub check_options {
     # check snmp information
     if ( !defined($o_community) && (!defined($o_login) || !defined($o_passwd)) )
 	{ print "Put snmp login info!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-	if (defined($o_login) || defined($o_passwd) && (defined($o_community) || defined($o_version2)) )
+	if ((defined($o_login) || defined($o_passwd)) && (defined($o_community) || defined($o_version2)) )
 	{ print "Can't mix snmp v1,2c,3 protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
 	if (defined ($v3protocols)) {
 	  if (!defined($o_login)) { print "Put snmp V3 login info with protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
@@ -246,14 +246,12 @@ sub check_options {
 	  if ((defined ($v3proto[1])) && (!defined($o_privpass))) {
 	    print "Put snmp V3 priv login info with priv protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
 	}
+	if (defined($o_timeout) && (isnnum($o_timeout) || ($o_timeout < 2) || ($o_timeout > 60))) 
+	  { print "Timeout must be >1 and <60 !\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (!defined($o_timeout)) {$o_timeout=5;}
     # check if -e without -f
     if ( defined($o_perfe) && !defined($o_perf))
         { print "Cannot output error without -f option!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-#    if ( !defined($o_checkperf) && (defined($o_ext_checkperf) || ($#o_warn > 1) || ($#o_crit > 1) || defined($o_delta)))
-#	{print "need -p option first \n"; print_usage(); exit $ERRORS{"UNKNOWN"}} 
-#    if (defined ($o_checkperf)) {
-#      if (defined($o_ext_checkperf)) {
-#	if (($#o_warn !=6)|| ($#o_crit !=6)) 
     if (defined ($o_short)) {
       #TODO maybe some basic tests ? caracters return empty string
     }
