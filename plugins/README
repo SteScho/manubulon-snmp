@@ -1,0 +1,58 @@
+Nagios SNMP plugins 1.0 README
+------------------------------
+
+
+Nagios SNMP plugins is a set of Nagios plugins to check hosts/devices using snmp protocol.
+http://www.manubulon.com/nagios for more details.
+
+
+Requirements:
+-------------
+- perl 
+- Net::SNMP and Getopt::Long
+- File utils.pm in Nagios plugin directory (default /usr/local/nagios/libexec)
+
+Installation:
+-------------
+
+You can simply copy the files to the Nagios Plugin directory if it is in /usr/local/nagios/libexec.
+
+You can also use the "install.sh" script provided in this directory to install the plugins.
+Type : "./install.sh" to install all the plugins or "./install.sh <plugin name>" for a specific one.
+
+The script will check for dependencies and ask for Nagios and temp directories.
+It will modify the scripts dependding on these answers and install the scripts. 
+
+By default, the scripts will consider : 
+- perl is in /usr/bin/perl
+- Net::SNMP and Getopt::Long
+- Nagios plugins (and file utils.pm) are in /usr/local/nagios/libexec
+- Temp files will be written in /tmp
+
+Help and support:
+-----------------
+
+Help files, examples and manual : http://www.manubulon.com/nagios/
+FAQ : http://www.manubulon.com/nagios/faq.html
+Mailling list, forum : https://sourceforge.net/projects/nagios-snmp/
+
+
+Legal stuff:
+------------
+
+    Nagios SNMP plugins version 1.0, Copyright (C) 2004-2006 Patrick Proy (nagios at proy.org)
+
+    This program is free software; you can redistribute it and/or modify 
+    it under the terms of the GNU General Public License version 2 as 
+    published by the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+    Nagios and the Nagios logo are registered trademarks of Ethan Galstad.
