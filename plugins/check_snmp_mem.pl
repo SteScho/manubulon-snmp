@@ -1,10 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_mem ##############
 # Version : 1.1
-# Date : Jun 30 2006
+# Date : Jul 09 2006
 # Author  : Patrick Proy (nagios at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# Contrib : Jan Jungmann
 # TODO : 
 #################################################################
 #
@@ -503,7 +504,12 @@ if (defined ($o_netsnmp)) {
   }
   $n_output .= " ; ".$n_status; 
   if (defined ($o_perf)) {
-    $n_output .= " | ram_used=" . ($$resultat{$nets_ram_total}-$$resultat{$nets_ram_free}).";";
+    if (defined ($o_cache)) {
+      $n_output .= " | ram_used=" . ($$resultat{$nets_ram_total}-$$resultat{$nets_ram_free}).";";
+    }
+    else {
+      $n_output .= " | ram_used=" . ($$resultat{$nets_ram_total}-$$resultat{$nets_ram_free}-$$resultat{$nets_ram_cache}).";";
+    }
     $n_output .= ($o_warnR ==0)? ";" : round($o_warnR * $$resultat{$nets_ram_total}/100,0).";";  
     $n_output .= ($o_critR ==0)? ";" : round($o_critR * $$resultat{$nets_ram_total}/100,0).";";  
     $n_output .= "0;" . $$resultat{$nets_ram_total}. " ";
