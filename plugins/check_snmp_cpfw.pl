@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_cpfw ##############
-# Version : 0.7
-# Date : Oct 02 2004
+# Version : 1.0
+# Date : Aug 23 2006
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -72,14 +72,16 @@ my @mgmt_checks_oid	= ($mgmt_status,$mgmt_alive);
 
 #################################### Globals ##############################""
 
-my $Version='0.7';
+my $Version='1.0';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
+my $o_version2	=undef;		# Version 2
 my $o_port = 	161; 		# port
 my $o_help=	undef; 		# wan't some help ?
 my $o_verb=	undef;		# verbose mode
 my $o_version=	undef;		# print version
+my $o_timeout=  5;            	# Default 5s Timeout
 my $o_warn=	undef;		# Warning for connections
 my $o_crit=	undef;		# Crit for connections
 my $o_svn=	undef;		# Check for SVN status
@@ -93,13 +95,17 @@ my $o_perf=	undef;		# Performance data output
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
 my $o_passwd=	undef;		# Pass for snmpv3
+my $v3protocols=undef;	# V3 protocol list.
+my $o_authproto='md5';		# Auth protocol
+my $o_privproto='des';		# Priv protocol
+my $o_privpass= undef;		# priv password
 
 # functions
 
 sub p_version { print "check_snmp_cpfw version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> | (-l login -x passwd) [-s] [-w [-p=pol_name] [-c=warn,crit]] [-m] [-a] [-f] [-p <port>] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-s] [-w [-p=pol_name] [-c=warn,crit]] [-m] [-a] [-f] [-p <port>] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -121,6 +127,16 @@ sub help {
    name or IP address of host to check
 -C, --community=COMMUNITY NAME
    community name for the host's SNMP agent (implies v1 protocol)
+2, --v2c
+   Use snmp v2c
+-l, --login=LOGIN ; -x, --passwd=PASSWD
+   Login and auth password for snmpv3 authentication 
+   If no priv password exists, implies AuthNoPriv 
+-X, --privpass=PASSWD
+   Priv password for snmpv3 (AuthPriv protocol)
+-L, --protocols=<authproto>,<privproto>
+   <authproto> : Authentication protocol (md5|sha : default md5)
+   <privproto> : Priv protocole (des|aes : default des) 
 -s, --svn
    check for svn status
 -w, --fw
@@ -135,10 +151,6 @@ sub help {
    check warn and critical number of connexions (must have -w)
 -f, --perfparse
    perfparse output (only works with -c)
--l, --login=LOGIN
-   Login for snmpv3 authentication (implies v3 protocol with MD5)
--x, --passwd=PASSWD
-   Password for snmpv3 authentication
 -P, --port=PORT
    SNMP port (Default 161)
 -t, --timeout=INTEGER
@@ -159,9 +171,12 @@ sub check_options {
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
         'P:i'   => \$o_port,   		'port:i'	=> \$o_port,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
+	'2'     => \$o_version2,        'v2c'           => \$o_version2,
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
 	'x:s'	=> \$o_passwd,		'passwd:s'	=> \$o_passwd,
-        't:i'   => \$TIMEOUT,    	'timeout:i'	=> \$TIMEOUT,
+	'X:s'	=> \$o_privpass,		'privpass:s'	=> \$o_privpass,
+	'L:s'	=> \$v3protocols,		'protocols:s'	=> \$v3protocols,   
+ 	't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
 	'V'	=> \$o_version,		'version'	=> \$o_version,
 	's'	=> \$o_svn,		'svn'		=> \$o_svn,
 	'w'	=> \$o_fw,		'fw'		=> \$o_fw,
@@ -177,7 +192,17 @@ sub check_options {
 	{ print_usage(); exit $ERRORS{"UNKNOWN"}}
     # check snmp information
     if ( !defined($o_community) && (!defined($o_login) || !defined($o_passwd)) )
-	{ print "Put snmp login info!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	  { print "Put snmp login info!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if ((defined($o_login) || defined($o_passwd)) && (defined($o_community) || defined($o_version2)) )
+	  { print "Can't mix snmp v1,2c,3 protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (defined ($v3protocols)) {
+	  if (!defined($o_login)) { print "Put snmp V3 login info with protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	  my @v3proto=split(/,/,$v3protocols);
+	  if ((defined ($v3proto[0])) && ($v3proto[0] ne "")) {$o_authproto=$v3proto[0];	}	# Auth protocol
+	  if (defined ($v3proto[1])) {$o_privproto=$v3proto[1];	}	# Priv  protocol
+	  if ((defined ($v3proto[1])) && (!defined($o_privpass))) {
+	    print "Put snmp V3 priv login info with priv protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	}
     # Check firewall options
     if ( defined($o_conn)) {
       if ( ! defined($o_fw))
@@ -208,29 +233,63 @@ sub check_options {
 check_options();
 
 # Check gobal timeout if snmp screws up
-alarm($TIMEOUT+15);
+if (defined($TIMEOUT)) {
+  verb("Alarm at $TIMEOUT");
+  alarm($TIMEOUT);
+} else {
+  verb("no timeout defined : $o_timeout + 10");
+  alarm ($o_timeout+10);
+}
 
 # Connect to host
 my ($session,$error);
 if ( defined($o_login) && defined($o_passwd)) {
   # SNMPv3 login
   verb("SNMPv3 login");
-  ($session, $error) = Net::SNMP->session(
+    if (!defined ($o_privpass)) {
+  verb("SNMPv3 AuthNoPriv login : $o_login, $o_authproto");
+    ($session, $error) = Net::SNMP->session(
       -hostname   	=> $o_host,
       -version		=> '3',
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
-      -authprotocol	=> 'md5',
-      -privpassword	=> $o_passwd
-   );
+      -authprotocol	=> $o_authproto,
+      -timeout          => $o_timeout
+    );  
+  } else {
+    verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
+    ($session, $error) = Net::SNMP->session(
+      -hostname   	=> $o_host,
+      -version		=> '3',
+      -username		=> $o_login,
+      -authpassword	=> $o_passwd,
+      -authprotocol	=> $o_authproto,
+      -privpassword	=> $o_privpass,
+	  -privprotocol => $o_privproto,
+      -timeout          => $o_timeout
+    );
+  }
 } else {
-  # SNMPV1 login
-  ($session, $error) = Net::SNMP->session(
-     -hostname  => $o_host,
-     -community => $o_community,
-     -port      => $o_port,
-     -timeout   => $TIMEOUT
-  );
+	if (defined ($o_version2)) {
+		# SNMPv2 Login
+		verb("SNMP v2c login");
+		  ($session, $error) = Net::SNMP->session(
+		 -hostname  => $o_host,
+		 -version   => 2,
+		 -community => $o_community,
+		 -port      => $o_port,
+		 -timeout   => $o_timeout
+		);
+  	} else {
+	  # SNMPV1 login
+	  verb("SNMP v1 login");
+	  ($session, $error) = Net::SNMP->session(
+		-hostname  => $o_host,
+		-community => $o_community,
+		-port      => $o_port,
+		-timeout   => $o_timeout
+	  );
+	}
 }
 if (!defined($session)) {
    printf("ERROR opening session: %s.\n", $error);
