@@ -1,11 +1,12 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
-# Version : 1.2.1.4
-# Date : Mar 28 2005 
+# Version : 1.3
+# Date : Sept 4 2006
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO : put $o_delta as an option
+# Contrib : 
 ###############################################################
 #
 # help : ./check_snmp_process -h
@@ -37,7 +38,7 @@ my $proc_run_state = '1.3.6.1.2.1.25.4.2.1.7';
 
 # Globals
 
-my $Version='1.2.1.4';
+my $Version='1.3.1';
 
 my $o_host = 	undef; 		# hostname 
 my $o_community =undef; 	# community 
@@ -136,7 +137,7 @@ sub write_file {
 
 sub help {
    print "\nSNMP Process Monitor for Nagios version ",$Version,"\n";
-   print "GPL licence, (c)2004-2005 Patrick Proy\n\n";
+   print "GPL licence, (c)2004-2006 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -480,7 +481,9 @@ for (my $i=0; $i< $num_int; $i++) {
    my $tmpmem=$result_cons{$proc_mem_table . "." . $tindex[$i]};
    my $tmpcpu=$result_cons{$proc_cpu_table . "." . $tindex[$i]};
    verb ("Process $tindex[$i] in state $state using $tmpmem, and $tmpcpu CPU");
-   $num_int_ok++ if (($state == 1) || ($state ==2));
+   if (!isnotnum($state)) { # check argument is numeric (can be NoSuchInstance)
+     $num_int_ok++ if (($state == 1) || ($state ==2));
+   }
 }
 
 my $final_status=0;
