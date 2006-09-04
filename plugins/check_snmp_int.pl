@@ -5,6 +5,7 @@
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# Contrib : Jan Jungmann
 # TODO : 
 # Check isdn "dormant" state
 # Maybe put base directory for performance as an option
@@ -479,7 +480,7 @@ for (my $i=0;$i < $num_int; $i++) {
 	      			      ($timenow - $file_values[$j][0] ))/$speed_metric;
 	    
 	    $overfl = ($$resultf{$oid_perf_outoct[$i]} >= $file_values[$j][2] ) ? 0 : 4294967296;
-	    $checkperf_out[1] = ( ($$resultf{$oid_perf_outoct[$i]} - $file_values[$j][2])/
+	    $checkperf_out[1] = ( ($overfl + $$resultf{$oid_perf_outoct[$i]} - $file_values[$j][2])/
 				      ($timenow - $file_values[$j][0] ))/$speed_metric;
 	    
 	    if (defined($o_ext_checkperf)) {
