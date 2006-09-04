@@ -85,11 +85,34 @@ my $nokia_ps_table="1.3.6.1.4.1.94.1.21.1.3";
 my $nokia_ps_temp="1.3.6.1.4.1.94.1.21.1.3.1.1.2";
 my $nokia_ps_status="1.3.6.1.4.1.94.1.21.1.3.1.1.3";
 
-				
-my @valid_types	=("cisco","nokia","lp");			
+# Bluecoat env mib
+my @bc_SensorCode=("","ok","unknown","not-installed","voltage-low-warning","voltage-low-critical",
+	"no-power","voltage-high-warning","voltage-high-critical","voltage-high-severe",
+	"temperature-high-warning","temperature-high-critical","temperature-high-severe",
+	"fan-slow-warning","fan-slow-critical","fan-stopped"); # BC element status returned by MIB
+my @bc_status_nagios=(3,0,3,3,1,2,2,1,2,2,1,2,2,1,2,2); # nagios status equivallent to BC status
+my @bc_SensorStatus=("","ok","unavailable","nonoperational"); # ok(1),unavailable(2),nonoperational(3)
+my @bc_mesure=("","","","Enum","volts","celsius","rpm");
+
+my @bc_DiskStatus=("","present","initializing","inserted","offline","removed","not-present","empty","bad","unknown");
+my @bc_dsk_status_nagios=(3,0,0,1,1,1,2,2,2,3);
+
+my $bc_sensor_table		= "1.3.6.1.4.1.3417.2.1.1.1.1.1"; # sensor table
+my $bc_sensor_units 	= "1.3.6.1.4.1.3417.2.1.1.1.1.1.3"; # cf bc_mesure
+my $bc_sensor_Scale 	= "1.3.6.1.4.1.3417.2.1.1.1.1.1.4"; # * 10^value
+my $bc_sensor_Value 	= "1.3.6.1.4.1.3417.2.1.1.1.1.1.5"; # value
+my $bc_sensor_Code 		= "1.3.6.1.4.1.3417.2.1.1.1.1.1.6"; # bc_SensorCode
+my $bc_sensor_Status 	= "1.3.6.1.4.1.3417.2.1.1.1.1.1.7"; # bc_SensorStatus
+my $bc_sensor_Name 		= "1.3.6.1.4.1.3417.2.1.1.1.1.1.9"; # name
+
+my $bc_dsk_table 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1"; #disk table
+my $bc_dsk_status 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1.3"; # cf 	bc_DiskStatus
+my $bc_dsk_vendor 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1.5"; # cf 	bc_DiskStatus
+my $bc_dsk_serial 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1.8"; # cf 	bc_DiskStatus
+		
 # Globals
 
-my $Version='0.5';
+my $Version='1.0';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -97,12 +120,13 @@ my $o_port = 	161; 		# port
 my $o_help=	undef; 		# wan't some help ?
 my $o_verb=	undef;		# verbose mode
 my $o_version=	undef;		# print version
-# check type  : cisco 
-my $o_check_type= "cisco";	
-
 my $o_timeout=  undef; 		# Timeout (Default 5)
 my $o_perf=     undef;          # Output performance data
 my $o_version2= undef;          # use snmp v2c
+# check type  
+my $o_check_type= "cisco";	 # default Cisco
+my @valid_types	=("cisco","nokia","bc");	
+
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
 my $o_passwd=	undef;		# Pass for snmpv3
@@ -125,9 +149,18 @@ sub isnnum { # Return true if arg is not a number
   return 1;
 }
 
+sub set_status { # return worst status with this order : OK, unknwonw, warning, critical 
+  my $new_status=shift;
+  my $cur_status=shift;
+  if (($cur_status == 0)|| ($new_status==$cur_status)){ return $new_status; }
+  if ($new_status==3) { return $cur_status; }
+  if ($new_status > $cur_status) {return $new_status;}
+  return $cur_status;
+}
+
 sub help {
    print "\nSNMP environemental Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 to my cat Ratoune - Author : Patrick Proy\n\n";
+   print "(c)2004-2006 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -150,12 +183,12 @@ sub help {
    <privproto> : Priv protocole (des|aes : default des) 
 -P, --port=PORT
    SNMP port (Default 161)
--T, --type=cisco
+-T, --type=cisco|nokia|bc
 	Environemental check : 
 		cisco : voltage,temp,fan,power supply status
 		        will try to check everything present
 		nokia : fan and power supply
-		lp : 
+		bc : fans, power supply, voltage, disks
 -f, --perfparse
    Perfparse compatible output
 -t, --timeout=INTEGER
@@ -505,3 +538,113 @@ if ($global_status==2) {
 }
 }
 
+############# Bluecoat checks
+if ($o_check_type eq "bc") {
+
+	verb("Checking bluecoat env");
+
+	my $resultat;
+	my $global_status=0;
+	my ($num_fan,$num_other,$num_volt,$num_temp,$num_disk)=(0,0,0,0,0);
+	my ($num_fan_ok,$num_other_ok,$num_volt_ok,$num_temp_ok,$num_disk_ok)=(0,0,0,0,0);
+	my $output="";
+	my $output_perf="";
+
+
+	# get sensor table
+	$resultat = (Net::SNMP->VERSION < 4) ? 
+			  $session->get_table($bc_sensor_table)
+			: $session->get_table(Baseoid => $bc_sensor_table); 
+	if (defined($resultat)) {
+		verb ("sensor table found");
+		my ($sens_name,$sens_status,$sens_value,$sens_unit)=(undef,undef,undef,undef);
+		foreach my $key ( keys %$resultat) {
+			if ($key =~ /$bc_sensor_Name/) { 
+				$sens_name = $$resultat{$key};
+				$key =~ s/$bc_sensor_Name//;
+				$sens_unit = $$resultat{$bc_sensor_units.$key};
+				if ($$resultat{$bc_sensor_Status.$key} != 1) { # sensor not operating : output and status unknown
+					if ($output ne "") { $output.=", ";}
+					$output .= $sens_name ." sensor ".$bc_SensorStatus[$$resultat{$bc_sensor_Status.$key}];
+					if ($global_status==0) {$global_status=3;}
+				} else { # Get status
+					$sens_status=$bc_status_nagios[$$resultat{$bc_sensor_Code.$key}];
+					if ($sens_status != 0) { # warn/critical/unknown : output
+						if ($output ne "") { $output.=", ";}
+						$output .= $sens_name . ":".$bc_SensorCode[$sens_status];
+						set_status($sens_status,$global_status);			
+					}
+				}
+				if (defined($o_perf)) {
+					if ($output_perf ne "") { $output_perf .=" ";}
+					$output_perf .= "'".$sens_name."'=";
+					my $perf_value = $$resultat{$bc_sensor_Value.$key} * 10 ** $$resultat{$bc_sensor_Scale.$key};
+					$output_perf .= $perf_value;
+				}
+				### FAN
+				if ($bc_mesure[$sens_unit] eq "rpm") { 
+					$num_fan++;if ($sens_status == 0) { $num_fan_ok++; }
+				} elsif ($bc_mesure[$sens_unit] eq "celsius") { 
+					$num_fan++;if ($sens_status == 0) { $num_temp_ok++; }
+				} elsif ($bc_mesure[$sens_unit] eq "volts") { 
+					$num_volt++;if ($sens_status == 0) { $num_volt_ok++; }
+				} else { 
+					$num_other++;if ($sens_status == 0) { $num_other_ok++;}}
+			}
+		} 
+	}
+			
+	# Get disk table
+	$resultat = (Net::SNMP->VERSION < 4) ? 
+			  $session->get_table($bc_dsk_table)
+			: $session->get_table(Baseoid => $bc_dsk_table); 
+			
+	if (defined($resultat)) {
+		foreach my $key ( keys %$resultat) {
+		    verb("OID : $key, Desc : $$resultat{$key}");
+			my ($dsk_name,$dsk_status)=(undef,undef,undef);
+		    if ( $key =~ /$bc_dsk_status/ ) {
+				$num_disk++;
+				$dsk_status=$bc_dsk_status_nagios[$$resultat{$key}];
+				if ( $dsk_status != 0) {
+					$key =~ s/$bc_dsk_status//;
+					$dsk_name = $$resultat{$bc_dsk_vendor.$key} . "(".$$resultat{$bc_dsk_serial.$key} . ")";
+					if ($output ne "") { $output.=", ";}
+					$output .= $dsk_name . ":" . $bc_DiskStatus[$$resultat{$bc_dsk_status.$key}];
+					set_status($dsk_status,$global_status);	
+				} else {      
+					$num_disk_ok++;
+				}
+			}
+		}
+	}
+
+	if ($num_fan+$num_other+$num_volt+$num_temp+$num_disk == 0) {
+	  print "No information found : UNKNOWN\n";
+	  exit $ERRORS{"UNKNOWN"};
+	}
+
+	if ($output ne "") { $output.=", ";}
+	if ($num_fan_ok != 0) { $output.= $num_fan_ok." fan OK ";}
+	if ($num_other_ok != 0) { $output.= $num_other_ok." other OK ";}
+	if ($num_volt_ok != 0) { $output.= $num_volt_ok." voltage OK ";}
+	if ($num_temp_ok != 0) { $output.= $num_temp_ok." temp OK ";}
+	if ($num_disk_ok != 0) { $output.= $num_disk_ok." disk OK ";}
+
+	if (defined($o_perf)) { $output_perf = " | " . $output_perf;}
+	if ($global_status==3) {
+	  print $output," : UNKNOWN",$output_perf,"\n";
+	  exit $ERRORS{"UNKNOWN"};
+	}
+	if ($global_status==2) {
+	  print $output," : CRITICAL",$output_perf,"\n";
+	  exit $ERRORS{"CRITICAL"};
+	}
+	if ($global_status==1) {
+	  print $output," : WARNING",$output_perf,"\n";
+	  exit $ERRORS{"WARNING"};
+	}
+	print $output," : OK",$output_perf,"\n";
+	exit $ERRORS{"OK"};
+
+}
