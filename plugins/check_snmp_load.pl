@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_load #################
-# Version : 1.3 
-# Date : Jun 30 2006
+# Version : 1.3.1
+# Date : 5 Sept 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Changelog : HP Procurve, Netscreen NS204,N5X, Fortigate VPN, Catalyst 6000
+# Changelog : HP-UX load added.
 # Contributors : F. Lacroix and many others !!!
 #################################################################
 #
@@ -81,14 +81,19 @@ my $linkproof_cpu= "1.3.6.1.4.1.89.35.1.53.0"; # Ressource utilisation (%) Consi
 # 1.3.6.1.4.1.89.35.1.54 : CPU only (%)
 # 1.3.6.1.4.1.89.35.1.55 : network only (%)
 
+# HP-UX cpu usage (thanks to krizb for the OIDs).
+my $hpux_load_1_min="1.3.6.1.4.1.11.2.3.1.1.3.0";
+my $hpux_load_5_min="1.3.6.1.4.1.11.2.3.1.1.4.0";
+my $hpux_load_15_min="1.3.6.1.4.1.11.2.3.1.1.5.0";
+ 
 # valid values 
-my @valid_types = ("stand","netsc","netsl","as400","cisco","cata","nsc","fg","bc","nokia","hp","lp");
+my @valid_types = ("stand","netsc","netsl","as400","cisco","cata","nsc","fg","bc","nokia","hp","lp","hpux");
 # CPU OID array
 my %cpu_oid = ("netsc",$ns_cpu_idle,"as400",$as400_cpu,"bc",$bluecoat_cpu,"nokia",$nokia_cpu,"hp",$procurve_cpu,"lp",$linkproof_cpu,"fg",$fortigate_cpu);
 
 # Globals
 
-my $Version='1.3';
+my $Version='1.3.1';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -96,7 +101,7 @@ my $o_port = 	161; 		# port
 my $o_help=	undef; 		# wan't some help ?
 my $o_verb=	undef;		# verbose mode
 my $o_version=	undef;		# print version
-# check type  : stand | netsc |  netsl | as400 | cisco | cata | nsc | fg | bc | nokia | hp | lp 
+# check type  : stand | netsc |  netsl | as400 | cisco | cata | nsc | fg | bc | nokia | hp | lp  | hpux
 my $o_check_type= "stand";	
 # End compatibility
 my $o_warn=	undef;		# warning level
@@ -119,7 +124,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_load version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|nsc|fg|bc|nokia|hp|lp] [-f] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -130,7 +135,7 @@ sub isnnum { # Return true if arg is not a number
 
 sub help {
    print "\nSNMP Load & CPU Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 to my cat Ratoune - Author : Patrick Proy\n\n";
+   print "GPL licence, (c)2004-2006 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -164,7 +169,7 @@ sub help {
 	CPU check : 
 		stand : standard MIBII (works with Windows), 
 		        can handle multiple CPU.
-		netsl : linux load provided by Net SNMP
+		netsl : linux load provided by Net SNMP (1,5 & 15 minutes values)
 		netsc : cpu usage given by net-snmp (100-idle)
 		as400 : as400 CPU usage
 		cisco : Cisco CPU usage
@@ -175,6 +180,7 @@ sub help {
 		nokia : Nokia CPU usage
 		hp    : HP procurve switch CPU usage
 		lp    : Linkproof CPU usage
+		hpux  : HP-UX load (1,5 & 15 minutes values)
 -f, --perfparse
    Perfparse compatible output
 -t, --timeout=INTEGER
@@ -201,7 +207,6 @@ sub check_options {
 	'L:s'	=> \$v3protocols,		'protocols:s'	=> \$v3protocols,   
         't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
 	'V'	=> \$o_version,		'version'	=> \$o_version,
-
 	'2'     => \$o_version2,        'v2c'           => \$o_version2,
         'c:s'   => \$o_crit,            'critical:s'    => \$o_crit,
         'w:s'   => \$o_warn,            'warn:s'        => \$o_warn,
@@ -241,27 +246,27 @@ sub check_options {
     $o_warn =~ s/\%//g; 
     $o_crit =~ s/\%//g;
     # Check for multiple warning and crit in case of -L
-    if (($o_warn =~ /,/) || ($o_crit =~ /,/)) {
-	  if (($o_check_type ne "netsl") && ($o_check_type ne "cisco") && ($o_check_type ne "cata") && ($o_check_type ne "nsc") ) 
+	if (($o_check_type eq "netsl") || ($o_check_type eq "cisco") || ($o_check_type eq "cata") || 
+		($o_check_type eq "nsc") || ($o_check_type ne "hpux")) {
+		@o_warnL=split(/,/ , $o_warn);
+		@o_critL=split(/,/ , $o_crit);
+		if (($#o_warnL != 2) || ($#o_critL != 2)) 
+			{ print "3 warnings and critical !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+		for (my $i=0;$i<3;$i++) {
+			if ( isnnum($o_warnL[$i]) || isnnum($o_critL[$i])) 
+				{ print "Numeric value for warning or critical !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+			if ($o_warnL[$i] > $o_critL[$i]) 
+				{ print "warning <= critical ! \n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+		}
+	} else {
+		if (($o_warn =~ /,/) || ($o_crit =~ /,/)) {
              { print "Multiple warning/critical levels not available for this check\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
-	  @o_warnL=split(/,/ , $o_warn);
-	  @o_critL=split(/,/ , $o_crit);
- 	  if (($#o_warnL != 2) || ($#o_critL != 2)) 
-	    { print "3 warnings and critical !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
-	  for (my $i=0;$i<3;$i++) {
-        if ( isnnum($o_warnL[$i]) || isnnum($o_critL[$i])) 
-		  { print "Numeric value for warning or critical !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
-	    if ($o_warnL[$i] > $o_critL[$i]) 
-	     { print "warning <= critical ! \n";print_usage(); exit $ERRORS{"UNKNOWN"}}
-	}
-    } else {
-        if (($o_check_type eq "netsl") || ($o_check_type eq "cisco") || ($o_check_type eq "cata") || ($o_check_type eq "nsc")) 
-           { print "Multiple warn and crit levels needed with this check\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+		}
         if ( isnnum($o_warn) || isnnum($o_crit) ) 
-	    { print "Numeric value for warning or critical !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
-	if ($o_warn > $o_crit) 
+			{ print "Numeric value for warning or critical !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+		if ($o_warn > $o_crit) 
             { print "warning <= critical ! \n";print_usage(); exit $ERRORS{"UNKNOWN"}}
-    }
+	}
 }
 
 ########## MAIN #######
@@ -610,6 +615,63 @@ print "<$o_warn) : OK" if ($exit_val eq $ERRORS{"OK"});
  : print "\n";
 exit $exit_val;
 
+}
+
+##### Checking hpux load
+if ($o_check_type eq "hpux") {
+
+verb("Checking hpux load");
+
+my @oidlists = ($hpux_load_1_min, $hpux_load_5_min, $hpux_load_15_min);
+my $resultat = (Net::SNMP->VERSION < 4) ?
+	  $session->get_request(@oidlists)
+	: $session->get_request(-varbindlist => \@oidlists);
+
+if (!defined($resultat)) {
+   printf("ERROR: Load table : %s.\n", $session->error);
+   $session->close;
+   exit $ERRORS{"UNKNOWN"};
+}
+
+$session->close;
+
+if (!defined ($$resultat{$hpux_load_1_min})) {
+  print "No Load information : UNKNOWN\n";
+  exit $ERRORS{"UNKNOWN"};
+}
+
+my @load = undef;
+
+$load[0]=$$resultat{$hpux_load_1_min}/100;
+$load[1]=$$resultat{$hpux_load_5_min}/100;
+$load[2]=$$resultat{$hpux_load_15_min}/100;
+
+print "Load : $load[0] $load[1] $load[2] :";
+
+$exit_val=$ERRORS{"OK"};
+for (my $i=0;$i<3;$i++) {
+  if ( $load[$i] > $o_critL[$i] ) {
+   print " $load[$i] > $o_critL[$i] : CRITICAL";
+   $exit_val=$ERRORS{"CRITICAL"};
+  }
+  if ( $load[$i] > $o_warnL[$i] ) {
+     # output warn error only if no critical was found
+     if ($exit_val eq $ERRORS{"OK"}) {
+       print " $load[$i] > $o_warnL[$i] : WARNING"; 
+       $exit_val=$ERRORS{"WARNING"};
+     }
+  }
+}
+print " OK" if ($exit_val eq $ERRORS{"OK"});
+if (defined($o_perf)) {
+   print " | load_1_min=$load[0]%;$o_warnL[0];$o_critL[0],";
+   print "load_5_min=$load[1]%;$o_warnL[1];$o_critL[1],";
+   print "load_15_min=$load[2]%;$o_warnL[2];$o_critL[2]\n";
+} else {
+ print "\n";
+}
+
+exit $exit_val;
 }
 
 ########## Standard cpu usage check ############
