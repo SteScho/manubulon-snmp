@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_load #################
 # Version : 1.3.1
-# Date : 5 Sept 2006
+# Date : 8 Sept 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -247,7 +247,7 @@ sub check_options {
     $o_crit =~ s/\%//g;
     # Check for multiple warning and crit in case of -L
 	if (($o_check_type eq "netsl") || ($o_check_type eq "cisco") || ($o_check_type eq "cata") || 
-		($o_check_type eq "nsc") || ($o_check_type ne "hpux")) {
+		($o_check_type eq "nsc") || ($o_check_type eq "hpux")) {
 		@o_warnL=split(/,/ , $o_warn);
 		@o_critL=split(/,/ , $o_crit);
 		if (($#o_warnL != 2) || ($#o_critL != 2)) 
