@@ -386,6 +386,8 @@ foreach my $key ( keys %$resultat) {
      $tindex[$num_int] = pop (@oid_list); 
      # get the full description
      $descr[$num_int]=$$resultat{$key};
+     # Get rid of special caracters (specially for Windows)
+     $descr[$num_int] =~ s/[[:cntrl:]]//g;
      # put the admin or oper oid in an array
      $oids[$num_int]= defined ($o_admin) ? $admin_table . $tindex[$num_int] 
 			: $oper_table . $tindex[$num_int] ;
