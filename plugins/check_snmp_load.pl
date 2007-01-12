@@ -1,7 +1,6 @@
-#!/usr/bin/perl -w 
-############################## check_snmp_load #################
-# Version : 1.3.1
-# Date : 8 Sept 2006
+eck_snmp_load #################
+# Version : 1.3.2
+# Date : 6 Nov 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -570,7 +569,7 @@ exit $exit_val;
 }
 
 ################## CPU for : AS/400 , Netsnmp, HP, Bluecoat, linkproof, fortigate  ###########
-if ( $o_check_type =~ /netsc|as400|bc|nokia|hp|lp|fg/ ) {
+if ( $o_check_type =~ /netsc|as400|bc|nokia|^hp$|lp|fg/ ) {
 
 # Get load table
 my @oidlist = $cpu_oid{$o_check_type}; 
@@ -722,4 +721,5 @@ print " < $o_warn : OK" if ($exit_val eq $ERRORS{"OK"});
    print " | cpu_prct_used=$cpu_used%;$o_warn;$o_crit\n"
  : print "\n";
 exit $exit_val;
+
 
