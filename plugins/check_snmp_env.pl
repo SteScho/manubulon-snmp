@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_env #################
-# Version : 1.0 
-# Date : Aug 23 2006
+# Version : 1.1
+# Date : Jan 11 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -110,9 +110,30 @@ my $bc_dsk_status 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1.3"; # cf 	bc_DiskStatus
 my $bc_dsk_vendor 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1.5"; # cf 	bc_DiskStatus
 my $bc_dsk_serial 	= "1.3.6.1.4.1.3417.2.2.1.1.1.1.8"; # cf 	bc_DiskStatus
 		
+# Ironport env mib
+
+my $iron_ps_table 	= "1.3.6.1.4.1.15497.1.1.1.8"; # ps table
+my $iron_ps_status 	= "1.3.6.1.4.1.15497.1.1.1.8.1.2"; # ps status 
+#powerSupplyNotInstalled(1), powerSupplyHealthy(2), powerSupplyNoAC(3), powerSupplyFaulty(4)
+my @iron_ps_status_name=("","powerSupplyNotInstalled","powerSupplyHealthy","powerSupplyNoAC","powerSupplyFaulty");
+my @iron_ps_status_nagios=(3,3,0,2,2);
+my $iron_ps_ha 		= "1.3.6.1.4.1.15497.1.1.1.8.1.3"; # ps redundancy status
+#powerSupplyRedundancyOK(1), powerSupplyRedundancyLost(2)
+my @iron_ps_ha_name=("","powerSupplyRedundancyOK","powerSupplyRedundancyLost");
+my @iron_ps_ha_nagios=(3,0,1);
+my $iron_ps_name 	= "1.3.6.1.4.1.15497.1.1.1.8.1.4"; # ps name
+
+my $iron_tmp_table	= "1.3.6.1.4.1.15497.1.1.1.9"; # temp table
+my $iron_tmp_celcius	= "1.3.6.1.4.1.15497.1.1.1.9.1.2"; # temp in celcius
+my $iron_tmp_name	= "1.3.6.1.4.1.15497.1.1.1.9.1.3"; # name
+
+my $iron_fan_table	= "1.3.6.1.4.1.15497.1.1.1.10"; # fan table
+my $iron_fan_rpm	= "1.3.6.1.4.1.15497.1.1.1.10.1.2"; # fan speed in RPM
+my $iron_fan_name	= "1.3.6.1.4.1.15497.1.1.1.10.1.3"; # fan name
+
 # Globals
 
-my $Version='1.0';
+my $Version='1.1';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -125,7 +146,9 @@ my $o_perf=     undef;          # Output performance data
 my $o_version2= undef;          # use snmp v2c
 # check type  
 my $o_check_type= "cisco";	 # default Cisco
-my @valid_types	=("cisco","nokia","bc");	
+my @valid_types	=("cisco","nokia","bc","iron");	
+my $o_temp=	undef;		# max temp
+my $o_fan=	undef;		# min fan speed
 
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
@@ -140,7 +163,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_env version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -T (cisco|nokia|lp) [-f] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -T (cisco|nokia|lp|iron) [-F <rpm>] [-c <celcius>] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -159,8 +182,8 @@ sub set_status { # return worst status with this order : OK, unknwonw, warning, 
 }
 
 sub help {
-   print "\nSNMP environemental Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 Patrick Proy\n\n";
+   print "\nSNMP environmental Monitor for Nagios version ",$Version,"\n";
+   print "GPL Licence, (c)2006-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -189,6 +212,11 @@ sub help {
 		        will try to check everything present
 		nokia : fan and power supply
 		bc : fans, power supply, voltage, disks
+		iron : fans, power supply, temp
+-F, --fan=<rpm>
+   Minimum fan rpm value
+-c, --celcius=<celcius>
+   Maximum temp in degree celcius
 -f, --perfparse
    Perfparse compatible output
 -t, --timeout=INTEGER
@@ -218,7 +246,9 @@ sub check_options {
 
 	'2'     => \$o_version2,        'v2c'           => \$o_version2,
         'f'     => \$o_perf,            'perfparse'     => \$o_perf,
-	'T:s'	=> \$o_check_type,	'type:s'	=> \$o_check_type
+	'T:s'	=> \$o_check_type,	'type:s'	=> \$o_check_type,
+        'F:i'   => \$o_fan,             'fan:i'     	=> \$o_fan,
+        'c:i'   => \$o_temp,            'celcius:i'     => \$o_temp
 	);
     # check the -T option
     my $T_option_valid=0; 
@@ -648,3 +678,139 @@ if ($o_check_type eq "bc") {
 	exit $ERRORS{"OK"};
 
 }
+
+
+############# Ironport checks
+if ($o_check_type eq "iron") {
+
+verb("Checking Ironport env");
+
+my $resultat;
+# status : 0=ok, 1=warn, 2=crit
+my ($fan_status,$ps_status,$temp_status)=(0,0,0);
+my ($fan_exist,$ps_exist,$temp_exist)=(0,0,0);
+my ($num_fan,$num_ps,$num_temp)=(0,0,0);
+my ($num_fan_nok,$num_ps_nok,$num_temp_nok)=(0,0,0);
+my $global_status=0;
+my $output="";
+# get temp if $o_temp is defined
+if (defined($o_temp)) {
+  verb("Checking temp < $o_temp");
+  $resultat = (Net::SNMP->VERSION < 4) ? 
+		  $session->get_table($iron_tmp_table)
+		: $session->get_table(Baseoid => $iron_tmp_table); 
+  if (defined($resultat)) {
+    verb ("temp found");
+    $temp_exist=1;
+    foreach my $key ( keys %$resultat) {
+      verb("OID : $key, Desc : $$resultat{$key}");
+      if ( $key =~ /$iron_tmp_celcius/ ) {
+	verb("Status : $$resultat{$key}");
+        if ($$resultat{$key} > $o_temp) { 
+  	  my @index_oid=split(/\./,$key);
+	  my $index_oid_key=pop(@index_oid);
+          $output .= ",Temp : ". $$resultat{ $iron_tmp_name.".".$index_oid_key}." : ".$$resultat{$key}." C";
+	  $temp_status=2;
+	  $num_temp_nok++;
+	}
+        $num_temp++;
+      }
+    }
+    if ($temp_status==0) {
+      $output.= ", ".$num_temp." temp < ".$o_temp." OK";
+    } else {
+      $output.= ", ".$num_temp_nok."/".$num_temp." temp probes CRITICAL";
+      $global_status=2;
+    }
+  }
+}
+
+# Get fan status if $o_fan is defined
+if (defined($o_fan)) {
+  verb("Checking fan > $o_fan");
+  $resultat = (Net::SNMP->VERSION < 4) ?
+                  $session->get_table($iron_fan_table)
+                : $session->get_table(Baseoid => $iron_fan_table);
+  if (defined($resultat)) {
+    verb ("fan found");
+    $fan_exist=1;
+    foreach my $key ( keys %$resultat) {
+      verb("OID : $key, Desc : $$resultat{$key}");
+      if ( $key =~ /$iron_fan_rpm/ ) {
+	verb("Status : $$resultat{$key}");
+        if ($$resultat{$key} < $o_fan) {
+  	  my @index_oid=split(/\./,$key);
+	  my $index_oid_key=pop(@index_oid);
+          $output .= ",Fan ". $$resultat{ $iron_fan_name.".".$index_oid_key}." : ".$$resultat{$key}." RPM";
+          $fan_status=2;
+          $num_fan_nok++;
+	}
+        $num_fan++;
+      }
+    }
+    if ($fan_status==0) {
+      $output.= ", ".$num_fan." fan > ".$o_fan." OK";
+    } else {
+      $output.= ", ".$num_fan_nok."/".$num_fan." fans CRITICAL";
+      $global_status=2;
+    }
+  }
+}
+
+# Get power supply status
+  verb("Checking PS");
+  $resultat = (Net::SNMP->VERSION < 4) ?
+                  $session->get_table($iron_ps_table)
+                : $session->get_table(Baseoid => $iron_ps_table);
+  if (defined($resultat)) {
+    verb ("ps found");
+    $ps_exist=1;
+    foreach my $key ( keys %$resultat) {
+      verb("OID : $key, Desc : $$resultat{$key}");
+      if ( $key =~ /$iron_ps_status/ ) {
+	verb("Status : $iron_ps_status_name[$$resultat{$key}]");
+        if ($iron_ps_status_nagios[$$resultat{$key}] != 0) {
+  	  my @index_oid=split(/\./,$key);
+	  my $index_oid_key=pop(@index_oid);
+          $output .= ",PS ". $$resultat{$iron_ps_name.".".$index_oid_key}." : ".$iron_ps_status_name[$$resultat{$key}];
+          $ps_status=2;
+          $num_ps_nok++;
+	}
+        $num_ps++;
+      }
+    }
+    if ($ps_status==0) {
+      $output.= ", ".$num_ps." ps OK";
+    } else {
+      $output.= ", ".$num_ps_nok."/".$num_ps." ps CRITICAL";
+      $global_status=2;
+    }
+  }
+
+$session->close;
+
+verb ("status : $global_status");
+
+if ( ($fan_exist+$ps_exist+$temp_exist) == 0) {
+  print "No environemental informations found : UNKNOWN\n";
+  exit $ERRORS{"UNKNOWN"};
+}
+
+$output =~ s/^,//;
+
+if ($global_status==0) {
+  print $output." : all OK\n";
+  exit $ERRORS{"OK"};
+}
+
+if ($global_status==1) {
+  print $output." : WARNING\n";
+  exit $ERRORS{"WARNING"};
+}
+
+if ($global_status==2) {
+  print $output." : CRITICAL\n";
+  exit $ERRORS{"CRITICAL"};
+}
+}
+
