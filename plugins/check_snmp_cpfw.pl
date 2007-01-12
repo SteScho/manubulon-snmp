@@ -116,7 +116,7 @@ sub isnnum { # Return true if arg is not a number
 
 sub help {
    print "\nSNMP Checkpoint FW-1 Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004 - to my cat Ratoune\n\n";
+   print "GPL Licence, (c)2004-2006 - Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
