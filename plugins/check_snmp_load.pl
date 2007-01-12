@@ -1,6 +1,7 @@
-eck_snmp_load #################
-# Version : 1.3.2
-# Date : 6 Nov 2006
+#!/usr/bin/perl -w 
+############################## check_snmp_load #################
+# Version : 1.3.1
+# Date : 8 Sept 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -76,7 +77,8 @@ my $bluecoat_cpu = "1.3.6.1.4.1.3417.2.4.1.1.1.4.1"; # Bluecoat %cpu usage.
 my $fortigate_cpu = ".1.3.6.1.4.1.12356.1.8.0"; # Fortigate CPU % usage
 
 # Linkproof Appliance
-my $linkproof_cpu= "1.3.6.1.4.1.89.35.1.53.0"; # Ressource utilisation (%) Considers network utilization and internal CPU utilization
+my $linkproof_cpu= "1.3.6.1.4.1.89.35.1.55.0"; # CPU RE (Routing Engine Tasks)
+# 1.3.6.1.4.1.89.35.1.53.0 : Ressource utilisation (%) Considers network utilization and internal CPU utilization
 # 1.3.6.1.4.1.89.35.1.54 : CPU only (%)
 # 1.3.6.1.4.1.89.35.1.55 : network only (%)
 
@@ -721,5 +723,4 @@ print " < $o_warn : OK" if ($exit_val eq $ERRORS{"OK"});
    print " | cpu_prct_used=$cpu_used%;$o_warn;$o_crit\n"
  : print "\n";
 exit $exit_val;
-
 
