@@ -1,7 +1,7 @@
 #!/bin/bash
 ############################## check_snmp_storage ##############
-# Version : 1.1
-# Date :  Sept 4 2006
+# Version : 1.2
+# Date :  Jan 11 2007
 # Author  : Patrick Proy ( nagios at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -38,7 +38,8 @@ if [ $? -ne 0 ]; then PERLHOME="" ; fi
 
 PLUGHOME=/usr/local/nagios/libexec
 TMPDATA=/tmp
-PLUGINS="check_snmp_boostedge.pl check_snmp_cpfw.pl check_snmp_css.pl check_snmp_env.pl check_snmp_int.pl check_snmp_linkproof_nhr.pl check_snmp_load.pl check_snmp_process.pl check_snmp_vrrp.pl check_snmp_mem.pl check_snmp_storage.pl check_snmp_win.pl "
+PLUGINS="check_snmp_boostedge.pl check_snmp_css.pl check_snmp_linkproof_nhr.pl check_snmp_nsbox.pl check_snmp_vrrp.pl check_snmp_cpfw.pl check_snmp_env.pl check_snmp_load.pl check_snmp_process.pl check_snmp_win.pl check_snmp_css_main.pl check_snmp_int.pl check_snmp_mem.pl check_snmp_storage.pl"
+
 ############################ Checking Perl
 
 echo -n "What is your perl location ? [$PERLHOME] "
@@ -57,7 +58,8 @@ if [ $? -ne 0 ] ; then
   echo "######### ERROR ########"
   exit 1;  
 fi
-if [ $NETSNMP != "Yes" ]; then
+
+if [ "zz$NETSNMP" != "zzYes" ]; then
   echo "Module Net::SNMP not found!"
   echo "Install it with CPAN or manually : http://www.manubulon.com/nagios/faq.html#FAQ2"
   echo "######### ERROR ########"
@@ -68,7 +70,7 @@ SNMPVER=`$PERLHOME -e 'require Net::SNMP;print Net::SNMP->VERSION'`
 echo "Net::SNMP module version is $SNMPVER [OK]"
 
 GETOPT=`$PERLHOME -e 'if (eval "require Getopt::Long") { print "Yes" ;}'`
-if [ $GETOPT != "Yes" ]; then
+if [ "zz$GETOPT" != "zzYes" ]; then
   echo "Module Getopt::Long not found!"
   echo "Install it with CPAN or manually"
   echo "######### ERROR ########"
