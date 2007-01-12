@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_env #################
-# Version : 1.0
+# Version : 1.0 
 # Date : Aug 23 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
