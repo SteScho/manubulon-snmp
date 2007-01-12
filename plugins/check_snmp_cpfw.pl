@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w 
-############################## check_snmp_cpfw ##############
+############################## check_snmp_cpfw ############## 
 # Version : 1.0
 # Date : Aug 23 2006
 # Author  : Patrick Proy (patrick at proy.org)
