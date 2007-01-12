@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-# Version : 1.4.2
-# Date : Oct 5 2006
+# Version : 1.4.3
+# Date : Dec 11 2006
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -46,7 +46,7 @@ my %status=(1=>'UP',2=>'DOWN',3=>'TESTING',4=>'UNKNOWN',5=>'DORMANT',6=>'NotPres
 
 # Globals
 
-my $Version='1.4.2';
+my $Version='1.4.3';
 
 my $o_host = 		undef; 	# hostname
 my $o_community = 	undef; 	# community
@@ -559,7 +559,7 @@ for (my $i=0;$i < $num_int; $i++) {
     }
   }
   # Get rid of special caracters for performance in description
-  $descr[$i] =~ s/'/_/g;
+  $descr[$i] =~ s/'\/\(\)/_/g;
   if ( $int_status == $ok_val) {
     $num_ok++;
   }
@@ -606,8 +606,7 @@ if ($num_ok == $num_int) {
 # else print the not OK interface number and exit (return is always critical if at least one int is down).
 
 print $print_out,": ", $num_int-$num_ok, " int NOK : CRITICAL";
-if (defined ($o_perf)) { print " | ",$perf_out; }
+if (defined ($o_perf) && defined ($perf_out)) { print " | ",$perf_out; }
 print "\n";
 exit $ERRORS{"CRITICAL"};
-
 
