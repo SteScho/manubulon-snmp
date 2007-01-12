@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
-############################## check_snmp_css_status.pl #################
-# Version : 1.0	
+############################## check_snmp_css.pl #################
+# Version : 1.0.1
 # Date : 27 Sept 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
@@ -79,7 +79,7 @@ sub print_usage {
 
 sub isnnum { # Return true if arg is not a number
   my $num = shift;
-  if ( $num =~ /^(\d+\.?\d*)|(^\.\d+)$/ ) { return 0 ;}
+  if ( $num =~ /^-?(\d+\.?\d*)|(^\.\d+)$/ ) { return 0 ;}
   return 1;
 }
 
@@ -120,12 +120,13 @@ sub help {
    - minimum number of active & alive service 
    - average response time
    - number of connexions
-   Put 0 for no warnings.
+   For no warnings, put -1 (ex : -w5,-1,3).
+   When using negative numbers, dont put space after "-w"
 -d, --dir=<directory to put file> 
    Directory where the temp file with index, created by check_snmp_css_main.pl, can be found
    If no directory is set, /tmp will be used
 -c, --critical=<num>,resp>,<conn>
-   Optional. Critical levels (0 for no critical levels)
+   Optional. Critical levels (-1 for no critical levels)
    See warning levels.
 -C, --community=COMMUNITY NAME
    community name for the host's SNMP agent (implies v1 protocol)
@@ -201,22 +202,22 @@ sub check_options {
 		@o_levels=split(/,/,$o_warn_conn);
 		if (defined($o_levels[0])) {
 			if (isnnum($o_levels[0])) {print "Need number for warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-			if ($o_levels[0] != 0 ) {$o_warn_number=$o_levels[0];} 
+			if ($o_levels[0] != -1 ) {$o_warn_number=$o_levels[0];} 
 		}
 		if (defined($o_levels[1])) {
 			if (isnnum($o_levels[1])) {print "Need number for warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-			if ($o_levels[1] != 0 ) {$o_warn_conn=$o_levels[1];} else {$o_warn_conn=undef;}
+			if ($o_levels[1] != -1 ) {$o_warn_conn=$o_levels[1];} else {$o_warn_conn=undef;}
 		} else {$o_warn_conn=undef;}
 		if (defined($o_levels[2]) ) {
 			if (isnnum($o_levels[2])) {print "Need number for warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-			if ($o_levels[2] != 0 ) {$o_warn_resp=$o_levels[2];}
+			if ($o_levels[2] != -1 ) {$o_warn_resp=$o_levels[2];}
 		}
 	}
 	if (defined($o_crit_conn)) {
 		@o_levels=split(/,/,$o_crit_conn);
 		if (defined($o_levels[0]) ) {		
 			if (isnnum($o_levels[0])) {print "Need number for critical!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-			if ($o_levels[0] != 0 ) {
+			if ($o_levels[0] != -1 ) {
 				$o_crit_number=$o_levels[0];
 				if (defined($o_warn_number) && ($o_crit_number>=$o_warn_number)) 
 					{print "critical must be < warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
@@ -224,7 +225,7 @@ sub check_options {
 		}
 		if (defined($o_levels[1]) ) {		
 			if (isnnum($o_levels[1])) {print "Need number for critical!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-			if ($o_levels[1] != 0 ) {
+			if ($o_levels[1] != -1 ) {
 				$o_crit_conn=$o_levels[1];
 				if (defined($o_warn_conn) && ($o_warn_conn>=$o_crit_conn)) 
 					{print "critical must be > warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
@@ -232,7 +233,7 @@ sub check_options {
 		} else {$o_crit_conn=undef;}
 		if (defined($o_levels[2]) ) {
 			if (isnnum($o_levels[2])) {print "Need number for critical!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
-			if ($o_levels[2] != 0 ) {
+			if ($o_levels[2] != -1 ) {
 				$o_crit_resp=$o_levels[1];
 				if (defined($o_warn_resp) && ($o_warn_resp>=$o_crit_resp)) 
 					{print "critical must be > warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
@@ -327,7 +328,7 @@ if (defined($o_dir_set)) {
 
 	# Check for lock file during 3 seconds max and quit if sill here.
 	my $file_timeout=0;
-	while (!stat($file_lock)) { 
+	while (-e $file_lock) { 
 		sleep(1);
 		if ($file_timeout==3) {
 		  print "Lock file remaining for more than 3 sec : UNKNOWN\n";
@@ -339,7 +340,8 @@ if (defined($o_dir_set)) {
 	open(FILE,"< ".$file_name);
 	while (<FILE>) {
 		my @file_line=split(/:/,$_);
-		if ($file_line[1] =~ /$o_name/) { # select service by name
+		if ((defined ($file_line[1])) && ($file_line[1] =~ /$o_name/)) { # select service by name
+			chomp($file_line[1]);
 			$svcname[$numsvc]=$file_line[1];
 			my $key = $file_line[0];
 			verb ("Found : $svcname[$numsvc]");
@@ -436,25 +438,28 @@ for (my $i=0;$i<$numsvc;$i++) {
 			if (defined ($o_warn_conn) && ($prctconn>$o_warn_conn)) {
 				if ($output ne "") { $output.=", ";}
 				$output .= $svcname[$i]. ":" . $prctconn ."%, ".$resptime."ms";
-				$output_done=1;
+				set_status(1,$global_status);$output_done=1;
 			}
 			if (defined ($o_crit_conn) && ($prctconn>$o_crit_conn)) {
 				if ($output_done==0) {
 					$output .= $svcname[$i]. ":" . $prctconn ."%, ".$resptime."ms";
 					$output_done=1;
 				}
+				set_status(2,$global_status);
 			}
 			if (defined ($o_warn_resp) && ($prctconn>$o_warn_resp)) {
 				if ($output_done==0) {
 					$output .= $svcname[$i]. ":" . $prctconn ."%, ".$resptime."ms";
 					$output_done=1;
 				}
+				set_status(1,$global_status);
 			}
 			if (defined ($o_crit_resp) && ($prctconn>$o_crit_resp)) {
 				if ($output_done==0) {
 					$output .= $svcname[$i]. ":" . $prctconn ."%, ".$resptime."ms";
 					$output_done=1;
 				}			
+				set_status(2,$global_status);
 			}			
 		}
 	}
@@ -463,14 +468,13 @@ for (my $i=0;$i<$numsvc;$i++) {
 
 $output .= " ".$numsvc_ok."/".$numsvc." services OK";
 
-if ((defined ($o_crit_number)) && ($numsvc_ok<=$o_crit_number)) {
+if (($global_status == 2) || ((defined ($o_crit_number)) && ($numsvc_ok<=$o_crit_number)) || ($numsvc_ok==0) ) {
 	print $output," : CRITICAL\n";
 	exit $ERRORS{"CRITICAL"}
 }
-if ((defined ($o_warn_number)) && ($numsvc_ok<=$o_warn_number)) {
+if (($global_status == 1) || ((defined ($o_warn_number)) && ($numsvc_ok<=$o_warn_number))) {
 	print $output," : WARNING\n";
 	exit $ERRORS{"WARNING"}
 }
 print $output," : OK\n";
 exit $ERRORS{"OK"};
-
