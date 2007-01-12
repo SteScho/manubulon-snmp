@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_win ##############
-# Version : 0.5
-# Date : Aug 22 2005 
+# Version : 0.6
+# Date : Nov 29 2006 
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -44,7 +44,7 @@ my $win_serv_uninst = '1.3.6.1.4.1.77.1.2.3.1.4';
 
 # Globals
 
-my $Version='0.5';
+my $Version='0.6';
 my $Name='check_snmp_win';
 
 my $o_host = 	undef; 		# hostname 
@@ -244,14 +244,14 @@ if ( defined($o_login) && defined($o_passwd)) {
   }
 }
 
-$session->max_msg_size(5000);
-verb($session->max_msg_size);
-#print $session->max_msg_size(),"\n";
 
 if (!defined($session)) {
    printf("ERROR: %s.\n", $error);
    exit $ERRORS{"UNKNOWN"};
 }
+
+$session->max_msg_size(5000);
+verb($session->max_msg_size);
 
 # Look for process in name or path name table
 my $resultat=undef;
