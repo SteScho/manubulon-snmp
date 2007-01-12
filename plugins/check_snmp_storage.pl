@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_storage ##############
-# Version : 1.3
-# Date :  Aug 23 2006
+# Version : 1.3.1
+# Date :  Jan 11 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -514,7 +514,7 @@ for ($i=0;$i<$num_int;$i++) {
   ##### Ouputs and checks
   # Keep complete description fot performance output (in MB)
   my $Pdescr=$descr[$i];
-  $Pdescr =~ s/'/_/g; 
+  $Pdescr =~ s/[`~!\$%\^&\*'"<>|\?,\(= )]/_/g; 
   ##### TODO : subs "," with something
  if (defined($o_shortL[2])) {
    if ($o_shortL[2] < 0) {$descr[$i]=substr($descr[$i],$o_shortL[2]);}
