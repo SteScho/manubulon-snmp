@@ -1,7 +1,7 @@
 #!/bin/bash
-############################## check_snmp_storage ##############
+############################## install.sh  #####################
 # Version : 1.2
-# Date :  Jan 11 2007
+# Date :  Jan 12 2007
 # Author  : Patrick Proy ( nagios at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
