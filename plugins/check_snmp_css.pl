@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
-############################## check_snmp_css.pl #################
+############################## check_snmp_css_status.pl #################
 # Version : 1.0	
-# Date : 27 aug 2006
+# Date : 27 Sept 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -51,6 +51,8 @@ my $o_timeout=  undef; 		# Timeout (Default 5)
 my $o_perf=     undef;          # Output performance data
 my $o_version2= undef;          # use snmp v2c
 #Specific
+my $o_dir=		"/tmp/";		# Directory to store temp file in it.
+my $o_dir_set= undef;		# defined if names and index must be read form file.
 my $o_name=		undef;		# service name (regexp)
 my $o_warn_number=	undef;		# minimum number of service before warning
 my $o_crit_number=	undef;		# minimum number of service before critical
@@ -72,7 +74,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_css version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) -n <name> [-w <num>,<resp>,<conn> -c <num>,<resp>,<conn>]  [-p <port>] [-f] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) -n <name> [-d directory] [-w <num>,<resp>,<conn> -c <num>,<resp>,<conn>]  [-p <port>] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -119,6 +121,9 @@ sub help {
    - average response time
    - number of connexions
    Put 0 for no warnings.
+-d, --dir=<directory to put file> 
+   Directory where the temp file with index, created by check_snmp_css_main.pl, can be found
+   If no directory is set, /tmp will be used
 -c, --critical=<num>,resp>,<conn>
    Optional. Critical levels (0 for no critical levels)
    See warning levels.
@@ -166,7 +171,8 @@ sub check_options {
 	'f'     => \$o_perf,		'perfparse'		=> \$o_perf,
 	'n:s'	=> \$o_name,		'name:s'		=> \$o_name,
 	'w:s'	=> \$o_warn_conn,	'warning:s'		=> \$o_warn_conn,
-	'c:s'	=> \$o_crit_conn,	'critical:s'		=> \$o_crit_conn
+	'c:s'	=> \$o_crit_conn,	'critical:s'		=> \$o_crit_conn,
+	'd:s'	=> \$o_dir_set,		'dir:s'		=> \$o_dir_set	
 	);
     # Basic checks
 	if (defined($o_timeout) && (isnnum($o_timeout) || ($o_timeout < 2) || ($o_timeout > 60))) 
@@ -232,6 +238,10 @@ sub check_options {
 					{print "critical must be > warning!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
 			}
 		}
+	}
+	if (defined($o_dir_set)) {
+	    if ($o_dir_set ne "") {$o_dir=$o_dir_set;} 
+		verb("Tmp directory : $o_dir");
 	}	
 }
 
@@ -306,35 +316,71 @@ $session->max_msg_size(10000);
 
 ########### Cisco CSS checks ##############
 
-# Get load table
-my $resultat = (Net::SNMP->VERSION < 4) ? 
-		  $session->get_table($css_svc_name)
-		: $session->get_table(Baseoid => $css_svc_name); 
-		
-if (!defined($resultat)) {
-   printf("ERROR: Description table : %s.\n", $session->error);
-   $session->close;
-   exit $ERRORS{"UNKNOWN"};
-}
-
-
-# Get name data & index
 my (@index,@svcname)=(undef,undef);
 my ($numsvc,$numoid,$numoid2)=0;
 my (@oid,@oid_list,@oid_list2)=undef;
-foreach my $key ( keys %$resultat) {
-	verb("OID : $key, Desc : $$resultat{$key}");
-	if ($$resultat{$key} =~ /$o_name/) { # select service by name
-		$svcname[$numsvc]=$$resultat{$key};
-		$key =~ s/$css_svc_name//;
-		verb ("Found : $svcname[$numsvc]");
-		$index[$numsvc++]=$key;
-		# Build oid for snmpget
-		$oid_list[$numoid++]=$css_svc_enable.$key;
-		$oid_list[$numoid++]=$css_svc_state.$key;
-		$oid_list2[$numoid2++]=$css_svc_maxconn.$key;
-		$oid_list2[$numoid2++]=$css_svc_conn.$key;
-		$oid_list2[$numoid2++]=$css_svc_avgresp.$key;
+my $resultat = undef;
+# Get load table by snmp or file
+if (defined($o_dir_set)) {
+	my $file_name=$o_dir."/Nagios_css_".$o_host;
+	my $file_lock=$file_name.".lock";
+
+	# Check for lock file during 3 seconds max and quit if sill here.
+	my $file_timeout=0;
+	while (!stat($file_lock)) { 
+		sleep(1);
+		if ($file_timeout==3) {
+		  print "Lock file remaining for more than 3 sec : UNKNOWN\n";
+		  exit $ERRORS{"UNKNOWN"};
+		}
+		$file_timeout++;
+	}
+	# Open file for reading.
+	open(FILE,"< ".$file_name);
+	while (<FILE>) {
+		my @file_line=split(/:/,$_);
+		if ($file_line[1] =~ /$o_name/) { # select service by name
+			$svcname[$numsvc]=$file_line[1];
+			my $key = $file_line[0];
+			verb ("Found : $svcname[$numsvc]");
+			$index[$numsvc++]=$key;
+			# Build oid for snmpget
+			$oid_list[$numoid++]=$css_svc_enable.$key;
+			$oid_list[$numoid++]=$css_svc_state.$key;
+			$oid_list2[$numoid2++]=$css_svc_maxconn.$key;
+			$oid_list2[$numoid2++]=$css_svc_conn.$key;
+			$oid_list2[$numoid2++]=$css_svc_avgresp.$key;
+		}
+	}
+	close (FILE);
+} else {
+	$resultat = (Net::SNMP->VERSION < 4) ? 
+			  $session->get_table($css_svc_name)
+			: $session->get_table(Baseoid => $css_svc_name); 
+			
+	if (!defined($resultat)) {
+	   printf("ERROR: Description table : %s.\n", $session->error);
+	   $session->close;
+	   exit $ERRORS{"UNKNOWN"};
+	}
+
+
+	# Get name data & index
+
+	foreach my $key ( keys %$resultat) {
+		verb("OID : $key, Desc : $$resultat{$key}");
+		if ($$resultat{$key} =~ /$o_name/) { # select service by name
+			$svcname[$numsvc]=$$resultat{$key};
+			$key =~ s/$css_svc_name//;
+			verb ("Found : $svcname[$numsvc]");
+			$index[$numsvc++]=$key;
+			# Build oid for snmpget
+			$oid_list[$numoid++]=$css_svc_enable.$key;
+			$oid_list[$numoid++]=$css_svc_state.$key;
+			$oid_list2[$numoid2++]=$css_svc_maxconn.$key;
+			$oid_list2[$numoid2++]=$css_svc_conn.$key;
+			$oid_list2[$numoid2++]=$css_svc_avgresp.$key;
+		}
 	}
 }
 # Check if a least one service found
@@ -427,3 +473,4 @@ if ((defined ($o_warn_number)) && ($numsvc_ok<=$o_warn_number)) {
 }
 print $output," : OK\n";
 exit $ERRORS{"OK"};
+
