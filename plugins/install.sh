@@ -9,7 +9,7 @@
 # Contribs : 
 #################################################################
 #
-# USAGE : ./install [<perl script name> | AUTO <dir> <tmp_dir> <perl_dir>]
+# USAGE : ./install [<perl script name> | AUTO <dir> <tmp_dir> <perl_dir> [<install_location>] ]
 # USAGE : by default all scripts will be installed
 #
 # REQUIREMENTS : /bin/bash and sed 
@@ -21,6 +21,8 @@
 # - Check Net::SNMP version 
 # - Install plugins in the plugins directory and modify paths if necessary.
 
+############################ script list
+PLUGINS="check_snmp_boostedge.pl check_snmp_css.pl check_snmp_linkproof_nhr.pl check_snmp_nsbox.pl check_snmp_vrrp.pl check_snmp_cpfw.pl check_snmp_env.pl check_snmp_load.pl check_snmp_process.pl check_snmp_win.pl check_snmp_css_main.pl check_snmp_int.pl check_snmp_mem.pl check_snmp_storage.pl"
 ############################ get script to install or install type
 
 if [ $# -gt 0 ] ; then INSTSCRIPT=$1 ; else INSTSCRIPT="all" ; fi
@@ -41,8 +43,6 @@ if [ $INSTSCRIPT != "AUTO" ] ; then
 
     PLUGHOME=/usr/local/nagios/libexec
     TMPDATA=/tmp
-    PLUGINS="check_snmp_boostedge.pl check_snmp_css.pl check_snmp_linkproof_nhr.pl check_snmp_nsbox.pl check_snmp_vrrp.pl check_snmp_cpfw.pl check_snmp_env.pl check_snmp_load.pl check_snmp_process.pl check_snmp_win.pl check_snmp_css_main.pl check_snmp_int.pl check_snmp_mem.pl check_snmp_storage.pl"
-
     ############################ Checking Perl
 
     echo -n "What is your perl location ? [$PERLHOME] "
@@ -213,15 +213,15 @@ if [ $INSTSCRIPT != "AUTO" ] ; then
 	
 else
 ####################### Silent install with parameters ############
-# PARAM AUTO <dir> <tmp_dir> <perl_dir>
-    if [ $# -ne 4 ] ; then exit 1; fi
+# PARAM AUTO <dir> <tmp_dir> <perl_dir> [<install_location>]
+    if [ $# -ne 4 ] && [ $# -ne 5 ]  ; then exit 1; fi
 
     SRCDIR=$PWD
     PERLHOME=$4
     PLUGHOME=$2
     TMPDATA=$3
-    PLUGINS="check_snmp_boostedge.pl check_snmp_css.pl check_snmp_linkproof_nhr.pl check_snmp_nsbox.pl check_snmp_vrrp.pl check_snmp_cpfw.pl check_snmp_env.pl check_snmp_load.pl check_snmp_process.pl check_snmp_win.pl check_snmp_css_main.pl check_snmp_int.pl check_snmp_mem.pl check_snmp_storage.pl"
-
+    INSTALLDIR=$5
+      
     TRANS=""
     # Change '#!/usr/bin/perl -w' 
     if [ $PERLHOME != "/usr/bin/perl" ] ; then
@@ -242,6 +242,9 @@ else
 
     ######################### script install
     ERROR=0
+    if [ "z$INSTALLDIR" != "z" ] ; then
+      PLUGHOME=$INSTALLDIR
+    fi
     for i in $PLUGINS ; do
       if [ ! -f $i ] ; then 
 	    ERROR=1
