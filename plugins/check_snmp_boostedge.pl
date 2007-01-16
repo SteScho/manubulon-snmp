@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_boostedge.pl #################
 # Version : 1.0
-# Date : 27 Aug 2006
+# Date : Jan 16 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -94,7 +94,7 @@ sub is_pattern_valid { # Test for things like "<I\s*[^>" or "+5-i"
 
 sub help {
    print "\nSNMP Boostedge service monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 Patrick Proy\n\n";
+   print "GPL Licensen, (c)2006-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_nsbox #################
 # Version : 1.0
-# Date : 27 aug 2006
+# Date : Jan 16 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
