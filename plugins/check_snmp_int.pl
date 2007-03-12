@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-# Version : 1.4.3
-# Date : Dec 11 2006
+# Version : 1.4.4
+# Date : Mars 12 2007
 # Author  : Patrick Proy ( patrick at proy.org )
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : J. Jungmann, S. Probst, R. Leroy
 # TODO : 
@@ -46,7 +46,7 @@ my %status=(1=>'UP',2=>'DOWN',3=>'TESTING',4=>'UNKNOWN',5=>'DORMANT',6=>'NotPres
 
 # Globals
 
-my $Version='1.4.3';
+my $Version='1.4.4';
 
 my $o_host = 		undef; 	# hostname
 my $o_community = 	undef; 	# community
@@ -143,7 +143,7 @@ sub isnnum { # Return true if arg is not a number
 
 sub help {
    print "\nSNMP Network Interface Monitor for Nagios version ",$Version,"\n";
-   print "GPL licence, (c)2004-2006 Patrick Proy\n\n";
+   print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
