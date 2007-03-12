@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w 
-############################## check_snmp_cpfw ############## 
-# Version : 1.0
-# Date : Aug 23 2006
+############################## check_snmp_cpfw ##############
+# Version : 1.2
+# Date : March 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO : 
 # - check sync method
@@ -41,15 +41,16 @@ my @svn_checks_oid	= ($svn_status);
 ###### HA data
 
 my $ha_active		= "1.3.6.1.4.1.2620.1.5.5.0"; 	# "yes"
-my $ha_state		= "1.3.6.1.4.1.2620.1.5.6.0"; 	# "active"
+my $ha_state		= "1.3.6.1.4.1.2620.1.5.6.0"; 	# "active" / "standby"
 my $ha_block_state	= "1.3.6.1.4.1.2620.1.5.7.0"; 	#"OK" : ha blocking state
 my $ha_status		= "1.3.6.1.4.1.2620.1.5.102.0"; # "OK" : ha status
 
 my %ha_checks		=( $ha_active,"yes",$ha_state,"active",$ha_block_state,"OK",$ha_status,"OK");
+my %ha_checks_stand	=( $ha_active,"yes",$ha_state,"standby",$ha_block_state,"OK",$ha_status,"OK");
 my %ha_checks_n		=( $ha_active,"HA active",$ha_state,"HA state",$ha_block_state,"HA block state",$ha_status,"ha_status");
 my @ha_checks_oid	=( $ha_active,$ha_state,$ha_block_state,$ha_status);
 
-my $ha_mode		= "1.3.6.1.4.1.2620.1.5.11.0";  # "Sync only" : ha Working mode
+my $ha_mode		= "1.3.6.1.4.1.2620.1.5.11.0";  # "Sync only"/"High Availability (Active Up)" : ha Working mode
 
 my $ha_tables		= "1.3.6.1.4.1.2620.1.5.13.1"; 	# ha status table
 my $ha_tables_index	= ".1";
@@ -72,7 +73,7 @@ my @mgmt_checks_oid	= ($mgmt_status,$mgmt_alive);
 
 #################################### Globals ##############################""
 
-my $Version='1.0';
+my $Version='1.2';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -105,7 +106,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_cpfw version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-s] [-w [-p=pol_name] [-c=warn,crit]] [-m] [-a] [-f] [-p <port>] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-s] [-w [-p=pol_name] [-c=warn,crit]] [-m] [-a [standby] ] [-f] [-p <port>] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -116,7 +117,7 @@ sub isnnum { # Return true if arg is not a number
 
 sub help {
    print "\nSNMP Checkpoint FW-1 Monitor for Nagios version ",$Version,"\n";
-   print "GPL Licence, (c)2004-2006 - Patrick Proy\n\n";
+   print "GPL Licence, (c)2004-2007 - Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -141,8 +142,9 @@ sub help {
    check for svn status
 -w, --fw
    check for fw status
--a, --ha
-   check for ha status
+-a, --ha[=standby]
+   check for ha status and node in "active" state
+   If using SecurePlatform and monitoring a standby unit, put "standby" too
 -m, --mgmt
    check for management status
 -p, --policy=POLICY_NAME
@@ -180,7 +182,7 @@ sub check_options {
 	'V'	=> \$o_version,		'version'	=> \$o_version,
 	's'	=> \$o_svn,		'svn'		=> \$o_svn,
 	'w'	=> \$o_fw,		'fw'		=> \$o_fw,
-	'a'	=> \$o_ha,		'ha'		=> \$o_ha,
+	'a:s'	=> \$o_ha,		'ha:s'		=> \$o_ha,
 	'm'	=> \$o_mgmt,		'mgmt'		=> \$o_mgmt,
 	'p:s'	=> \$o_policy,		'policy:s'	=> \$o_policy,
 	'c:s'	=> \$o_conn,		'connexions:s'	=> \$o_conn,
@@ -226,6 +228,9 @@ sub check_options {
 	{ print "Nothing selected for perfparse !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
     if (!defined($o_fw) && !defined($o_ha) && !defined($o_mgmt) && !defined($o_svn))
 	{ print "Must select a product to check !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+    if (defined ($o_ha) && ($o_ha ne "") && ($o_ha ne "standby")) 
+	{ print "-a option comes with 'standby' or nothing !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+	
 }
 
 ########## MAIN #######
@@ -252,6 +257,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -hostname   	=> $o_host,
       -version		=> '3',
       -username		=> $o_login,
+      -port      	=> $o_port,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
       -timeout          => $o_timeout
@@ -262,6 +268,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -hostname   	=> $o_host,
       -version		=> '3',
       -username		=> $o_login,
+      -port      	=> $o_port,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
@@ -434,9 +441,16 @@ if (defined ($o_ha)) {
   if (defined($resultat)) {
     foreach $key ( keys %ha_checks) {
       verb("$ha_checks_n{$key} : $ha_checks{$key} / $$resultat{$key}");
-      if ( $$resultat{$key} ne $ha_checks{$key} ) {
-	$ha_print .= $ha_checks_n{$key} . ":" . $$resultat{$key} . " "; 
-	$ha_state_n=2;
+      if ( $o_ha eq "standby" ) {
+        if ( $$resultat{$key} ne $ha_checks_stand{$key} ) {
+	  $ha_print .= $ha_checks_n{$key} . ":" . $$resultat{$key} . " "; 
+	  $ha_state_n=2;
+        }
+      } else {
+        if ( $$resultat{$key} ne $ha_checks{$key} ) {
+	  $ha_print .= $ha_checks_n{$key} . ":" . $$resultat{$key} . " "; 
+	  $ha_state_n=2;
+        }
       }  
     }
     #my $ha_mode		= "1.3.6.1.4.1.2620.1.5.11.0";  # "Sync only" : ha Working mode
