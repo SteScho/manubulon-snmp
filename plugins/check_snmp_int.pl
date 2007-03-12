@@ -5,7 +5,7 @@
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Contrib : J. Jungmann, S. Probst
+# Contrib : J. Jungmann, S. Probst, R. Leroy
 # TODO : 
 # Check isdn "dormant" state
 # Maybe put base directory for performance as an option
@@ -308,6 +308,7 @@ if ( defined($o_login) && defined($o_passwd)) {
     ($session, $error) = Net::SNMP->session(
       -hostname   	=> $o_host,
       -version		=> '3',
+      -port      	=> $o_port,
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
@@ -319,6 +320,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -hostname   	=> $o_host,
       -version		=> '3',
       -username		=> $o_login,
+      -port      	=> $o_port,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
