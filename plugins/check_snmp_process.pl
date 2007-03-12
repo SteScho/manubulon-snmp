@@ -1,10 +1,11 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
-# Version : 1.3
-# Date : Sept 4 2006
+# Version : 1.4
+# Date : March 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# Contrib : Makina Corpus
 # TODO : put $o_delta as an option
 # Contrib : 
 ###############################################################
@@ -38,7 +39,7 @@ my $proc_run_state = '1.3.6.1.2.1.25.4.2.1.7';
 
 # Globals
 
-my $Version='1.3.1';
+my $Version='1.4';
 
 my $o_host = 	undef; 		# hostname 
 my $o_community =undef; 	# community 
@@ -60,6 +61,12 @@ my $o_timeout=  5;            	# Default 5s Timeout
 # SNMP V3 specific
 my $o_login=	undef;		# snmp v3 login
 my $o_passwd=	undef;		# snmp v3 passwd
+my $v3protocols=undef;	# V3 protocol list.
+my $o_authproto='md5';		# Auth protocol
+my $o_privproto='des';		# Priv protocol
+my $o_privpass= undef;		# priv password
+# SNMP Message size parameter (Makina Corpus contrib)
+my $o_octetlength=undef;
 # Memory & CPU
 my $o_mem=	undef;		# checks memory (max)
 my @o_memL=	undef;		# warn and crit level for mem
@@ -73,7 +80,7 @@ my $o_delta=	$delta_of_time_to_make_average;		# delta time for CPU check
 sub p_version { print "check_snmp_process version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> ] [-t <timeout>] [-f ] [-r] [-V] [-g]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> ] [-t <timeout>] [-o <octet_length>] [-f ] [-r] [-V] [-g]\n";
 }
 
 sub isnotnum { # Return true if arg is not a number
@@ -148,12 +155,15 @@ sub help {
    name or IP address of host to check
 -C, --community=COMMUNITY NAME
    community name for the host's SNMP agent (implies SNMP v1 or v2c with option)
--2, --v2c
-   Use snmp v2c
--l, --login=LOGIN
-   Login for snmpv3 authentication (implies v3 protocol with MD5)
--x, --passwd=PASSWD
-   Password for snmpv3 authentication
+-l, --login=LOGIN ; -x, --passwd=PASSWD, -2, --v2c
+   Login and auth password for snmpv3 authentication 
+   If no priv password exists, implies AuthNoPriv 
+   -2 : use snmp v2c
+-X, --privpass=PASSWD
+   Priv password for snmpv3 (AuthPriv protocol)
+-L, --protocols=<authproto>,<privproto>
+   <authproto> : Authentication protocol (md5|sha : default md5)
+   <privproto> : Priv protocole (des|aes : default des) 
 -p, --port=PORT
    SNMP port (Default 161)
 -n, --name=NAME
@@ -187,6 +197,10 @@ Notes on warning and critical :
   In some cases, it is necessary to get all data at once because
   process die very frequently.
   This option eats bandwidth an cpu (for remote host) at breakfast.
+-o, --octetlength=INTEGER
+  max-size of the SNMP message, usefull in case of Too Long responses.
+  Be carefull with network filters. Range 484 - 65535, default are
+  usually 1472,1452,1460 or 1440.  
 -t, --timeout=INTEGER
    timeout for SNMP in seconds (Default: 5)
 -V, --version
@@ -205,7 +219,6 @@ EOT
 sub verb { my $t=shift; print $t,"\n" if defined($o_verb) ; }
 
 sub check_options {
-    my $compat_o_cpu_sum;
     Getopt::Long::Configure ("bundling");
     GetOptions(
    	'v'	=> \$o_verb,		'verbose'	=> \$o_verb,
@@ -215,7 +228,9 @@ sub check_options {
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
         'l:s'   => \$o_login,           'login:s'       => \$o_login,
         'x:s'   => \$o_passwd,          'passwd:s'      => \$o_passwd,
-        'c:s'   => \$o_crit,    	'critical:s'	=> \$o_crit,
+	'X:s'	=> \$o_privpass,		'privpass:s'	=> \$o_privpass,
+	'L:s'	=> \$v3protocols,		'protocols:s'	=> \$v3protocols,   
+	'c:s'   => \$o_crit,    	'critical:s'	=> \$o_crit,
         'w:s'   => \$o_warn,    	'warn:s'	=> \$o_warn,
 		't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
         'n:s'   => \$o_descr,		'name:s'	=> \$o_descr,
@@ -225,10 +240,8 @@ sub check_options {
         'a'     => \$o_mem_avg,       	'average'      	=> \$o_mem_avg,
         'u:s'   => \$o_cpu,       	'cpu'      	=> \$o_cpu,
 		'2'	=> \$o_version2,	'v2c'		=> \$o_version2,
+		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
 		'g'   	=> \$o_get_all,       	'getall'      	=> \$o_get_all,
-	#### To be compatible with version 1.2, will be removed... ####
-	's'     => \$compat_o_cpu_sum,  'cpusum'        => \$compat_o_cpu_sum,  
-	##########
 		'V'     => \$o_version,         'version'       => \$o_version
     );
     if (defined ($o_help)) { help(); exit $ERRORS{"UNKNOWN"}};
@@ -236,6 +249,19 @@ sub check_options {
     # check snmp information
     if ( !defined($o_community) && (!defined($o_login) || !defined($o_passwd)) )
         { print "Put snmp login info!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if ((defined($o_login) || defined($o_passwd)) && (defined($o_community) || defined($o_version2)) )
+	{ print "Can't mix snmp v1,2c,3 protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (defined ($v3protocols)) {
+	  if (!defined($o_login)) { print "Put snmp V3 login info with protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	  my @v3proto=split(/,/,$v3protocols);
+	  if ((defined ($v3proto[0])) && ($v3proto[0] ne "")) {$o_authproto=$v3proto[0];	}	# Auth protocol
+	  if (defined ($v3proto[1])) {$o_privproto=$v3proto[1];	}	# Priv  protocol
+	  if ((defined ($v3proto[1])) && (!defined($o_privpass))) {
+	    print "Put snmp V3 priv login info with priv protocols!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	}
+	if (defined($o_timeout) && (isnotnum($o_timeout) || ($o_timeout < 2) || ($o_timeout > 60))) 
+	  { print "Timeout must be >1 and <60 !\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+	if (!defined($o_timeout)) {$o_timeout=5;}
     # Check compulsory attributes
     if ( ! defined($o_descr) ||  ! defined($o_host) ) { print_usage(); exit $ERRORS{"UNKNOWN"}};
     @o_warnL=split(/,/,$o_warn);
@@ -277,7 +303,10 @@ sub check_options {
       if ($o_cpuL[0]>$o_cpuL[1])
        {print "Warning must be <= Critical for cpu!\n";print_usage(); exit $ERRORS{"UNKNOWN"}};
     }
-
+    #### octet length checks
+    if (defined ($o_octetlength) && (isnotnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484 )) {
+		print "octet lenght must be < 65535 and > 484\n";print_usage(); exit $ERRORS{"UNKNOWN"};
+    }
 }
 
 ########## MAIN #######
@@ -297,16 +326,31 @@ if (defined($TIMEOUT)) {
 my ($session,$error);
 if ( defined($o_login) && defined($o_passwd)) {
   # SNMPv3 login
-  verb("SNMPv3 login");
-  ($session, $error) = Net::SNMP->session(
-      -hostname         => $o_host,
-      -version          => '3',
-      -username         => $o_login,
-      -authpassword     => $o_passwd,
-      -authprotocol     => 'md5',
-      -privpassword     => $o_passwd,
+  if (!defined ($o_privpass)) {
+  verb("SNMPv3 AuthNoPriv login : $o_login, $o_authproto");
+    ($session, $error) = Net::SNMP->session(
+      -hostname   	=> $o_host,
+      -version		=> '3',
+      -port      	=> $o_port,
+      -username		=> $o_login,
+      -authpassword	=> $o_passwd,
+      -authprotocol	=> $o_authproto,
       -timeout          => $o_timeout
-   );
+    );  
+  } else {
+    verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
+    ($session, $error) = Net::SNMP->session(
+      -hostname   	=> $o_host,
+      -version		=> '3',
+      -username		=> $o_login,
+      -port      	=> $o_port,
+      -authpassword	=> $o_passwd,
+      -authprotocol	=> $o_authproto,
+      -privpassword	=> $o_privpass,
+	  -privprotocol => $o_privproto,
+      -timeout          => $o_timeout
+    );
+  }
 } else {
   if (defined ($o_version2)) {
     # SNMPv2 Login
@@ -331,6 +375,20 @@ if ( defined($o_login) && defined($o_passwd)) {
 if (!defined($session)) {
    printf("ERROR: %s.\n", $error);
    exit $ERRORS{"UNKNOWN"};
+}
+
+if (defined($o_octetlength)) {
+	my $oct_resultat=undef;
+	my $oct_test= $session->max_msg_size();
+	verb(" actual max octets:: $oct_test");
+	$oct_resultat = $session->max_msg_size($o_octetlength);
+	if (!defined($oct_resultat)) {
+		 printf("ERROR: Session settings : %s.\n", $session->error);
+		 $session->close;
+		 exit $ERRORS{"UNKNOWN"};
+	}
+	$oct_test= $session->max_msg_size();
+	verb(" new max octets:: $oct_test");
 }
 
 # Look for process in name or path name table
