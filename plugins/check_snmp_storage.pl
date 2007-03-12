@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_storage ##############
-# Version : 1.3.1
-# Date :  Jan 11 2007
+# Version : 1.3.2
+# Date :  March 12 2007
 # Author  : Patrick Proy ( patrick at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO : 
-# Contribs : Dimo Velev
+# Contribs : Dimo Velev, Makina Corpus
 #################################################################
 #
 # help : ./check_snmp_storage -h
@@ -57,7 +57,7 @@ $hrStorage{"1.3.6.1.2.1.25.2.1.10"} = 'NetworkDisk';
 # Globals
 
 my $Name='check_snmp_storage';
-my $Version='1.3';
+my $Version='1.3.2';
 
 my $o_host = 	undef; 		# hostname 
 my $o_community = undef; 	# community 
@@ -87,13 +87,15 @@ my $v3protocols=undef;	# V3 protocol list.
 my $o_authproto='md5';		# Auth protocol
 my $o_privproto='des';		# Priv protocol
 my $o_privpass= undef;		# priv password
+# SNMP Message size parameter (Makina Corpus contrib)
+my $o_octetlength=undef;
 
 # functions
 
 sub p_version { print "$Name version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r] [-s] [-i] [-e] [-S 0|1[,1,<car>]]\n";
+    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r] [-s] [-i] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>]\n";
 }
 
 sub round ($$) {
@@ -187,6 +189,10 @@ warn if %used > warn and critical if %used > crit
          ex : "/ : 66 %used  (<  80) : OK"
    <where>: (optional) if = 1, put the OK/WARN/CRIT at the beginning
    <cut>: take the <n> first caracters or <n> last if n<0
+-o, --octetlength=INTEGER
+  max-size of the SNMP message, usefull in case of Too Long responses.
+  Be carefull with network filters. Range 484 - 65535, default are
+  usually 1472,1452,1460 or 1440.   
 -t, --timeout=INTEGER
    timeout for SNMP in seconds (Default: 5)
 -V, --version
@@ -238,6 +244,7 @@ sub check_options {
         'V'     => \$o_version,         'version'       => \$o_version,
 		'q:s'  	=> \$o_storagetype,	'storagetype:s'=> \$o_storagetype,
 	'S:s'   => \$o_short,         	'short:s'       => \$o_short,
+	'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
 	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf
     );
     if (defined($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
@@ -295,6 +302,10 @@ sub check_options {
 	  if (defined ($o_shortL[2]) && isnnum($o_shortL[2]))
 	    {print "-S last option must be an integer\n";print_usage(); exit $ERRORS{"UNKNOWN"};}
 	}
+    #### octet length checks
+    if (defined ($o_octetlength) && (isnnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484 )) {
+		print "octet lenght must be < 65535 and > 484\n";print_usage(); exit $ERRORS{"UNKNOWN"};
+    }	
 }
 
 ########## MAIN #######
@@ -323,6 +334,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
+      -port      	=> $o_port,
       -timeout          => $o_timeout
     );  
   } else {
@@ -335,6 +347,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
 	  -privprotocol => $o_privproto,
+      -port      	=> $o_port,
       -timeout          => $o_timeout
     );
   }
@@ -364,6 +377,20 @@ if ( defined($o_login) && defined($o_passwd)) {
 if (!defined($session)) {
    printf("ERROR: %s.\n", $error);
    exit $ERRORS{"UNKNOWN"};
+}
+
+if (defined($o_octetlength)) {
+	my $oct_resultat=undef;
+	my $oct_test= $session->max_msg_size();
+	verb(" actual max octets:: $oct_test");
+	$oct_resultat = $session->max_msg_size($o_octetlength);
+	if (!defined($oct_resultat)) {
+		 printf("ERROR: Session settings : %s.\n", $session->error);
+		 $session->close;
+		 exit $ERRORS{"UNKNOWN"};
+	}
+	$oct_test= $session->max_msg_size();
+	verb(" new max octets:: $oct_test");
 }
 
 my $resultat=undef;
