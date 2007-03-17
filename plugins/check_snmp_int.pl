@@ -5,7 +5,7 @@
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Contrib : J. Jungmann, S. Probst, R. Leroy
+# Contrib : J. Jungmann, S. Probst, R. Leroy, M. Berger
 # TODO : 
 # Check isdn "dormant" state
 # Maybe put base directory for performance as an option
@@ -62,6 +62,7 @@ my $o_verb=		undef;	# verbose mode
 my $o_version=		undef;	# print version
 my $o_noreg=		undef;	# Do not use Regexp for name
 my $o_short=		undef;	# set maximum of n chars to be displayed
+my $o_label=		undef;	# add label before speed (in, out, etc...).
 # Performance data options 
 my $o_perf=     	undef;  # Output performance data
 my $o_perfe=		undef;	# Output discard/error also in perf data
@@ -94,6 +95,10 @@ my $v3protocols=undef;	# V3 protocol list.
 my $o_authproto='md5';		# Auth protocol
 my $o_privproto='des';		# Priv protocol
 my $o_privpass= undef;		# priv password
+
+# Readable names for counters (M. Berger contrib)
+my @countername = ( "in=" , "out=" , "errors-in=" , "errors-out=" , "discard-in=" , "discard-out=" );
+my $checkperf_out_desc;
 
 # functions
 
@@ -147,7 +152,7 @@ sub write_file {
 sub p_version { print "check_snmp_int version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-i] [-a] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-i] [-a] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -201,11 +206,13 @@ sub help {
 -S, --intspeed
    Include speed in performance output in bits/s
 -y, --perfprct ; -Y, --perfspeed
-   -y : output performance data in % of max speed
+   -y : output performance data in % of max speed 
    -Y : output performance data in bits/s or Bytes/s (depending on -B)   
 -k, --perfcheck ; -q, --extperfcheck 
    -k check the input/ouput bandwidth of the interface
    -q also check the error and discard input/output
+--label
+   Add label before speed in output : in=, out=, errors-out=, etc...
 -g, --64bits
    Use 64 bits counters instead of the standard counters  
    when checking bandwidth & performance data.
@@ -274,7 +281,8 @@ sub check_options {
         'M'   	=> \$o_meg,      	'mega'   	=> \$o_meg,
         'G'   	=> \$o_gig,      	'giga'   	=> \$o_gig,
         'u'   	=> \$o_prct,      	'prct'   	=> \$o_prct,
-		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,		
+		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
+		'label'   => \$o_label,    	
         'd:i'   => \$o_delta,           'delta:i'     	=> \$o_delta
     );
     if (defined ($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
@@ -648,16 +656,18 @@ for (my $i=0;$i < $num_int; $i++) {
       # check 2 or 6 values depending on ext_check_perf
       my $num_checkperf=(defined($o_ext_checkperf))?6:2;
       for (my $l=0;$l < $num_checkperf;$l++) {
+	    # Set labels if needed
+	    $checkperf_out_desc= (defined($o_label)) ? $countername[$l] : "";
 	    verb("Interface $i, check $l : $checkperf_out[$l]");
         if ($l!=0) {$print_out.="/";}
 	    if (($o_crit[$l]!=0) && ($checkperf_out[$l]>$o_crit[$l])) { 
           $final_status=2;
-          $print_out.= sprintf("CRIT : %.1f",$checkperf_out[$l]); 
+          $print_out.= sprintf("CRIT %s%.1f",$checkperf_out_desc,$checkperf_out[$l]); 
         } elsif (($o_warn[$l]!=0) && ($checkperf_out[$l]>$o_warn[$l])) { 
 	  $final_status=($final_status==2)?2:1;
-          $print_out.= sprintf("WARN : %.1f",$checkperf_out[$l]);
+          $print_out.= sprintf("WARN %s%.1f",$checkperf_out_desc,$checkperf_out[$l]);
 	} else {
-          $print_out.= sprintf("%.1f",$checkperf_out[$l]);
+          $print_out.= sprintf("%s%.1f",$checkperf_out_desc,$checkperf_out[$l]);
 	}
 	if ( $l==0 || $l == 1) { $print_out.= $speed_unit; }
       }
@@ -684,17 +694,42 @@ for (my $i=0;$i < $num_int; $i++) {
   if (( $int_status == 1 ) && defined ($o_perf)) {
     if (defined ($o_perfp)) { # output in % of speed
 	  if ($usable_data==1) {
-	    $perf_out .= "'" . $descr[$i] ."_in_prct'=" . $checkperf_out_raw[0] * 800 / $$resultf{$oid_speed[$i]} ."% ";
-	    $perf_out .= "'" . $descr[$i] ."_out_prct'=" . $checkperf_out_raw[1] * 800 / $$resultf{$oid_speed[$i]} ."%";  
+	    $perf_out .= "'" . $descr[$i] ."_in_prct'=";
+		$perf_out .= sprintf("%.0f",$checkperf_out_raw[0] * 800 / $$resultf{$oid_speed[$i]}) ."%;";
+		$perf_out .= ($o_warn[0]!=0) ? $o_warn[0] . ";" : ";";
+		$perf_out .= ($o_crit[0]!=0) ? $o_crit[0] . ";" : ";"; 
+		$perf_out .= "0;100 ";
+	    $perf_out .= "'" . $descr[$i] ."_out_prct'=";
+		$perf_out .= sprintf("%.0f",$checkperf_out_raw[1] * 800 / $$resultf{$oid_speed[$i]}) ."%;";
+		$perf_out .= ($o_warn[1]!=0) ? $o_warn[1] . ";" : ";";
+		$perf_out .= ($o_crit[1]!=0) ? $o_crit[1] . ";" : ";"; 
+		$perf_out .= "0;100 ";
 	  }
 	} elsif (defined ($o_perfr)) { # output in bites or Bytes /s
 	  if ($usable_data==1) {
   	    if (defined($o_kbits)) { # bps
-	      $perf_out .= "'" . $descr[$i] ."_in_bps'=" . $checkperf_out_raw[0] * 8 ." ";
-	      $perf_out .= "'" . $descr[$i] ."_out_bps'=" . $checkperf_out_raw[1] * 8 ;  	  	  
+		  # put warning and critical levels into bps or Bps
+		  my $warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
+	      $perf_out .= "'" . $descr[$i] ."_in_bps'=";
+          $perf_out .= sprintf("%.0f",$checkperf_out_raw[0] * 8) .";";
+		  $perf_out .= ($o_warn[0]!=0) ? $o_warn[0]*$warn_factor . ";" : ";";
+		  $perf_out .= ($o_crit[0]!=0) ? $o_crit[0]*$warn_factor . ";" : ";";
+		  $perf_out .= "0;". $$resultf{$oid_speed[$i]} ." ";		  
+	      $perf_out .= "'" . $descr[$i] ."_out_bps'=";
+          $perf_out .= sprintf("%.0f",$checkperf_out_raw[1] * 8) .";";
+		  $perf_out .= ($o_warn[1]!=0) ? $o_warn[1]*$warn_factor . ";" : ";";
+		  $perf_out .= ($o_crit[1]!=0) ? $o_crit[1]*$warn_factor . ";" : ";";
+		  $perf_out .= "0;". $$resultf{$oid_speed[$i]} ." ";		  		  
 	    } else { # Bps
-	      $perf_out .= "'" . $descr[$i] ."_in_Bps'=" . $checkperf_out_raw[0] ." ";
-	      $perf_out .= "'" . $descr[$i] ."_out_Bps'=" . $checkperf_out_raw[1] ;  	  
+		  my $warn_factor = (defined($o_meg)) ? 1048576 : (defined($o_gig)) ? 1073741824 : 1024;
+	      $perf_out .= "'" . $descr[$i] ."_in_Bps'=" . sprintf("%.0f",$checkperf_out_raw[0]) .";";
+		  $perf_out .= ($o_warn[0]!=0) ? $o_warn[0]*$warn_factor . ";" : ";";
+		  $perf_out .= ($o_crit[0]!=0) ? $o_crit[0]*$warn_factor . ";" : ";";
+		  $perf_out .= "0;". $$resultf{$oid_speed[$i]} ." ";		 		  
+	      $perf_out .= "'" . $descr[$i] ."_out_Bps'=" . sprintf("%.0f",$checkperf_out_raw[1]) .";" ;
+		  $perf_out .= ($o_warn[1]!=0) ? $o_warn[1]*$warn_factor . ";" : ";";
+		  $perf_out .= ($o_crit[1]!=0) ? $o_crit[1]*$warn_factor . ";" : ";";
+		  $perf_out .= "0;". $$resultf{$oid_speed[$i]} ." ";		  
 	    }
 	  }
 	} else { # output in octet counter
