@@ -341,7 +341,7 @@ sub check_options {
 	  }
     }
     #### octet length checks
-    if (defined ($o_octetlength) && (isnotnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484 )) {
+    if (defined ($o_octetlength) && (isnnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484 )) {
 		print "octet lenght must be < 65535 and > 484\n";print_usage(); exit $ERRORS{"UNKNOWN"};
     }	
 }
