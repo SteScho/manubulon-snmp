@@ -408,11 +408,11 @@ if (defined ($o_fw)) {
 
     if (defined($o_conn)) {
       if ($$resultat{$connections} > $o_crit) {
-	    $fw_state=2;
+	 $fw_state=2;
         $fw_print .= "Connexions : ".$$resultat{$connections}." > ".$o_crit." ";
       } else {
 	if ($$resultat{$connections} > $o_warn) {
-	  if ($fw_state!=2) $fw_state=1;
+	  if ($fw_state!=2) {$fw_state=1;}
 	  $fw_print .= "Connexions : ".$$resultat{$connections}." > ".$o_warn." ";    
 	}
       }
