@@ -359,6 +359,11 @@ if (defined($TIMEOUT)) {
   alarm ($o_timeout+10);
 }
 
+$SIG{'ALRM'} = sub {
+ print "No answer from host\n";
+ exit $ERRORS{"UNKNOWN"};
+};
+
 # Connect to host
 my ($session,$error);
 if ( defined($o_login) && defined($o_passwd)) {
@@ -664,13 +669,13 @@ for (my $i=0;$i < $num_int; $i++) {
           $final_status=2;
           $print_out.= sprintf("CRIT %s%.1f",$checkperf_out_desc,$checkperf_out[$l]); 
         } elsif (($o_warn[$l]!=0) && ($checkperf_out[$l]>$o_warn[$l])) { 
-	  $final_status=($final_status==2)?2:1;
+	      $final_status=($final_status==2)?2:1;
           $print_out.= sprintf("WARN %s%.1f",$checkperf_out_desc,$checkperf_out[$l]);
-	} else {
+	    } else {
           $print_out.= sprintf("%s%.1f",$checkperf_out_desc,$checkperf_out[$l]);
-	}
-	if ( $l==0 || $l == 1) { $print_out.= $speed_unit; }
-      }
+	    }
+	    if ( $l==0 || $l == 1) { $print_out.= $speed_unit; }
+     }
       $print_out .= ")";
     } else { # Return unknown when no data
       $print_out.= " No usable data on file (".$n_rows." rows) ";
