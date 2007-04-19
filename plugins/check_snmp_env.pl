@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_env #################
-# Version : 1.1
-# Date : Jan 11 2007
+# Version : 1.2
+# Date : April 19 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -18,7 +18,7 @@ use Getopt::Long;
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
+use lib "/LNAGIOS/nagios/libexec";
 use utils qw(%ERRORS $TIMEOUT);
 #my $TIMEOUT = 15;
 #my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
@@ -77,13 +77,13 @@ my $ciscoPSTableState = $ciscoPSTable.".3"; #Status
                 # ciscoEnvMonSupplySource         INTEGER
 
 # Nokia env mib 
-my $nokia_temp_tbl="1.3.6.1.4.1.94.1.21.1.1.5";
-my $nokia_temp="1.3.6.1.4.1.94.1.21.1.1.5.0";
-my $nokia_fan_table="1.3.6.1.4.1.94.1.21.1.2";
-my $nokia_fan_status="1.3.6.1.4.1.94.1.21.1.2.1.1.2";
-my $nokia_ps_table="1.3.6.1.4.1.94.1.21.1.3";
-my $nokia_ps_temp="1.3.6.1.4.1.94.1.21.1.3.1.1.2";
-my $nokia_ps_status="1.3.6.1.4.1.94.1.21.1.3.1.1.3";
+my $nokia_temp_tbl=	"1.3.6.1.4.1.94.1.21.1.1.5";
+my $nokia_temp=		"1.3.6.1.4.1.94.1.21.1.1.5.0";
+my $nokia_fan_table=	"1.3.6.1.4.1.94.1.21.1.2";
+my $nokia_fan_status=	"1.3.6.1.4.1.94.1.21.1.2.1.1.2";
+my $nokia_ps_table=	"1.3.6.1.4.1.94.1.21.1.3";
+my $nokia_ps_temp=	"1.3.6.1.4.1.94.1.21.1.3.1.1.2";
+my $nokia_ps_status=	"1.3.6.1.4.1.94.1.21.1.3.1.1.3";
 
 # Bluecoat env mib
 my @bc_SensorCode=("","ok","unknown","not-installed","voltage-low-warning","voltage-low-critical",
@@ -131,9 +131,23 @@ my $iron_fan_table	= "1.3.6.1.4.1.15497.1.1.1.10"; # fan table
 my $iron_fan_rpm	= "1.3.6.1.4.1.15497.1.1.1.10.1.2"; # fan speed in RPM
 my $iron_fan_name	= "1.3.6.1.4.1.15497.1.1.1.10.1.3"; # fan name
 
+# Foundry BigIron Router Switch (FOUNDRY-SN-AGENT-MIB)
+
+my $foundry_temp 	= "1.3.6.1.4.1.1991.1.1.1.1.18.0"; # Chassis temperature in Deg C *2
+my $foundry_temp_warn 	= "1.3.6.1.4.1.1991.1.1.1.1.19.0"; # Chassis warn temperature in Deg C *2
+my $foundry_temp_crit 	= "1.3.6.1.4.1.1991.1.1.1.1.20.0"; # Chassis warn temperature in Deg C *2
+my $foundry_ps_table	= "1.3.6.1.4.1.1991.1.1.1.2.1"; # PS table
+my $foundry_ps_desc	= "1.3.6.1.4.1.1991.1.1.1.2.1.1.2"; # PS desc
+my $foundry_ps_status	= "1.3.6.1.4.1.1991.1.1.1.2.1.1.3"; # PS status
+my $foundry_fan_table	= "1.3.6.1.4.1.1991.1.1.1.3.1"; # FAN table
+my $foundry_fan_desc	= "1.3.6.1.4.1.1991.1.1.1.3.1.1.2"; # FAN desc
+my $foundry_fan_status	= "1.3.6.1.4.1.1991.1.1.1.3.1.1.3"; # FAN status
+
+my @foundry_status = (3,0,2); # oper status : 1:other, 2: Normal, 3: Failure 
+
 # Globals
 
-my $Version='1.1';
+my $Version='1.2';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -146,7 +160,7 @@ my $o_perf=     undef;          # Output performance data
 my $o_version2= undef;          # use snmp v2c
 # check type  
 my $o_check_type= "cisco";	 # default Cisco
-my @valid_types	=("cisco","nokia","bc","iron");	
+my @valid_types	=("cisco","nokia","bc","iron","foundry");	
 my $o_temp=	undef;		# max temp
 my $o_fan=	undef;		# min fan speed
 
@@ -163,7 +177,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_env version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -T (cisco|nokia|lp|iron) [-F <rpm>] [-c <celcius>] [-f] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -T (cisco|nokia|bc|iron|foundry) [-F <rpm>] [-c <celcius>] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -206,13 +220,14 @@ sub help {
    <privproto> : Priv protocole (des|aes : default des) 
 -P, --port=PORT
    SNMP port (Default 161)
--T, --type=cisco|nokia|bc
+-T, --type=cisco|nokia|bc|iron|foundry
 	Environemental check : 
 		cisco : voltage,temp,fan,power supply status
 		        will try to check everything present
 		nokia : fan and power supply
 		bc : fans, power supply, voltage, disks
 		iron : fans, power supply, temp
+		foundry : power supply, temp
 -F, --fan=<rpm>
    Minimum fan rpm value
 -c, --celcius=<celcius>
@@ -290,6 +305,11 @@ if (defined($TIMEOUT)) {
   verb("no global timeout defined : $o_timeout + 10");
   alarm ($o_timeout+10);
 }
+
+$SIG{'ALRM'} = sub {
+ print "No answer from host\n";
+ exit $ERRORS{"UNKNOWN"};
+};
 
 # Connect to host
 my ($session,$error);
@@ -394,8 +414,49 @@ if ( ($voltexist ==0) && ($tempexist ==0) && ($fanexist ==0) && ($psexist ==0) )
   exit $ERRORS{"UNKNOWN"};
 }
 
+my $perf_output="";
 # Get the data
 my ($i,$cur_status)=(undef,undef); 
+
+my $volt_global=0;
+my %volt_status;
+if ($fanexist !=0) {
+  for ($i=0;$i < $voltexist; $i++) {
+    $cur_status=$$resultat{$ciscoVoltageTableState. "." . $voltindex[$i]};
+    verb ($$resultat{$ciscoVoltageTableDesc .".".$voltindex[$i]});
+    verb ($cur_status);
+    if (!defined ($cur_status)) { ### Error TODO
+      $volt_global=1;
+    } 
+    $perf_output.=" '".$$resultat{$ciscoVoltageTableDesc .".".$voltindex[$i]}."'=" ;
+    $perf_output.=$$resultat{$ciscoVoltageTableValue."." . $voltindex[$i]};
+    if ($Nagios_state[$CiscoEnvMonNagios{$cur_status}] ne "OK") {
+      $volt_global= 1;
+      $volt_status{$$resultat{$ciscoVoltageTableDesc .".".$voltindex[$i]}}=$cur_status;
+    }
+  }
+}
+
+
+my $temp_global=0;
+my %temp_status;
+if ($tempexist !=0) {
+  for ($i=0;$i < $tempexist; $i++) {
+    $cur_status=$$resultat{$ciscoTempTableState . "." . $tempindex[$i]};
+    verb ($$resultat{$ciscoTempTableDesc .".".$tempindex[$i]});
+    verb ($cur_status);
+    if (!defined ($cur_status)) { ### Error TODO
+      $temp_global=1;
+    }
+    $perf_output.=" '".$$resultat{$ciscoTempTableDesc .".".$tempindex[$i]}."'=" ;
+    $perf_output.=$$resultat{$ciscoTempTableValue."." . $tempindex[$i]};
+    if ($Nagios_state[$CiscoEnvMonNagios{$cur_status}] ne "OK") {
+      $temp_global= 1;
+      $temp_status{$$resultat{$ciscoTempTableDesc .".".$tempindex[$i]}}=$cur_status;
+    }
+  }
+}
+
                 
 my $fan_global=0;
 my %fan_status;
@@ -407,7 +468,7 @@ if ($fanexist !=0) {
     if (!defined ($cur_status)) { ### Error TODO
       $fan_global=1;
     }
-    if ($CiscoEnvMonNagios{$cur_status} ne "OK") {
+    if ($Nagios_state[$CiscoEnvMonNagios{$cur_status}] ne "OK") {
       $fan_global= 1;
       $fan_status{$$resultat{$ciscoFanTableDesc .".".$fanindex[$i]}}=$cur_status;
     }
@@ -422,7 +483,7 @@ if ($psexist !=0) {
     if (!defined ($cur_status)) { ### Error TODO
       $fan_global=1;
     }
-    if ($CiscoEnvMonNagios{$cur_status} ne "OK") {
+    if ($Nagios_state[$CiscoEnvMonNagios{$cur_status}] ne "OK") {
       $ps_global= 1;
       $ps_status{$$resultat{$ciscoPSTableDesc .".".$psindex[$i]}}=$cur_status;
     }
@@ -431,9 +492,11 @@ if ($psexist !=0) {
 
 my $global_state=0; 
 my $output="";
+
 if ($fanexist !=0) {
 	if ($fan_global ==0) {
 	   $output .= $fanexist." Fan OK";
+	   $global_state=1 if ($global_state==0);
 	} else {
 	  foreach (keys %fan_status) {
 	    $output .= "Fan " . $_ . ":" . $CiscoEnvMonState {$fan_status{$_}} ." ";
@@ -444,10 +507,11 @@ if ($fanexist !=0) {
 	}
 }
 
-$output .= "," if ($output ne "");
 if ($psexist !=0) {
+	$output .= ", " if ($output ne "");
 	if ($ps_global ==0) {
 	   $output .= $psexist." ps OK";
+	   $global_state=1 if ($global_state==0);
 	} else {
 	  foreach (keys %ps_status) {
 	    $output .= "ps " . $_ . ":" . $CiscoEnvMonState {$ps_status{$_}} ." ";
@@ -458,6 +522,37 @@ if ($psexist !=0) {
 	}
 }
 
+if ($voltexist !=0) {
+	$output .= ", " if ($output ne "");
+	if ($volt_global ==0) {
+	   $output .= $voltexist." volt OK";
+	   $global_state=1 if ($global_state==0);
+	} else {
+	  foreach (keys %volt_status) {
+	    $output .= "volt " . $_ . ":" . $CiscoEnvMonState {$volt_status{$_}} ." ";
+		if ($global_state < $CiscoEnvMonNagios{$volt_status{$_}} ) {
+		  $global_state = $CiscoEnvMonNagios{$volt_status{$_}} ;
+		}
+	  }
+	}
+}
+
+if ($tempexist !=0) {
+	$output .= ", " if ($output ne "");
+	if ($temp_global ==0) {
+	   $output .= $tempexist." temp OK";
+	   $global_state=1 if ($global_state==0);
+	} else {
+	  foreach (keys %temp_status) {
+	    $output .= "temp " . $_ . ":" . $CiscoEnvMonState {$temp_status{$_}} ." ";
+		if ($global_state < $CiscoEnvMonNagios{$temp_status{$_}} ) {
+		  $global_state = $CiscoEnvMonNagios{$temp_status{$_}} ;
+		}
+	  }
+	}
+}
+
+#print $output," : ",$Nagios_state[$global_state]," | ",$perf_output,"\n";
 print $output," : ",$Nagios_state[$global_state],"\n";
 $exit_val=$ERRORS{$Nagios_state[$global_state]};
 
@@ -814,3 +909,109 @@ if ($global_status==2) {
 }
 }
 
+
+########### Foundry env checks ##############
+
+if ($o_check_type eq "foundry") {
+
+verb("Checking foundry env");
+
+#my $foundry_temp        = "1.3.6.1.4.1.1991.1.1.1.1.18.0"; # Chassis temperature in Deg C *2
+#my $foundry_temp_warn   = "1.3.6.1.4.1.1991.1.1.1.1.19.0"; # Chassis warn temperature in Deg C *2
+#my $foundry_temp_crit   = "1.3.6.1.4.1.1991.1.1.1.1.20.0"; # Chassis warn temperature in Deg C *2
+#my $foundry_ps_table    = "1.3.6.1.4.1.1991.1.1.1.2.1"; # PS table
+#my $foundry_ps_desc     = "1.3.6.1.4.1.1991.1.1.1.2.1.1.2"; # PS desc
+#my $foundry_ps_status   = "1.3.6.1.4.1.1991.1.1.1.2.1.1.3"; # PS status
+#my $foundry_fan_table   = "1.3.6.1.4.1.1991.1.1.1.3.1"; # FAN table
+#my $foundry_fan_desc    = "1.3.6.1.4.1.1991.1.1.1.3.1.1.2"; # FAN desc
+#my $foundry_fan_status  = "1.3.6.1.4.1.1991.1.1.1.3.1.1.3"; # FAN status
+
+#my @foundry_status = (3,0,2); # oper status : 1:other, 2: Normal, 3: Failure 
+my $global_status=0; # status to UNKNOWN
+my $output="";
+
+# Get temperature
+
+my @foundry_temp_oid=($foundry_temp,$foundry_temp_warn,$foundry_temp_crit);
+
+my $result_temp = $session->get_request(
+   Varbindlist => \@foundry_temp_oid
+);
+
+my $temp_found=0;
+if (defined($result_temp)) {
+  $temp_found=1;
+  #Temp found
+  $output = "Temp : " . $$result_temp{$foundry_temp} / 2;
+  if ($$result_temp{$foundry_temp} > $$result_temp{$foundry_temp_crit}) { # Temp above critical
+    $output.= " > ". $$result_temp{$foundry_temp_crit} / 2 . " : CRITICAL";
+    $global_status=3;
+  } elsif ( $$result_temp{$foundry_temp} > $$result_temp{$foundry_temp_warn}) { # Temp above warning
+      $output.= " > ". $$result_temp{$foundry_temp_warn} / 2 . " : WARNING";
+      $global_status=2;
+  } else {
+      $output.= " < ". $$result_temp{$foundry_temp_warn} / 2 . " : OK";
+      $global_status=1;
+  }
+}
+
+# Get PS table (TODO : Bug in FAN table, see with Foundry).
+
+my $result_ps = (Net::SNMP->VERSION < 4) ? 
+                    $session->get_table($foundry_ps_table)
+                  : $session->get_table(Baseoid => $foundry_ps_table);
+
+my $ps_num=0;
+if (defined($result_ps)) {
+  $output .=", " if defined($output);
+  foreach my $key ( keys %$result_ps) {
+    verb("OID : $key, Desc : $$result_ps{$key}");
+    if ($$result_ps{$key} =~ /$foundry_ps_desc/) {
+     $ps_num++;
+     my @oid_list = split (/\./,$key); 
+     my $index_ps = pop (@oid_list); 
+     $index_ps= $foundry_ps_status . "." . $index_ps;
+     if (defined ($$result_ps{$index_ps})) {
+        if ($$result_ps{$index_ps} == 3) {
+	  $output.="PS ".$$result_ps{$key}." : FAILURE";
+          $global_status=3;
+        } elsif ($$result_ps{$index_ps} == 2) {
+  	  $global_status=1 if ($global_status==0);
+        } else {
+          $output.= "ps ".$$result_ps{$key}." : OTHER";
+        }
+     } else {
+       $output.= "ps ".$$result_ps{$key}." : UNDEFINED STATUS";    
+     } 
+   }
+ }
+}
+
+$session->close;
+
+if (($ps_num+$temp_found) == 0) {
+  print  "No data found : UNKNOWN\n";
+  exit $ERRORS{"UNKNOWN"};
+}
+
+if ($global_status==1) {
+  print $output." : all OK\n";
+  exit $ERRORS{"OK"};
+}
+
+if ($global_status==2) {
+  print $output." : WARNING\n";
+  exit $ERRORS{"WARNING"};
+}
+
+if ($global_status==3) {
+  print $output." : CRITICAL\n";
+  exit $ERRORS{"CRITICAL"};
+}
+
+print  $output." : UNKNOWN\n";
+exit $ERRORS{"UNKNOWN"};
+
+}
+
+exit (3);
