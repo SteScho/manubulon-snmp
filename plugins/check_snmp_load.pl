@@ -283,6 +283,11 @@ if (defined($TIMEOUT)) {
   alarm ($o_timeout+10);
 }
 
+$SIG{'ALRM'} = sub {
+ print "No answer from host\n";
+ exit $ERRORS{"UNKNOWN"};
+};
+
 # Connect to host
 my ($session,$error);
 if ( defined($o_login) && defined($o_passwd)) {
@@ -706,19 +711,19 @@ if ($ncpu==0) {
 $cpu_used /= $ncpu;
 
 print "$ncpu CPU, ", $ncpu==1 ? "load" : "average load";
-printf(" %.1f",$cpu_used);
+printf(" %.1f%%",$cpu_used);
 $exit_val=$ERRORS{"OK"};
 
 if ($cpu_used > $o_crit) {
- print " > $o_crit : CRITICAL";
+ print " > $o_crit% : CRITICAL";
  $exit_val=$ERRORS{"CRITICAL"};
 } else {
   if ($cpu_used > $o_warn) {
-   print " > $o_warn : WARNING";
+   print " > $o_warn% : WARNING";
    $exit_val=$ERRORS{"WARNING"};
   }
 }
-print " < $o_warn : OK" if ($exit_val eq $ERRORS{"OK"});
+print " < $o_warn% : OK" if ($exit_val eq $ERRORS{"OK"});
 (defined($o_perf)) ?
    print " | cpu_prct_used=$cpu_used%;$o_warn;$o_crit\n"
  : print "\n";
