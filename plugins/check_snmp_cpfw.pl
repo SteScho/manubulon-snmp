@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_cpfw ##############
-# Version : 1.2
-# Date : March 12 2007
+# Version : 1.2.1
+# Date : April 19 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -73,7 +73,7 @@ my @mgmt_checks_oid	= ($mgmt_status,$mgmt_alive);
 
 #################################### Globals ##############################""
 
-my $Version='1.2';
+my $Version='1.2.1';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -246,6 +246,11 @@ if (defined($TIMEOUT)) {
   alarm ($o_timeout+10);
 }
 
+$SIG{'ALRM'} = sub {
+ print "No answer from host\n";
+ exit $ERRORS{"UNKNOWN"};
+};
+
 # Connect to host
 my ($session,$error);
 if ( defined($o_login) && defined($o_passwd)) {
@@ -396,18 +401,18 @@ if (defined ($o_fw)) {
 
     if (defined($o_policy)) {
       if ($$resultat{$policy_name} ne $o_policy) {
-	$fw_state=2;
-	$fw_print .= "Policy installed : $$resultat{$policy_name}";
+	    $fw_state=2;
+	    $fw_print .= "Policy installed : $$resultat{$policy_name}";
       }
     }
 
     if (defined($o_conn)) {
       if ($$resultat{$connections} > $o_crit) {
-	$fw_state=2;
-    $fw_print .= "Connexions : ".$$resultat{$connections}." > ".$o_crit." ";
+	    $fw_state=2;
+        $fw_print .= "Connexions : ".$$resultat{$connections}." > ".$o_crit." ";
       } else {
 	if ($$resultat{$connections} > $o_warn) {
-	  $fw_state=1;
+	  if ($fw_state!=2) $fw_state=1;
 	  $fw_print .= "Connexions : ".$$resultat{$connections}." > ".$o_warn." ";    
 	}
       }
