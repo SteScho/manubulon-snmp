@@ -916,17 +916,6 @@ if ($o_check_type eq "foundry") {
 
 verb("Checking foundry env");
 
-#my $foundry_temp        = "1.3.6.1.4.1.1991.1.1.1.1.18.0"; # Chassis temperature in Deg C *2
-#my $foundry_temp_warn   = "1.3.6.1.4.1.1991.1.1.1.1.19.0"; # Chassis warn temperature in Deg C *2
-#my $foundry_temp_crit   = "1.3.6.1.4.1.1991.1.1.1.1.20.0"; # Chassis warn temperature in Deg C *2
-#my $foundry_ps_table    = "1.3.6.1.4.1.1991.1.1.1.2.1"; # PS table
-#my $foundry_ps_desc     = "1.3.6.1.4.1.1991.1.1.1.2.1.1.2"; # PS desc
-#my $foundry_ps_status   = "1.3.6.1.4.1.1991.1.1.1.2.1.1.3"; # PS status
-#my $foundry_fan_table   = "1.3.6.1.4.1.1991.1.1.1.3.1"; # FAN table
-#my $foundry_fan_desc    = "1.3.6.1.4.1.1991.1.1.1.3.1.1.2"; # FAN desc
-#my $foundry_fan_status  = "1.3.6.1.4.1.1991.1.1.1.3.1.1.3"; # FAN status
-
-#my @foundry_status = (3,0,2); # oper status : 1:other, 2: Normal, 3: Failure 
 my $global_status=0; # status to UNKNOWN
 my $output="";
 
