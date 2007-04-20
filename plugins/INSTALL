@@ -5,7 +5,7 @@ You can simply copy the .pl files to the Nagios Plugin directory if
 - Nagios plugins and utils.pm file are in /usr/local/nagios/libexec.
 - You are sure Net::SNMP is installed. (Getopt::Long is standard).
 - perl is in /usr/bin/perl
-- Temp files can be written bu Nagios in /tmp
+- Temp files can be written by Nagios in /tmp
 
 You can also use the "install.sh" script provided in this directory to install the plugins.
 Type : "./install.sh" to install all the plugins or "./install.sh <plugin name>" for a specific one.
