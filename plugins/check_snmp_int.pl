@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
 # Version : 1.4.5
-# Date : Mars 16 2007
+# Date : April 21 2007
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -216,6 +216,7 @@ sub help {
 -g, --64bits
    Use 64 bits counters instead of the standard counters  
    when checking bandwidth & performance data.
+   You must use snmp v2c or v3 to get 64 bits counters.
 -d, --delta=seconds
    make an average of <delta> seconds (default 300=5min)
 -B, --kbits
@@ -305,6 +306,9 @@ sub check_options {
 	if (defined($o_timeout) && (isnnum($o_timeout) || ($o_timeout < 2) || ($o_timeout > 60))) 
 	  { print "Timeout must be >1 and <60 !\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
 	if (!defined($o_timeout)) {$o_timeout=5;}
+    # Check snmpv2c or v3 with 64 bit counters
+    if ( defined ($o_highperf) && (!defined($o_version2) && defined($o_community)))
+      { print "Can't get 64 bit counters with snmp version 1\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
     # check if -e without -f
     if ( defined($o_perfe) && !defined($o_perf))
         { print "Cannot output error without -f option!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}		
