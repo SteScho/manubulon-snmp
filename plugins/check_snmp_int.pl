@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-# Version : 1.4.5
-# Date : April 21 2007
+# Version : 1.4.6
+# Date : April 23 2007
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -49,7 +49,7 @@ my %status=(1=>'UP',2=>'DOWN',3=>'TESTING',4=>'UNKNOWN',5=>'DORMANT',6=>'NotPres
 
 # Globals
 
-my $Version='1.4.5';
+my $Version='1.4.6';
 
 # Standard options
 my $o_host = 		undef; 	# hostname
@@ -309,6 +309,12 @@ sub check_options {
     # Check snmpv2c or v3 with 64 bit counters
     if ( defined ($o_highperf) && (!defined($o_version2) && defined($o_community)))
       { print "Can't get 64 bit counters with snmp version 1\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+    if (defined ($o_highperf)) {
+      if (eval "require bigint") {
+        use bigint;
+      } else  { print "Need bigint module for 64 bit counters\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+    }
+
     # check if -e without -f
     if ( defined($o_perfe) && !defined($o_perf))
         { print "Cannot output error without -f option!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}		
