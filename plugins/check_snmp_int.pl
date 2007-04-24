@@ -23,10 +23,8 @@ my $file_history=200;   # number of data to keep in files.
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 5;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 
@@ -512,31 +510,25 @@ foreach my $key ( keys %$resultat) {
 # No interface found -> error
 if ( $num_int == 0 ) { print "ERROR : Unknown interface $o_descr\n" ; exit $ERRORS{"UNKNOWN"};}
 
-my ($result,$resultf)=(undef,undef);
+my $result=undef;
+# Add performance oids if requested 
+if (defined($o_perf)||defined($o_checkperf)) {
+  @oids=(@oids,@oid_perf_outoct,@oid_perf_inoct,@oid_speed);
+  if (defined($o_highperf)) { 
+    @oids=(@oids,@oid_speed_high);
+  }   
+  if (defined ($o_ext_checkperf) || defined($o_perfe)) {
+    @oids=(@oids,@oid_perf_inerr,@oid_perf_outerr,@oid_perf_indisc,@oid_perf_outdisc);
+  }
+}
+
 # Get the requested oid values
 $result = $session->get_request(
    Varbindlist => \@oids
 );
-if (!defined($result)) { printf("ERROR: Status table : %s.\n", $session->error); $session->close;
+if (!defined($result)) { printf("ERROR: Status/statistics table : %s.\n", $session->error); $session->close;
    exit $ERRORS{"UNKNOWN"};
 }
-# Get the perf value if -f (performance) option defined or -k (check bandwidth)
-if (defined($o_perf)||defined($o_checkperf)) {
-  @oid_perf=(@oid_perf_outoct,@oid_perf_inoct,@oid_speed);
-  if (defined($o_highperf)) { 
-    @oid_perf=(@oid_perf,@oid_speed_high);
-  } 
-  if (defined ($o_ext_checkperf) || defined($o_perfe)) {
-    @oid_perf=(@oid_perf,@oid_perf_inerr,@oid_perf_outerr,@oid_perf_indisc,@oid_perf_outdisc);
-  }
-  $resultf = $session->get_request(
-   Varbindlist => \@oid_perf
-  );
-  if (!defined($resultf)) { printf("ERROR: Statistics table : %s.\n", $session->error); $session->close;
-     exit $ERRORS{"UNKNOWN"};
-  }
-}
-
 
 $session->close;
 
@@ -581,19 +573,19 @@ for (my $i=0;$i < $num_int; $i++) {
     if ($n_rows != 0) { @file_values = @ret_array };     
     verb ("File read returns : $return with $n_rows rows");
     # Get the speed in normal or highperf speed counters
-    if ($$resultf{$oid_speed[$i]} == 4294967295) { # Too high for this counter
+    if ($$result{$oid_speed[$i]} == 4294967295) { # Too high for this counter (cf IF-MIB)
        if (! defined($o_highperf) && (defined($o_prct) || defined ($o_perfs) || defined ($o_perfp))) {
           print "Cannot get interface speed with standard MIB, use highperf mib (-g) : UNKNOWN\n";
 	  exit $ERRORS{"UNKNOWN"}
  	}
-       if (defined ($$resultf{$oid_speed_high[$i]}) && $$resultf{$oid_speed_high[$i]} != 0) {
-	  $speed_real=$$resultf{$oid_speed_high[$i]} * 1000000;
+       if (defined ($$result{$oid_speed_high[$i]}) && $$result{$oid_speed_high[$i]} != 0) {
+	  $speed_real=$$result{$oid_speed_high[$i]} * 1000000;
        } else {
           print "Cannot get interface speed using highperf mib : UNKNOWN\n";
           exit $ERRORS{"UNKNOWN"}
 	}
     } else {
-      $speed_real=$$resultf{$oid_speed[$i]};
+      $speed_real=$$result{$oid_speed[$i]};
     }
     verb ("Interface speed : $speed_real");
     #make the checks if the file is OK  
@@ -639,24 +631,24 @@ for (my $i=0;$i < $num_int; $i++) {
 		# First set the modulus depending on highperf counters or not
 		my $overfl_mod = defined ($o_highperf) ? 18446744073709551616 : 4294967296;
 	    # Check counter (s)
-		my $overfl = ($$resultf{$oid_perf_inoct[$i]} >= $file_values[$j][1] ) ? 0 : $overfl_mod;
-	    $checkperf_out_raw[0] = ( ($overfl + $$resultf{$oid_perf_inoct[$i]} - $file_values[$j][1])/
+		my $overfl = ($$result{$oid_perf_inoct[$i]} >= $file_values[$j][1] ) ? 0 : $overfl_mod;
+	    $checkperf_out_raw[0] = ( ($overfl + $$result{$oid_perf_inoct[$i]} - $file_values[$j][1])/
 	      			      ($timenow - $file_values[$j][0] ));
 		$checkperf_out[0] = $checkperf_out_raw[0] / $speed_metric;
 	    
-	    $overfl = ($$resultf{$oid_perf_outoct[$i]} >= $file_values[$j][2] ) ? 0 : $overfl_mod;
-		$checkperf_out_raw[1] = ( ($overfl + $$resultf{$oid_perf_outoct[$i]} - $file_values[$j][2])/
+	    $overfl = ($$result{$oid_perf_outoct[$i]} >= $file_values[$j][2] ) ? 0 : $overfl_mod;
+		$checkperf_out_raw[1] = ( ($overfl + $$result{$oid_perf_outoct[$i]} - $file_values[$j][2])/
 				      ($timenow - $file_values[$j][0] ));
 	    $checkperf_out[1] = $checkperf_out_raw[1] / $speed_metric;
 	    
 	    if (defined($o_ext_checkperf)) {
-	      $checkperf_out[2] = ( ($$resultf{$oid_perf_inerr[$i]} - $file_values[$j][3])/
+	      $checkperf_out[2] = ( ($$result{$oid_perf_inerr[$i]} - $file_values[$j][3])/
 				($timenow - $file_values[$j][0] ))*60;
-	      $checkperf_out[3] = ( ($$resultf{$oid_perf_outerr[$i]} - $file_values[$j][4])/
+	      $checkperf_out[3] = ( ($$result{$oid_perf_outerr[$i]} - $file_values[$j][4])/
 				($timenow - $file_values[$j][0] ))*60;
-	      $checkperf_out[4] = ( ($$resultf{$oid_perf_indisc[$i]} - $file_values[$j][5])/
+	      $checkperf_out[4] = ( ($$result{$oid_perf_indisc[$i]} - $file_values[$j][5])/
 				($timenow - $file_values[$j][0] ))*60;
-	      $checkperf_out[5] = ( ($$resultf{$oid_perf_outdisc[$i]} - $file_values[$j][6])/
+	      $checkperf_out[5] = ( ($$result{$oid_perf_outdisc[$i]} - $file_values[$j][6])/
 				($timenow - $file_values[$j][0] ))*60;
 	    }
 	  }
@@ -666,13 +658,13 @@ for (my $i=0;$i < $num_int; $i++) {
     } 
     # Put the new values in the array and write the file
     $file_values[$n_rows][0]=$timenow;
-    $file_values[$n_rows][1]=$$resultf{$oid_perf_inoct[$i]};
-    $file_values[$n_rows][2]=$$resultf{$oid_perf_outoct[$i]};
+    $file_values[$n_rows][1]=$$result{$oid_perf_inoct[$i]};
+    $file_values[$n_rows][2]=$$result{$oid_perf_outoct[$i]};
     if (defined($o_ext_checkperf)) { # Add other values (error & disc)
-      $file_values[$n_rows][3]=$$resultf{$oid_perf_inerr[$i]};
-      $file_values[$n_rows][4]=$$resultf{$oid_perf_outerr[$i]};
-      $file_values[$n_rows][5]=$$resultf{$oid_perf_indisc[$i]};
-      $file_values[$n_rows][6]=$$resultf{$oid_perf_outdisc[$i]};
+      $file_values[$n_rows][3]=$$result{$oid_perf_inerr[$i]};
+      $file_values[$n_rows][4]=$$result{$oid_perf_outerr[$i]};
+      $file_values[$n_rows][5]=$$result{$oid_perf_indisc[$i]};
+      $file_values[$n_rows][6]=$$result{$oid_perf_outdisc[$i]};
     } 
     $n_rows++;
     $return=write_file($temp_file_name,$n_rows,$n_items_check,@file_values);
@@ -773,14 +765,14 @@ for (my $i=0;$i < $num_int; $i++) {
 	    }
 	  }
 	} else { # output in octet counter
-      $perf_out .= "'" . $descr[$i] ."_in_octet'=". $$resultf{$oid_perf_inoct[$i]} ."c ";  
-      $perf_out .= "'" . $descr[$i] ."_out_octet'=". $$resultf{$oid_perf_outoct[$i]} ."c";  
+      $perf_out .= "'" . $descr[$i] ."_in_octet'=". $$result{$oid_perf_inoct[$i]} ."c ";  
+      $perf_out .= "'" . $descr[$i] ."_out_octet'=". $$result{$oid_perf_outoct[$i]} ."c";  
 	}
     if (defined ($o_perfe)) {
-      $perf_out .= " '" . $descr[$i] ."_in_error'=". $$resultf{$oid_perf_inerr[$i]} ."c ";
-      $perf_out .= "'" . $descr[$i] ."_in_discard'=". $$resultf{$oid_perf_indisc[$i]} ."c ";
-      $perf_out .= "'" . $descr[$i] ."_out_error'=". $$resultf{$oid_perf_outerr[$i]} ."c ";
-      $perf_out .= "'" . $descr[$i] ."_out_discard'=". $$resultf{$oid_perf_outdisc[$i]} ."c";
+      $perf_out .= " '" . $descr[$i] ."_in_error'=". $$result{$oid_perf_inerr[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_in_discard'=". $$result{$oid_perf_indisc[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_out_error'=". $$result{$oid_perf_outerr[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_out_discard'=". $$result{$oid_perf_outdisc[$i]} ."c";
     }
 	if (defined ($o_perfs)) {
 	  $perf_out .= " '" . $descr[$i] ."_speed_bps'=".$speed_real; 
