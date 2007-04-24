@@ -757,11 +757,11 @@ for (my $i=0;$i < $num_int; $i++) {
 	      $perf_out .= "'" . $descr[$i] ."_in_Bps'=" . sprintf("%.0f",$checkperf_out_raw[0]) .";";
 		  $perf_out .= ($o_warn[0]!=0) ? $o_warn[0]*$warn_factor . ";" : ";";
 		  $perf_out .= ($o_crit[0]!=0) ? $o_crit[0]*$warn_factor . ";" : ";";
-		  $perf_out .= "0;". $speed_real ." ";		 		  
+		  $perf_out .= "0;". $speed_real / 8 ." ";		 		  
 	      $perf_out .= "'" . $descr[$i] ."_out_Bps'=" . sprintf("%.0f",$checkperf_out_raw[1]) .";" ;
 		  $perf_out .= ($o_warn[1]!=0) ? $o_warn[1]*$warn_factor . ";" : ";";
 		  $perf_out .= ($o_crit[1]!=0) ? $o_crit[1]*$warn_factor . ";" : ";";
-		  $perf_out .= "0;". $speed_real ." ";		  
+		  $perf_out .= "0;". $speed_real / 8 ." ";		  
 	    }
 	  }
 	} else { # output in octet counter
