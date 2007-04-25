@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_storage ##############
 # Version : 1.3.2
-# Date :  March 12 2007
+# Date :  April 25 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -526,6 +526,12 @@ for ($i=0;$i<$num_int;$i++) {
   verb("Size :  $$result{$size_table . $tindex[$i]}");
   verb("Used : $$result{$used_table . $tindex[$i]}");
   verb("Alloc : $$result{$alloc_units . $tindex[$i]}");
+  if (!defined($$result{$size_table . $tindex[$i]}) || 
+	!defined($$result{$used_table . $tindex[$i]}) || 
+	!defined ($$result{$alloc_units . $tindex[$i]})) {
+     print "Data not fully defined for storage ",$descr[$i]," : UNKNOWN\n";
+     exit $ERRORS{"UNKNOWN"};
+  }
   my $to = $$result{$size_table . $tindex[$i]} * $$result{$alloc_units . $tindex[$i]} / 1024**2;
   my $pu=undef;
   if ( $$result{$used_table . $tindex[$i]} != 0 ) {
