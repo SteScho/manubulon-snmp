@@ -1,13 +1,12 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-# Version : 1.4.7
-# Date : April 24 2007
+# Version : 1.4.8
+# Date : May 24 2007
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : J. Jungmann, S. Probst, R. Leroy, M. Berger
 # TODO : 
-# Check isdn "dormant" state
 # Maybe put base directory for performance as an option
 #################################################################
 #
@@ -57,6 +56,7 @@ my $o_descr = 		undef; 	# description filter
 my $o_help=		undef; 	# wan't some help ?
 my $o_admin=		undef;	# admin status instead of oper
 my $o_inverse=  	undef;	# Critical when up
+my $o_dormant=        	undef;  # Dormant state is OK
 my $o_verb=		undef;	# verbose mode
 my $o_version=		undef;	# print version
 my $o_noreg=		undef;	# Do not use Regexp for name
@@ -151,7 +151,7 @@ sub write_file {
 sub p_version { print "check_snmp_int version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-i] [-a] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-i -a -D] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -194,6 +194,8 @@ sub help {
    Make critical when up
 -a, --admin
    Use administrative status instead of operational
+-D, --dormant
+   Dormant state is an OK state
 -o, --octetlength=INTEGER
   max-size of the SNMP message, usefull in case of Too Long responses.
   Be carefull with network filters. Range 484 - 65535, default are
@@ -283,7 +285,8 @@ sub check_options {
         'u'   	=> \$o_prct,      	'prct'   	=> \$o_prct,
 		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
 		'label'   => \$o_label,    	
-        'd:i'   => \$o_delta,           'delta:i'     	=> \$o_delta
+        'd:i'   => \$o_delta,           'delta:i'     	=> \$o_delta,
+	'D'   => \$o_dormant,           'dormant'             => \$o_dormant
     );
     if (defined ($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"}};
@@ -720,7 +723,7 @@ for (my $i=0;$i < $num_int; $i++) {
   }
   # Get rid of special caracters for performance in description
   $descr[$i] =~ s/'\/\(\)/_/g;
-  if ( $int_status == $ok_val) {
+  if (( $int_status == $ok_val)||(defined($o_dormant) && $int_status == 5)) {
     $num_ok++;
   }
   if (( $int_status == 1 ) && defined ($o_perf)) {
