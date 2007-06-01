@@ -81,6 +81,7 @@ my $o_perf=	undef;		# Output performance data
 my $o_short=	undef;	# Short output parameters
 my @o_shortL=	undef;		# output type,where,cut
 my $o_reserve=	0;              # % reserved blocks (A. Greiner-Bär patch)
+my $o_giga=		undef;	# output and levels in gigabytes instead of megabytes
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
 my $o_passwd=	undef;		# Pass for snmpv3
@@ -96,7 +97,7 @@ my $o_octetlength=undef;
 sub p_version { print "$Name version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r] [-s] [-i] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
+    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
 }
 
 sub round ($$) {
@@ -183,6 +184,8 @@ warn if %used > warn and critical if %used > crit
 -R, --reserved=INTEGER
    % reserved blocks for superuser
    For ext2/3 filesystems, it is 5% by default
+-G, --gigabyte
+   output, warning & critical levels in gigabytes
 -f, --perfparse
    Perfparse compatible output
 -S, --short=<type>[,<where>,<cut>]
@@ -250,7 +253,8 @@ sub check_options {
 	'S:s'   => \$o_short,         	'short:s'       => \$o_short,
 	'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
 	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf,
-	'R:i'	=> \$o_reserve,	        'reserved:i'	=> \$o_reserve
+	'R:i'	=> \$o_reserve,	        'reserved:i'	=> \$o_reserve,
+	'G'	=> \$o_giga,	        'gigabyte'	=> \$o_giga
     );
     if (defined($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
     if (defined($o_version) ) { p_version(); exit $ERRORS{"UNKNOWN"}};
@@ -530,6 +534,14 @@ my $warn_state=0;
 my $crit_state=0;
 my ($p_warn,$p_crit);
 my $output=undef;
+my $output_metric_val = 1024**2;
+my $output_metric = "M";
+# Set the metric 
+if (defined($o_giga)) {
+	$output_metric_val *= 1024;
+	$output_metric='G';
+}
+
 for ($i=0;$i<$num_int;$i++) {
   verb("Descr : $descr[$i]");
   verb("Size :  $$result{$size_table . $tindex[$i]}");
@@ -541,16 +553,16 @@ for ($i=0;$i<$num_int;$i++) {
      print "Data not fully defined for storage ",$descr[$i]," : UNKNOWN\n";
      exit $ERRORS{"UNKNOWN"};
   }
-  my $to = $$result{$size_table . $tindex[$i]} * ( ( 100 - $o_reserve ) / 100 ) * $$result{$alloc_units . $tindex[$i]} / 1024**2;
+  my $to = $$result{$size_table . $tindex[$i]} * ( ( 100 - $o_reserve ) / 100 ) * $$result{$alloc_units . $tindex[$i]} / $output_metric_val;
   my $pu=undef;
   if ( $$result{$used_table . $tindex[$i]} != 0 ) {
 	$pu = $$result{$used_table . $tindex[$i]}* 100 /  ( $$result{$size_table . $tindex[$i]} * ( 100 - $o_reserve ) / 100 );
   }else {
     $pu=0;
   } 
-  my $bu = $$result{$used_table . $tindex[$i]} *  $$result{$alloc_units . $tindex[$i]} / 1024**2;
+  my $bu = $$result{$used_table . $tindex[$i]} *  $$result{$alloc_units . $tindex[$i]} / $output_metric_val;
   my $pl = 100 - $pu;
-  my $bl = ( ( $$result{$size_table . $tindex[$i]} * ( ( 100 - $o_reserve ) / 100 ) - ( $$result{$used_table . $tindex[$i]} ) ) * $$result{$alloc_units . $tindex[$i]} / 1024**2 );
+  my $bl = ( ( $$result{$size_table . $tindex[$i]} * ( ( 100 - $o_reserve ) / 100 ) - ( $$result{$used_table . $tindex[$i]} ) ) * $$result{$alloc_units . $tindex[$i]} / $output_metric_val );
   # add a ' ' if some data exists in $perf_out
   $perf_out .= " " if (defined ($perf_out)) ;
   ##### Ouputs and checks
@@ -569,7 +581,7 @@ for ($i=0;$i<$num_int;$i++) {
 	   || (($pu >= $o_warn) && ($locstate=$warn_state=1));
 	if (defined($o_shortL[2])) {}
 	if (!defined($o_shortL[0]) || ($locstate==1)) { # print full output if warn or critical state
-	  $output.=sprintf ("%s: %.0f%%used(%.0fMB/%.0fMB) ",$descr[$i],$pu,$bu,$to);
+	  $output.=sprintf ("%s: %.0f%%used(%.0f%sB/%.0f%sB) ",$descr[$i],$pu,$bu,$output_metric,$to,$output_metric);
     } elsif ($o_shortL[0] == 1) {
 	  $output.=sprintf ("%s: %.0f%% ",$descr[$i],$pu);
 	} 
@@ -581,9 +593,9 @@ for ($i=0;$i<$num_int;$i++) {
     ( ($bu >= $o_crit) && ($locstate=$crit_state=1) ) 
 	  || ( ($bu >= $o_warn) && ($locstate=$warn_state=1) );
 	if (!defined($o_shortL[0]) || ($locstate==1)) { # print full output if warn or critical state
-      $output.=sprintf("%s: %.0fMBused/%.0fMB (%.0f%%) ",$descr[$i],$bu,$to,$pu);
+      $output.=sprintf("%s: %.0f%sBused/%.0f%sB (%.0f%%) ",$descr[$i],$bu,$output_metric,$to,$output_metric,$pu);
     } elsif ($o_shortL[0] == 1) {
-	  $output.=sprintf("%s: %.0fMB ",$descr[$i],$bu);
+	  $output.=sprintf("%s: %.0f%sB ",$descr[$i],$bu,$output_metric);
     } 
  }
  
@@ -593,9 +605,9 @@ for ($i=0;$i<$num_int;$i++) {
     ( ($bl <= $o_crit) && ($locstate=$crit_state=1) ) 
 	  || ( ($bl <= $o_warn) && ($locstate=$warn_state=1) );
 	if (!defined($o_shortL[0]) || ($locstate==1)) { # print full output if warn or critical state
-      $output.=sprintf ("%s: %.0fMBleft/%.0fMB (%.0f%%) ",$descr[$i],$bl,$to,$pl);
+      $output.=sprintf ("%s: %.0f%sBleft/%.0f%sB (%.0f%%) ",$descr[$i],$bl,$output_metric,$to,$output_metric,$pl);
     } elsif ($o_shortL[0] == 1) {
-	  $output.=sprintf ("%s: %.0fMB ",$descr[$i],$bl);
+	  $output.=sprintf ("%s: %.0f%sB ",$descr[$i],$bl,$output_metric);
     } 
  }
   
@@ -605,13 +617,13 @@ for ($i=0;$i<$num_int;$i++) {
     ( ($pl <= $o_crit) && ($locstate=$crit_state=1) ) 
 	  || ( ($pl <= $o_warn) && ($locstate=$warn_state=1) );
 	if (!defined($o_shortL[0]) || ($locstate==1)) { # print full output if warn or critical state
-      $output.=sprintf ("%s: %.0f%%left(%.0fMB/%.0fMB) ",$descr[$i],$pl,$bl,$to);
+      $output.=sprintf ("%s: %.0f%%left(%.0f%sB/%.0f%sB) ",$descr[$i],$pl,$bl,$output_metric,$to,$output_metric);
     } elsif ($o_shortL[0] == 1) {
 	  $output.=sprintf ("%s: %.0f%% ",$descr[$i],$pl);
     } 
   }
   # Performance output (in MB)
-  $perf_out .= "'".$Pdescr. "'=" . round($bu,0) . "MB;" . round($p_warn,0) 
+  $perf_out .= "'".$Pdescr. "'=" . round($bu,0) . $output_metric ."B;" . round($p_warn,0) 
 	       . ";" . round($p_crit,0) . ";0;" . round($to,0);
 }
 
@@ -621,8 +633,8 @@ my $comp_oper=undef;
 my $comp_unit=undef;
 ($o_type eq "pu") && ($comp_oper ="<") && ($comp_unit ="%");
 ($o_type eq "pl") && ($comp_oper =">") && ($comp_unit ="%");
-($o_type eq "bu") && ($comp_oper ="<") && ($comp_unit ="MB");
-($o_type eq 'bl') && ($comp_oper =">") && ($comp_unit ="MB");
+($o_type eq "bu") && ($comp_oper ="<") && ($comp_unit = $output_metric."B");
+($o_type eq 'bl') && ($comp_oper =">") && ($comp_unit =$output_metric."B");
 
 if (!defined ($output)) { $output="All selected storages "; }
 
