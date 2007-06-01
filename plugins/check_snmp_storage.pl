@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_storage ##############
-# Version : 1.3.2
-# Date :  April 25 2007
+# Version : 1.3.3
+# Date :  Jun 1 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO : 
-# Contribs : Dimo Velev, Makina Corpus
+# Contribs : Dimo Velev, Makina Corpus, A. Greiner-Bär
 #################################################################
 #
 # help : ./check_snmp_storage -h
@@ -80,6 +80,7 @@ my $o_timeout=  5;            	# Default 5s Timeout
 my $o_perf=	undef;		# Output performance data
 my $o_short=	undef;	# Short output parameters
 my @o_shortL=	undef;		# output type,where,cut
+my $o_reserve=	0;              # % reserved blocks (A. Greiner-Bär patch)
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
 my $o_passwd=	undef;		# Pass for snmpv3
@@ -95,7 +96,7 @@ my $o_octetlength=undef;
 sub p_version { print "$Name version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r] [-s] [-i] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>]\n";
+    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r] [-s] [-i] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
 }
 
 sub round ($$) {
@@ -135,7 +136,7 @@ warn if %used > warn and critical if %used > crit
    name or IP address of host to check
 -C, --community=COMMUNITY NAME
    community name for the host's SNMP agent (implies SNMP v1)
-2, --v2c
+-2, --v2c
    Use snmp v2c
 -l, --login=LOGIN ; -x, --passwd=PASSWD
    Login and auth password for snmpv3 authentication 
@@ -179,6 +180,9 @@ warn if %used > warn and critical if %used > crit
 -c, --critical=INTEGER
    percent / MB of disk used to generate CRITICAL state
    you can add the % sign 
+-R, --reserved=INTEGER
+   % reserved blocks for superuser
+   For ext2/3 filesystems, it is 5% by default
 -f, --perfparse
    Perfparse compatible output
 -S, --short=<type>[,<where>,<cut>]
@@ -245,7 +249,8 @@ sub check_options {
 		'q:s'  	=> \$o_storagetype,	'storagetype:s'=> \$o_storagetype,
 	'S:s'   => \$o_short,         	'short:s'       => \$o_short,
 	'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
-	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf
+	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf,
+	'R:i'	=> \$o_reserve,	        'reserved:i'	=> \$o_reserve
     );
     if (defined($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
     if (defined($o_version) ) { p_version(); exit $ERRORS{"UNKNOWN"}};
@@ -306,6 +311,10 @@ sub check_options {
     if (defined ($o_octetlength) && (isnnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484 )) {
 		print "octet lenght must be < 65535 and > 484\n";print_usage(); exit $ERRORS{"UNKNOWN"};
     }	
+    #### reserved blocks checks (A. Greiner-Bär patch).
+    if (defined ($o_reserve) && (isnnum($o_reserve) || $o_reserve > 99 || $o_reserve < 0 )) {
+		print "reserved blocks must be < 100 and >= 0\n";print_usage(); exit $ERRORS{"UNKNOWN"};
+    }
 }
 
 ########## MAIN #######
@@ -532,16 +541,16 @@ for ($i=0;$i<$num_int;$i++) {
      print "Data not fully defined for storage ",$descr[$i]," : UNKNOWN\n";
      exit $ERRORS{"UNKNOWN"};
   }
-  my $to = $$result{$size_table . $tindex[$i]} * $$result{$alloc_units . $tindex[$i]} / 1024**2;
+  my $to = $$result{$size_table . $tindex[$i]} * ( ( 100 - $o_reserve ) / 100 ) * $$result{$alloc_units . $tindex[$i]} / 1024**2;
   my $pu=undef;
   if ( $$result{$used_table . $tindex[$i]} != 0 ) {
-    $pu = $$result{$used_table . $tindex[$i]}*100 / $$result{$size_table . $tindex[$i]};
+	$pu = $$result{$used_table . $tindex[$i]}* 100 /  ( $$result{$size_table . $tindex[$i]} * ( 100 - $o_reserve ) / 100 );
   }else {
     $pu=0;
   } 
   my $bu = $$result{$used_table . $tindex[$i]} *  $$result{$alloc_units . $tindex[$i]} / 1024**2;
   my $pl = 100 - $pu;
-  my $bl = ($$result{$size_table . $tindex[$i]}- $$result{$used_table . $tindex[$i]}) * $$result{$alloc_units . $tindex[$i]} / 1024**2;
+  my $bl = ( ( $$result{$size_table . $tindex[$i]} * ( ( 100 - $o_reserve ) / 100 ) - ( $$result{$used_table . $tindex[$i]} ) ) * $$result{$alloc_units . $tindex[$i]} / 1024**2 );
   # add a ' ' if some data exists in $perf_out
   $perf_out .= " " if (defined ($perf_out)) ;
   ##### Ouputs and checks
