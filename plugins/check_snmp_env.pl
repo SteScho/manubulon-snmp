@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_env #################
-# Version : 1.2
-# Date : April 19 2007
+# Version : 1.3
+# Date : May 24 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -145,9 +145,24 @@ my $foundry_fan_status	= "1.3.6.1.4.1.1991.1.1.1.3.1.1.3"; # FAN status
 
 my @foundry_status = (3,0,2); # oper status : 1:other, 2: Normal, 3: Failure 
 
+# Linux Net-SNMP with LM-SENSORS
+my $linux_temp		= "1.3.6.1.4.1.2021.13.16.2.1"; # temperature table
+my $linux_temp_descr	= "1.3.6.1.4.1.2021.13.16.2.1.2"; # temperature entry description
+my $linux_temp_value	= "1.3.6.1.4.1.2021.13.16.2.1.3"; # temperature entry value (mC)
+my $linux_fan		= "1.3.6.1.4.1.2021.13.16.3.1"; # fan table
+my $linux_fan_descr	= "1.3.6.1.4.1.2021.13.16.3.1.2"; # fan entry description
+my $linux_fan_value	= "1.3.6.1.4.1.2021.13.16.3.1.3"; # fan entry value (RPM)
+my $linux_volt		= "1.3.6.1.4.1.2021.13.16.4.1"; # voltage table
+my $linux_volt_descr	= "1.3.6.1.4.1.2021.13.16.4.1.2"; # voltage entry description
+my $linux_volt_value	= "1.3.6.1.4.1.2021.13.16.4.1.3"; # voltage entry value (mV)
+my $linux_misc		= "1.3.6.1.4.1.2021.13.16.4.1"; # misc table
+my $linux_misc_descr	= "1.3.6.1.4.1.2021.13.16.4.1.2"; # misc entry description
+my $linux_misc_value	= "1.3.6.1.4.1.2021.13.16.4.1.3"; # misc entry value
+
+
 # Globals
 
-my $Version='1.2';
+my $Version='1.3';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -160,7 +175,7 @@ my $o_perf=     undef;          # Output performance data
 my $o_version2= undef;          # use snmp v2c
 # check type  
 my $o_check_type= "cisco";	 # default Cisco
-my @valid_types	=("cisco","nokia","bc","iron","foundry");	
+my @valid_types	=("cisco","nokia","bc","iron","foundry","linux");	
 my $o_temp=	undef;		# max temp
 my $o_fan=	undef;		# min fan speed
 
@@ -177,7 +192,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_env version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -T (cisco|nokia|bc|iron|foundry) [-F <rpm>] [-c <celcius>] [-f] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -T (cisco|nokia|bc|iron|foundry|linux) [-F <rpm>] [-c <celcius>] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -221,17 +236,18 @@ sub help {
 -P, --port=PORT
    SNMP port (Default 161)
 -T, --type=cisco|nokia|bc|iron|foundry
-	Environemental check : 
-		cisco : voltage,temp,fan,power supply status
-		        will try to check everything present
-		nokia : fan and power supply
-		bc : fans, power supply, voltage, disks
-		iron : fans, power supply, temp
-		foundry : power supply, temp
+   Environemental check : 
+	cisco : All Cisco equipements : voltage,temp,fan,power supply
+	        (will try to check everything in the env mib)
+	nokia : Nokia IP platforms : fan and power supply
+	bc : BlueCoat platforms : fans, power supply, voltage, disks
+	iron : IronPort platforms : fans, power supply, temp
+	foundry : Foundry Network platforms : power supply, temp
+	linux : Net-SNMP with LM-SENSORS : temp, fan, volt, misc
 -F, --fan=<rpm>
-   Minimum fan rpm value
+   Minimum fan rpm value (only needed for 'iron' & 'linux')
 -c, --celcius=<celcius>
-   Maximum temp in degree celcius
+   Maximum temp in degree celcius (only needed for 'iron' & 'linux')
 -f, --perfparse
    Perfparse compatible output
 -t, --timeout=INTEGER
@@ -428,8 +444,10 @@ if ($fanexist !=0) {
     if (!defined ($cur_status)) { ### Error TODO
       $volt_global=1;
     } 
-    $perf_output.=" '".$$resultat{$ciscoVoltageTableDesc .".".$voltindex[$i]}."'=" ;
-    $perf_output.=$$resultat{$ciscoVoltageTableValue."." . $voltindex[$i]};
+    if (defined($$resultat{$ciscoVoltageTableValue."." . $voltindex[$i]})) {
+      $perf_output.=" '".$$resultat{$ciscoVoltageTableDesc .".".$voltindex[$i]}."'=" ;
+      $perf_output.=$$resultat{$ciscoVoltageTableValue."." . $voltindex[$i]};
+    }	
     if ($Nagios_state[$CiscoEnvMonNagios{$cur_status}] ne "OK") {
       $volt_global= 1;
       $volt_status{$$resultat{$ciscoVoltageTableDesc .".".$voltindex[$i]}}=$cur_status;
@@ -448,8 +466,10 @@ if ($tempexist !=0) {
     if (!defined ($cur_status)) { ### Error TODO
       $temp_global=1;
     }
-    $perf_output.=" '".$$resultat{$ciscoTempTableDesc .".".$tempindex[$i]}."'=" ;
-    $perf_output.=$$resultat{$ciscoTempTableValue."." . $tempindex[$i]};
+    if (defined($$resultat{$ciscoTempTableValue."." . $tempindex[$i]})) {
+      $perf_output.=" '".$$resultat{$ciscoTempTableDesc .".".$tempindex[$i]}."'=" ;
+      $perf_output.=$$resultat{$ciscoTempTableValue."." . $tempindex[$i]};
+    }
     if ($Nagios_state[$CiscoEnvMonNagios{$cur_status}] ne "OK") {
       $temp_global= 1;
       $temp_status{$$resultat{$ciscoTempTableDesc .".".$tempindex[$i]}}=$cur_status;
@@ -1003,4 +1023,14 @@ exit $ERRORS{"UNKNOWN"};
 
 }
 
-exit (3);
+########### Cisco env checks ##############
+if ($o_check_type eq "linux") {
+
+ verb("Checking linux env");
+
+ print "Not implemented yet : UNKNOWN\n";
+ exit $ERRORS{"UNKNOWN"};
+}
+
+print "Unknown check type : UNKNOWN\n";
+exit $ERRORS{"UNKNOWN"};
