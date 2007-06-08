@@ -1,13 +1,13 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
-# Version : 1.4
-# Date : March 12 2007
-# Author  : Patrick Proy (patrick at proy.org)
+# Version : 1.5
+# Date : Jun 08 2007
+# Author  : Patrick Proy (patrick at proy dot org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Contrib : Makina Corpus
+# Contrib : Makina Corpus, adam At greekattic d0t com
 # TODO : put $o_delta as an option
-# Contrib : 
+# 	 If testing on localhost, selects itself....
 ###############################################################
 #
 # help : ./check_snmp_process -h
@@ -33,13 +33,14 @@ my $process_table= '1.3.6.1.2.1.25.4.2.1';
 my $index_table = '1.3.6.1.2.1.25.4.2.1.1';
 my $run_name_table = '1.3.6.1.2.1.25.4.2.1.2';
 my $run_path_table = '1.3.6.1.2.1.25.4.2.1.4';
+my $run_param_table = '1.3.6.1.2.1.25.4.2.1.5';
 my $proc_mem_table = '1.3.6.1.2.1.25.5.1.1.2'; # Kbytes
 my $proc_cpu_table = '1.3.6.1.2.1.25.5.1.1.1'; # Centi sec of CPU
 my $proc_run_state = '1.3.6.1.2.1.25.4.2.1.7';
 
 # Globals
 
-my $Version='1.4';
+my $Version='1.5';
 
 my $o_host = 	undef; 		# hostname 
 my $o_community =undef; 	# community 
@@ -57,6 +58,8 @@ my $o_noreg=	undef;		# Do not use Regexp for name
 my $o_path=	undef;		# check path instead of name
 my $o_inverse=	undef;		# checks max instead of min number of process
 my $o_get_all=	undef;		# get all tables at once
+my $o_param=	undef;		# Add process parameters for selection 
+my $o_perf=	undef;		# Add performance output
 my $o_timeout=  5;            	# Default 5s Timeout
 # SNMP V3 specific
 my $o_login=	undef;		# snmp v3 login
@@ -80,7 +83,7 @@ my $o_delta=	$delta_of_time_to_make_average;		# delta time for CPU check
 sub p_version { print "check_snmp_process version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> ] [-t <timeout>] [-o <octet_length>] [-f ] [-r] [-V] [-g]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> ] [-t <timeout>] [-o <octet_length>] [-f -A -F ] [-r] [-V] [-g]\n";
 }
 
 sub isnotnum { # Return true if arg is not a number
@@ -174,6 +177,12 @@ sub help {
 -f, --fullpath
    Use full path name instead of process name 
    (Windows doesn't provide full path name)
+-A, --param
+   Add parameters to select processes.
+   ex : "named.*-t /var/named/chroot" will only select named process with this parameter 
+-F, --perfout
+   Add performance output
+   outputs : memory_usage, num_process, cpu_usage
 -w, --warn=MIN[,MAX]
    Number of process that will cause a warning 
    -1 for no warning, MAX must be >0. Ex : -w-1,50
@@ -242,6 +251,8 @@ sub check_options {
 		'2'	=> \$o_version2,	'v2c'		=> \$o_version2,
 		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
 		'g'   	=> \$o_get_all,       	'getall'      	=> \$o_get_all,
+		'A'     => \$o_param,         'param'       => \$o_param,
+		'F'     => \$o_perf,         'perfout'       => \$o_perf,
 		'V'     => \$o_version,         'version'       => \$o_version
     );
     if (defined ($o_help)) { help(); exit $ERRORS{"UNKNOWN"}};
@@ -411,6 +422,19 @@ if (!defined($resultat)) {
    exit $ERRORS{"UNKNOWN"};
 }
 
+my $resultat_param=undef;
+if (defined($o_param)) { # Get parameter table too
+    $resultat_param = (Net::SNMP->VERSION < 4) ?
+        $session->get_table($run_param_table)
+        :$session->get_table(Baseoid => $run_param_table);
+   if (!defined($resultat_param)) {
+      printf("ERROR: Process param table : %s.\n", $session->error);
+      $session->close;
+      exit $ERRORS{"UNKNOWN"};
+   }
+   
+}
+
 if (defined ($o_get_all)) {
   $getall_run = (Net::SNMP->VERSION < 4) ?
 	$session->get_table($proc_run_state )
@@ -458,8 +482,14 @@ my $count_oid = 0;
 verb("Filter : $o_descr");
 
 foreach my $key ( keys %$resultat) {
-   verb("OID : $key, Desc : $$resultat{$key}");
    # test by regexp or exact match
+   # First add param if necessary
+   if (defined($o_param)){
+	my $pid = (split /\./,$key)[-1];
+	$pid = $run_param_table .".".$pid;
+        $$resultat{$key} .= " " . $$resultat_param{$pid};
+   }
+   verb("OID : $key, Desc : $$resultat{$key}");
    my $test = defined($o_noreg)
                 ? $$resultat{$key} eq $o_descr
                 : $$resultat{$key} =~ /$o_descr/;
@@ -545,6 +575,7 @@ for (my $i=0; $i< $num_int; $i++) {
 }
 
 my $final_status=0;
+my $perf_output;
 my ($res_memory,$res_cpu)=(0,0);
 my $memory_print="";
 my $cpu_print="";
@@ -570,6 +601,9 @@ if (defined ($o_mem) ) {
    $memory_print=", Mem : ".sprintf("%.1f",$res_memory)."Mb > ".$o_memL[0]." WARNING";
  } else {
    $memory_print=", Mem : ".sprintf("%.1f",$res_memory)."Mb OK";
+ }
+ if (defined($o_perf)) {
+	$perf_output= "'memory_usage'=".sprintf("%.1f",$res_memory) ."MB;".$o_memL[0].";".$o_memL[1];
  }
 }
 
@@ -631,6 +665,10 @@ if (defined ($o_cpu) ) {
     } else {
       $cpu_print.=", Cpu : ".sprintf("%.0f",$found_value)."% OK";
     }
+	if (defined($o_perf)) {
+		if (!defined($perf_output)) {$perf_output="";} else {$perf_output.=" ";}
+		$perf_output.= "'cpu_usage'=". sprintf("%.0f",$found_value)."%;".$o_cpuL[0].";".$o_cpuL[1];
+	}
   } else {
     if ($final_status==0) { $final_status=3 };
     $cpu_print.=", No data for CPU (".$n_rows." line(s)):UNKNOWN";
@@ -659,7 +697,14 @@ if (defined($o_critL[1]) && ($num_int_ok > $o_critL[1])) {
    print " (<= ",$o_warnL[1],"):OK";
 }
 
-print $memory_print,$cpu_print,"\n";
+print $memory_print,$cpu_print;
+
+if (defined($o_perf)) {
+	if (!defined($perf_output)) {$perf_output="";} else {$perf_output.=" ";}
+	$perf_output.= "'num_process'=". $num_int_ok.";".$o_warnL[0].";".$o_critL[0];
+	print " | ",$perf_output;
+}
+print "\n";
 
 if ($final_status==2) { exit $ERRORS{"CRITICAL"};}
 if ($final_status==1) { exit $ERRORS{"WARNING"};}
