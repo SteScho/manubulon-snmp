@@ -57,7 +57,7 @@ $hrStorage{"1.3.6.1.2.1.25.2.1.10"} = 'NetworkDisk';
 # Globals
 
 my $Name='check_snmp_storage';
-my $Version='1.3.2';
+my $Version='1.3.3';
 
 my $o_host = 	undef; 		# hostname 
 my $o_community = undef; 	# community 
@@ -124,7 +124,7 @@ sub isnnum { # Return true if arg is not a number
 
 sub help {
    print "\nSNMP Disk Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 Patrick Proy\n\n";
+   print "(c)2004-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 By default, plugin will monitor %used on drives :
