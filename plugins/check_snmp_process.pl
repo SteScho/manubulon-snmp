@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
 # Version : 1.5
-# Date : Jun 08 2007
+# Date : Jun 09 2007
 # Author  : Patrick Proy (patrick at proy dot org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -15,7 +15,7 @@
 ############### BASE DIRECTORY FOR TEMP FILE ########
 my $o_base_dir="/tmp/tmp_Nagios_proc.";
 my $file_history=200;   # number of data to keep in files.
-my $delta_of_time_to_make_average=300;  # 5minutes by default
+my $delta_of_time_to_make_average=30;  # 5minutes by default
  
 use strict;
 use Net::SNMP;
@@ -83,7 +83,7 @@ my $o_delta=	$delta_of_time_to_make_average;		# delta time for CPU check
 sub p_version { print "check_snmp_process version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> ] [-t <timeout>] [-o <octet_length>] [-f -A -F ] [-r] [-V] [-g]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> -d<delta> ] [-t <timeout>] [-o <octet_length>] [-f -A -F ] [-r] [-V] [-g]\n";
 }
 
 sub isnotnum { # Return true if arg is not a number
@@ -202,6 +202,8 @@ Notes on warning and critical :
    checks cpu usage of all process
    values are warning and critical values in % of CPU usage
    if more than one CPU, value can be > 100% : 100%=1 CPU
+-d, --delta=seconds
+   make an average of <delta> seconds for CPU (default 300=5min)   
 -g, --getall
   In some cases, it is necessary to get all data at once because
   process die very frequently.
@@ -253,6 +255,7 @@ sub check_options {
 		'g'   	=> \$o_get_all,       	'getall'      	=> \$o_get_all,
 		'A'     => \$o_param,         'param'       => \$o_param,
 		'F'     => \$o_perf,         'perfout'       => \$o_perf,
+        'd:i'   => \$o_delta,           'delta:i'       => \$o_delta,		
 		'V'     => \$o_version,         'version'       => \$o_version
     );
     if (defined ($o_help)) { help(); exit $ERRORS{"UNKNOWN"}};
@@ -643,6 +646,10 @@ if (defined ($o_cpu) ) {
         if ($file_values[$j][0] > $trigger_low) {
           # found value = centiseconds / seconds = %cpu
           $found_value= ($res_cpu-$file_values[$j][1]) / ($timenow - $file_values[$j][0] );
+		  if ($found_value <0) { # in case of program restart
+			$j=1;$found_value=undef; # don't look for more values
+			$n_rows=0; # reset file
+		  }
         }
       }
       $j--;
