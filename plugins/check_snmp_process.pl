@@ -15,7 +15,7 @@
 ############### BASE DIRECTORY FOR TEMP FILE ########
 my $o_base_dir="/tmp/tmp_Nagios_proc.";
 my $file_history=200;   # number of data to keep in files.
-my $delta_of_time_to_make_average=30;  # 5minutes by default
+my $delta_of_time_to_make_average=300  # 5minutes by default
  
 use strict;
 use Net::SNMP;
@@ -646,10 +646,10 @@ if (defined ($o_cpu) ) {
         if ($file_values[$j][0] > $trigger_low) {
           # found value = centiseconds / seconds = %cpu
           $found_value= ($res_cpu-$file_values[$j][1]) / ($timenow - $file_values[$j][0] );
-		  if ($found_value <0) { # in case of program restart
-			$j=1;$found_value=undef; # don't look for more values
-			$n_rows=0; # reset file
-		  }
+	  if ($found_value <0) { # in case of program restart
+		$j=0;$found_value=undef; # don't look for more values
+		$n_rows=0; # reset file
+	  }
         }
       }
       $j--;
