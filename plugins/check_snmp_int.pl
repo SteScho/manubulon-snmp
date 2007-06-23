@@ -729,22 +729,34 @@ for (my $i=0;$i < $num_int; $i++) {
   if (( $int_status == 1 ) && defined ($o_perf)) {
     if (defined ($o_perfp)) { # output in % of speed
 	  if ($usable_data==1) {
+	     my $warn_factor=1;
+	     if (!defined($o_prct)) { # warn&crit in K|M|G B|bps -> put warn_factor to make %
+		$warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
+		if (!defined($o_kbits)) { $warn_factor*=8;}
+		$warn_factor/=$speed_real; 
+		$warn_factor*=100; # now turn into displayed % : 0,1 = 10%
+	     } 
 	    $perf_out .= "'" . $descr[$i] ."_in_prct'=";
 		$perf_out .= sprintf("%.0f",$checkperf_out_raw[0] * 800 / $speed_real) ."%;";
-		$perf_out .= ($o_warn[0]!=0) ? $o_warn[0] . ";" : ";";
-		$perf_out .= ($o_crit[0]!=0) ? $o_crit[0] . ";" : ";"; 
+		$perf_out .= ($o_warn[0]!=0) ? sprintf("%.0f",$o_warn[0]*$warn_factor) . ";" : ";";
+		$perf_out .= ($o_crit[0]!=0) ? sprintf("%.0f",$o_crit[0]*$warn_factor) . ";" : ";"; 
 		$perf_out .= "0;100 ";
 	    $perf_out .= "'" . $descr[$i] ."_out_prct'=";
 		$perf_out .= sprintf("%.0f",$checkperf_out_raw[1] * 800 / $speed_real) ."%;";
-		$perf_out .= ($o_warn[1]!=0) ? $o_warn[1] . ";" : ";";
-		$perf_out .= ($o_crit[1]!=0) ? $o_crit[1] . ";" : ";"; 
+		$perf_out .= ($o_warn[1]!=0) ? sprintf("%.0f",$o_warn[1]*$warn_factor) . ";" : ";";
+		$perf_out .= ($o_crit[1]!=0) ? sprintf("%.0f",$o_crit[1]*$warn_factor) . ";" : ";"; 
 		$perf_out .= "0;100 ";
 	  }
 	} elsif (defined ($o_perfr)) { # output in bites or Bytes /s
 	  if ($usable_data==1) {
   	    if (defined($o_kbits)) { # bps
 		  # put warning and critical levels into bps or Bps
-		  my $warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
+		  my $warn_factor;
+		  if (defined($o_prct)) { # warn&crit in % -> put warn_factor to 1% of speed in bps
+			$warn_factor=$speed_real/100;
+		  } else { # just convert from K|M|G bps
+			$warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
+		  }
 	      $perf_out .= "'" . $descr[$i] ."_in_bps'=";
           $perf_out .= sprintf("%.0f",$checkperf_out_raw[0] * 8) .";";
 		  $perf_out .= ($o_warn[0]!=0) ? $o_warn[0]*$warn_factor . ";" : ";";
@@ -756,7 +768,12 @@ for (my $i=0;$i < $num_int; $i++) {
 		  $perf_out .= ($o_crit[1]!=0) ? $o_crit[1]*$warn_factor . ";" : ";";
 		  $perf_out .= "0;". $speed_real ." ";		  		  
 	    } else { # Bps
-		  my $warn_factor = (defined($o_meg)) ? 1048576 : (defined($o_gig)) ? 1073741824 : 1024;
+                  my $warn_factor; 
+                  if (defined($o_prct)) { # warn&crit in % -> put warn_factor to 1% of speed in Bps
+                        $warn_factor=$speed_real/800;
+                  } else { # just convert from K|M|G bps
+			$warn_factor = (defined($o_meg)) ? 1048576 : (defined($o_gig)) ? 1073741824 : 1024;
+		  }
 	      $perf_out .= "'" . $descr[$i] ."_in_Bps'=" . sprintf("%.0f",$checkperf_out_raw[0]) .";";
 		  $perf_out .= ($o_warn[0]!=0) ? $o_warn[0]*$warn_factor . ";" : ";";
 		  $perf_out .= ($o_crit[0]!=0) ? $o_crit[0]*$warn_factor . ";" : ";";
