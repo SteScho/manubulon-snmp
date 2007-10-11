@@ -280,6 +280,9 @@ sub check_options {
     # Check compulsory attributes
     if ( ! defined($o_descr) ||  ! defined($o_host) || !defined($o_warn) || 
 	!defined($o_crit)) { print_usage(); exit $ERRORS{"UNKNOWN"}};
+    # Get rid of % sign if any
+    $o_warn =~ s/\%//; 
+    $o_crit =~ s/\%//;
     # Check for positive numbers
     if (($o_warn < 0) || ($o_crit < 0)) { print " warn and critical > 0 \n";print_usage(); exit $ERRORS{"UNKNOWN"}};
     # check if warn or crit  in % and MB is tested
@@ -287,9 +290,6 @@ sub check_options {
 	print "warning or critical cannot be in % when MB are tested\n";
 	print_usage(); exit $ERRORS{"UNKNOWN"};
     }
-    # Get rid of % sign
-    $o_warn =~ s/\%//; 
-    $o_crit =~ s/\%//;
     # Check warning and critical values
     if ( ( $o_type eq 'pu' ) || ( $o_type eq 'bu' )) {
 	if ($o_warn >= $o_crit) { print " warn < crit if type=",$o_type,"\n";print_usage(); exit $ERRORS{"UNKNOWN"}};
