@@ -11,5 +11,5 @@ You can also use the "install.sh" script provided in this directory to install t
 Type : "./install.sh" to install all the plugins or "./install.sh <plugin name>" for a specific one.
 
 The script will check for dependencies and ask for Nagios and temp directories.
-It will modify the scripts dependding on these answers and install the scripts. 
+It will modify the scripts depending on these answers and install the scripts. 
 
