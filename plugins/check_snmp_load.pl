@@ -1,11 +1,10 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_load #################
-# Version : 1.3.2
-# Date : Jan 16 2007
+my $Version='1.12';
+# Date : Oct 12 2007
 # Author  : Patrick Proy ( patrick at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Changelog : HP-UX load added.
 # Contributors : F. Lacroix and many others !!!
 #################################################################
 #
@@ -18,10 +17,8 @@ use Getopt::Long;
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 15;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 
@@ -94,7 +91,6 @@ my %cpu_oid = ("netsc",$ns_cpu_idle,"as400",$as400_cpu,"bc",$bluecoat_cpu,"nokia
 
 # Globals
 
-my $Version='1.3.2';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
