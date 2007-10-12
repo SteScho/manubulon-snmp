@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
-# Version : 1.5
-# Date : Jun 09 2007
+my $Version='1.9';
+# Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy dot org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -12,21 +12,19 @@
 #
 # help : ./check_snmp_process -h
 
-############### BASE DIRECTORY FOR TEMP FILE ########
-my $o_base_dir="/tmp/tmp_Nagios_proc.";
-my $file_history=200;   # number of data to keep in files.
-my $delta_of_time_to_make_average=300  # 5minutes by default
- 
 use strict;
 use Net::SNMP;
 use Getopt::Long;
 
+############### BASE DIRECTORY FOR TEMP FILE ########
+my $o_base_dir="/tmp/tmp_Nagios_proc.";
+my $file_history=200;   # number of data to keep in files.
+my $delta_of_time_to_make_average=300;  # 5minutes by default
+
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 5;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my $TIMEOUT = 5;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 my $process_table= '1.3.6.1.2.1.25.4.2.1';
@@ -40,7 +38,6 @@ my $proc_run_state = '1.3.6.1.2.1.25.4.2.1.7';
 
 # Globals
 
-my $Version='1.5';
 
 my $o_host = 	undef; 		# hostname 
 my $o_community =undef; 	# community 
