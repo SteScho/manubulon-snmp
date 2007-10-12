@@ -73,7 +73,7 @@
 
             <p class="NewsItemDate">&nbsp;</p>
 
-            <p class="SectionTitle"> Last update : Jan 11 2007</p>
+            <p class="SectionTitle"> Last update : May 25 2007</p>
 
           </td>
 
@@ -105,6 +105,7 @@
               Nagios 2</a></p>
             <p class="SectionBody">- <a href="#FAQ9">Getting : &quot;ERROR: Size 
               table :Message size exceeded buffer maxMsgSize&quot;</a></p>
+            <p class="SectionBody">- <a href="#FAQ10">No usable data on file (X rows)</a></p>
             <p class="SectionBody"><b>Misc<br>
               </b></p>
             <p class="SectionBody">- <a href="#FAQM3">Are these scripts secure 
@@ -175,7 +176,7 @@
               with Nagios 2.0 ?</p>
             <p class="SectionBody">Yes.</p>
             <p class="SectionTitle"><a name="FAQ7"></a>ERROR: XXXXXX : Expected OBJECT IDENTIFIER in dotted notation.
-              </p>
+            </p>
             <p class="SectionBody">Upgrade your Net::SNMP module version (5 is good, 4 maybe OK, 3 gives this error) <br>
               This happens with Debian Woody (Net::SNMP version 3.6).<br>
               I have special patches if you can't upgrade : contact me.</p>
@@ -203,6 +204,16 @@
             <p class="SectionBody"> $session-&gt;max_msg_size(5000);<br>
             </p>
             <p class="SectionBody">After the session has been initialized. </p>
+            <p class="SectionTitle"><a name="FAQ10"></a>No usable data on file (X rows)</p>
+            <p class="SectionBody">Scripts like check_snmp_int need to store data when they get a SNMP counter so they can outpout readable data like bandwidth, cpu, etc....</p>
+            <p class="SectionBody">For example, to output a bandwidth with an octet counter, check_snmp_int will store data every time it is run. It will also read the previous data, and try to get data old enough to make a correct average. By default, it needs data which was produced 5 minutes ago.</p>
+            <p class="SectionBody">So, when you first run the script - or if you run it a long time ago -, it won't be able to get data old enough and will report an error (UNKNOWN status) saying the is &quot;no usable data on file (X rows)&quot;.<br>
+              If you leave the 5 minutes default delta value, the script will need data wich is : <br>
+            - At least 4 minutes and 30 seconds old (5 min - 10%)<br>
+            - At most 15 minutes old (3 * 5 min) </p>
+            <p class="SectionBody">You can change this 5 minutes value  using the '-d &lt;sec&gt;' option. The script will then look for data which is at least &lt;sec&gt;-10% old and at most 3*&lt;sec&gt;. </p>
+            <p class="SectionBody">This option will only tell to make an average on &lt;sec&gt; seconds, you can run the service every minute with Nagios, it will always get the newest value which is at least &lt;sec&gt;-10% old.<br>
+              The only thing you must check is that your service will at least run every 15 minutes, or the script will always output &quot;unknown&quot; as the value will be too old for him. </p>
             <p class="SectionTitle"><br>
               <a name="FAQM3"></a>Are these scripts secure ?</p>
             <p class="SectionBody">Not at all ! You must secure the Nagios server.<br>
@@ -218,7 +229,7 @@
               of how, so just send a postcard to my son (Jolan) with a nice drawing (or buy a cookie to your son/daughter/nephew/grand-ma...).<br> 
               You can get my postal address on my resume (<a href="http://www.manubulon.com/cvpproy.htm">www.manubulon.com/cvpproy.htm</a>).<br>
               He will answer you when he knows how to write (in several years).</p>
-            </td>
+          </td>
 
         </tr> 
         <tr>

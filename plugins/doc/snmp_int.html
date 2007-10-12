@@ -112,7 +112,7 @@
 
             <p class="NewsItemDate">Script : check_snmp_int.pl</p>
 
-            <p class="SectionTitle"> Last update : March 17 2007</p>
+            <p class="SectionTitle"> Last update : May 24 2007</p>
 
           </td>
 
@@ -201,7 +201,7 @@
             <p class="SectionBody">You can make the same tests on administrative 
 
               status instead with the <b>-a </b>option.</p>
-
+            <p class="SectionBody">If you have ISDN interface, and want that DORMANT state returns ok, put <strong>-D</strong>.</p>
             <p class="SectionBody">To make output shorter, specially when you 
 
               have multiple interface, you can put the <b>-s</b> option. <br>
@@ -384,7 +384,7 @@
             </p>
 
             <p class="SectionBody"><a href="check_snmp_int.pl" class="SectionTitle">Dowload 
-              latest version : 1.4.5</a></p>
+              latest version : 1.4.8</a></p>
 
             <p class="SectionBody"><a href="index_commands.html" class="SectionTitle">Configuration 
 
@@ -546,18 +546,11 @@
               <tr> 
 
                 <td class="SectionBody" valign = top> 
-                  <p class="SectionBody">SNMP Network Interface Monitor for Nagios 
-                    version 1.4.5<br>
-                    GPL licence, (c)2004-2007 Patrick Proy
-                  <p>Usage: ./check_snmp_int.pl [-v] -H &lt;host&gt; -C &lt;snmp_community&gt; 
-                    [-2] | (-l login -x passwd [-X pass -L &lt;authp&gt;,&lt;privp&gt;) 
-                    [-p &lt;port&gt;] -n &lt;name in desc_oid&gt; [-i] [-a] [-r] 
-                    [-f[eSyY]] [-k[qBMGu] -g -w&lt;warn levels&gt; -c&lt;crit 
-                    levels&gt; -d&lt;delta&gt;] [-o &lt;octet_length&gt;] [-t 
-                    &lt;timeout&gt;] [-s] [-V]<br>
+                  <p>SNMP Network Interface Monitor for Nagios version 1.4.8<br>
+                    GPL licence, (c)2004-2007 Patrick Proy</p>
+                  <p>Usage: ./check_snmp_int.pl [-v] -H &lt;host&gt; -C &lt;snmp_community&gt; [-2] | (-l login -x passwd [-X pass -L &lt;authp&gt;,&lt;privp&gt;)  [-p &lt;port&gt;] -n &lt;name in desc_oid&gt; [-i -a -D] [-r] [-f[eSyY]] [-k[qBMGu] -g -w&lt;warn levels&gt; -c&lt;crit levels&gt; -d&lt;delta&gt;] [-o &lt;octet_length&gt;] [-t &lt;timeout&gt;] [-s] --label [-V]<br>
                     -v, --verbose<br>
-                    print extra debugging information (including interface list 
-                    on the system)<br>
+                    print extra debugging information (including interface list on the system)<br>
                     -h, --help<br>
                     print this help message<br>
                     -H, --hostname=HOST<br>
@@ -571,28 +564,25 @@
                     -X, --privpass=PASSWD<br>
                     Priv password for snmpv3 (AuthPriv protocol)<br>
                     -L, --protocols=&lt;authproto&gt;,&lt;privproto&gt;<br>
-                    &lt;authproto&gt; : Authentication protocol (md5|sha : default 
-                    md5)<br>
-                    &lt;privproto&gt; : Priv protocole (des|aes : default des) 
-                    <br>
+  &lt;authproto&gt; : Authentication protocol (md5|sha : default md5)<br>
+  &lt;privproto&gt; : Priv protocole (des|aes : default des) <br>
                     -P, --port=PORT<br>
                     SNMP port (Default 161)<br>
                     -n, --name=NAME<br>
                     Name in description OID (eth0, ppp0 ...).<br>
                     This is treated as a regexp : -n eth will match eth0,eth1,...<br>
-                    Test it before, because there are known bugs (ex : trailling 
-                    /)<br>
+                    Test it before, because there are known bugs (ex : trailling /)<br>
                     -r, --noregexp<br>
                     Do not use regexp to match NAME in description OID<br>
                     -i, --inverse<br>
                     Make critical when up<br>
                     -a, --admin<br>
                     Use administrative status instead of operational<br>
+                    -D, --dormant<br>
+                    Dormant state is an OK state<br>
                     -o, --octetlength=INTEGER<br>
-                    max-size of the SNMP message, usefull in case of Too Long 
-                    responses.<br>
-                    Be carefull with network filters. Range 484 - 65535, default 
-                    are<br>
+                    max-size of the SNMP message, usefull in case of Too Long responses.<br>
+                    Be carefull with network filters. Range 484 - 65535, default are<br>
                     usually 1472,1452,1460 or 1440. <br>
                     -f, --perfparse<br>
                     Perfparse compatible output (no output when interface is down).<br>
@@ -601,49 +591,42 @@
                     -S, --intspeed<br>
                     Include speed in performance output in bits/s<br>
                     -y, --perfprct ; -Y, --perfspeed<br>
-                    -y : output performance data in % of max speed<br>
-                    -Y : output performance data in bits/s or Bytes/s (depending 
-                    on -B) <br>
+                    -y : output performance data in % of max speed <br>
+                    -Y : output performance data in bits/s or Bytes/s (depending on -B) <br>
                     -k, --perfcheck ; -q, --extperfcheck <br>
                     -k check the input/ouput bandwidth of the interface<br>
                     -q also check the error and discard input/output<br>
+                    --label<br>
+                    Add label before speed in output : in=, out=, errors-out=, etc...<br>
                     -g, --64bits<br>
-                    Use 64 bits counters instead of the standard counters <br>
-                    when checking bandwidth &amp; performance data.<br>
+                    Use 64 bits counters instead of the standard counters when checking <br>
+                    bandwidth &amp; performance data for interface &gt;= 1Gbps.<br>
+                    You must use snmp v2c or v3 to get 64 bits counters.<br>
                     -d, --delta=seconds<br>
                     make an average of &lt;delta&gt; seconds (default 300=5min)<br>
                     -B, --kbits<br>
-                    Make the warning and critical levels in K|M|G Bits/s instead 
-                    of K|M|G Bytes/s<br>
+                    Make the warning and critical levels in K|M|G Bits/s instead of K|M|G Bytes/s<br>
                     -G, --giga ; -M, --mega ; -u, --prct<br>
-                    -G : Make the warning and critical levels in Gbps (with -B) 
-                    or GBps<br>
-                    -M : Make the warning and critical levels in Mbps (with -B) 
-                    or MBps<br>
-                    -u : Make the warning and critical levels in % of reported 
-                    interface speed.<br>
-                    -w, --warning=input,output[,error in,error out,discard in,discard 
-                    out]<br>
+                    -G : Make the warning and critical levels in Gbps (with -B) or GBps<br>
+                    -M : Make the warning and critical levels in Mbps (with -B) or MBps<br>
+                    -u : Make the warning and critical levels in % of reported interface speed.<br>
+                    -w, --warning=input,output[,error in,error out,discard in,discard out]<br>
                     warning level for input / output bandwidth (0 for no warning)<br>
                     unit depends on B,M,G,u options<br>
-                    warning for error &amp; discard input / output in error/min 
-                    (need -q)<br>
-                    -c, --critical=input,output[,error in,error out,discard in,discard 
-                    out]<br>
+                    warning for error &amp; discard input / output in error/min (need -q)<br>
+                    -c, --critical=input,output[,error in,error out,discard in,discard out]<br>
                     critical level for input / output bandwidth (0 for no critical)<br>
                     unit depends on B,M,G,u options<br>
-                    critical for error &amp; discard input / output in error/min 
-                    (need -q)<br>
+                    critical for error &amp; discard input / output in error/min (need -q)<br>
                     -s, --short=int<br>
-                    Make the output shorter : only the first &lt;n&gt; chars of 
-                    the interface(s)<br>
+                    Make the output shorter : only the first &lt;n&gt; chars of the interface(s)<br>
                     If the number is negative, then get the &lt;n&gt; LAST caracters.<br>
                     -t, --timeout=INTEGER<br>
                     timeout for SNMP in seconds (Default: 5) <br>
                     -V, --version<br>
                     prints version number<br>
                     Note : when multiple interface are selected with regexp, <br>
-                    all be must be up (or down with -i) to get an OK result.</p>
+                  all be must be up (or down with -i) to get an OK result.</p>
                 </td>
 
               </tr>

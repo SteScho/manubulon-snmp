@@ -226,7 +226,7 @@
 
 
 
-            <p class="SectionTitle"> Last update : March 12 2007</p>
+            <p class="SectionTitle"> Last update : Jun 09 2007</p>
 
 
 
@@ -501,7 +501,7 @@
 
 
             <p class="SectionBody"><a href="check_snmp_storage.pl" class="SectionTitle">Dowload 
-              lastest version : 1.3.2</a></p>
+              lastest version : 1.3.3</a></p>
 
 
 
@@ -619,7 +619,7 @@
 
 
 
-                  <p>&nbsp; 
+                  <p> 
 
 
 
@@ -1142,15 +1142,9 @@
               <tr> 
 
                 <td class="SectionBody" valign = top> 
-                  <p class="SectionBody">SNMP Disk Monitor for Nagios version 
-                    1.3.2<br>
-                    (c)2004-2006 Patrick Proy
-                  <p>Usage: check_snmp_storage [-v] -H &lt;host&gt; -C &lt;snmp_community&gt; 
-                    [-2] | (-l login -x passwd [-X pass -L &lt;authp&gt;,&lt;privp&gt;]) 
-                    [-p &lt;port&gt;] -m &lt;name in desc_oid&gt; [-q storagetype] 
-                    -w &lt;warn_level&gt; -c &lt;crit_level&gt; [-t &lt;timeout&gt;] 
-                    [-T pl|pu|bl|bu ] [-r] [-s] [-i] [-e] [-S 0|1[,1,&lt;car&gt;]] 
-                    [-o &lt;octet_length&gt;]<br>
+                  <p>SNMP Disk Monitor for Nagios version 1.3.3<br>
+                    (c)2004-2007 Patrick Proy</p>
+                  <p>Usage: check_snmp_storage [-v] -H &lt;host&gt; -C &lt;snmp_community&gt; [-2] | (-l login -x passwd [-X pass -L &lt;authp&gt;,&lt;privp&gt;]) [-p &lt;port&gt;] -m &lt;name in desc_oid&gt; [-q storagetype] -w &lt;warn_level&gt; -c &lt;crit_level&gt; [-t &lt;timeout&gt;] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-S 0|1[,1,&lt;car&gt;]] [-o &lt;octet_length&gt;] [-R &lt;% reserved&gt;]<br>
                     By default, plugin will monitor %used on drives :<br>
                     warn if %used &gt; warn and critical if %used &gt; crit<br>
                     -v, --verbose<br>
@@ -1161,7 +1155,7 @@
                     name or IP address of host to check<br>
                     -C, --community=COMMUNITY NAME<br>
                     community name for the host's SNMP agent (implies SNMP v1)<br>
-                    2, --v2c<br>
+                    -2, --v2c<br>
                     Use snmp v2c<br>
                     -l, --login=LOGIN ; -x, --passwd=PASSWD<br>
                     Login and auth password for snmpv3 authentication <br>
@@ -1169,27 +1163,21 @@
                     -X, --privpass=PASSWD<br>
                     Priv password for snmpv3 (AuthPriv protocol)<br>
                     -L, --protocols=&lt;authproto&gt;,&lt;privproto&gt;<br>
-                    &lt;authproto&gt; : Authentication protocol (md5|sha : default 
-                    md5)<br>
-                    &lt;privproto&gt; : Priv protocole (des|aes : default des) 
-                    <br>
+  &lt;authproto&gt; : Authentication protocol (md5|sha : default md5)<br>
+  &lt;privproto&gt; : Priv protocole (des|aes : default des) <br>
                     -x, --passwd=PASSWD<br>
                     Password for snmpv3 authentication<br>
                     -p, --port=PORT<br>
                     SNMP port (Default 161)<br>
                     -m, --name=NAME<br>
-                    Name in description OID (can be mounpoints '/home' or 'Swap 
-                    Space'...)<br>
-                    This is treated as a regexp : -m /var will match /var , /var/log, 
-                    /opt/var ...<br>
-                    Test it before, because there are known bugs (ex : trailling 
-                    /)<br>
+                    Name in description OID (can be mounpoints '/home' or 'Swap Space'...)<br>
+                    This is treated as a regexp : -m /var will match /var , /var/log, /opt/var ...<br>
+                    Test it before, because there are known bugs (ex : trailling /)<br>
                     No trailing slash for mountpoints !<br>
                     -q, --storagetype=[Other|Ram|VirtualMemory|FixedDisk|RemovableDisk|FloppyDisk<br>
                     CompactDisk|RamDisk|FlashMemory|NetworkDisk]<br>
                     Also check the storage type in addition of the name<br>
-                    It is possible to use regular expressions ( &quot;FixedDisk|FloppyDisk&quot; 
-                    )<br>
+                    It is possible to use regular expressions ( &quot;FixedDisk|FloppyDisk&quot; )<br>
                     -r, --noregexp<br>
                     Do not use regexp to match NAME in description OID<br>
                     -s, --sum<br>
@@ -1211,24 +1199,24 @@
                     -c, --critical=INTEGER<br>
                     percent / MB of disk used to generate CRITICAL state<br>
                     you can add the % sign <br>
+                    -R, --reserved=INTEGER<br>
+                    % reserved blocks for superuser<br>
+                    For ext2/3 filesystems, it is 5% by default<br>
+                    -G, --gigabyte<br>
+                    output, warning &amp; critical levels in gigabytes<br>
                     -f, --perfparse<br>
                     Perfparse compatible output<br>
                     -S, --short=&lt;type&gt;[,&lt;where&gt;,&lt;cut&gt;]<br>
-                    &lt;type&gt;: Make the output shorter :<br>
-                    0 : only print the global result except the disk in warning 
-                    or critical<br>
+  &lt;type&gt;: Make the output shorter :<br>
+                    0 : only print the global result except the disk in warning or critical<br>
                     ex: &quot;&lt; 80% : OK&quot;<br>
                     1 : Don't print all info for every disk <br>
-                    ex : &quot;/ : 66 %used (&lt; 80) : OK&quot;<br>
-                    &lt;where&gt;: (optional) if = 1, put the OK/WARN/CRIT at 
-                    the beginning<br>
-                    &lt;cut&gt;: take the &lt;n&gt; first caracters or &lt;n&gt; 
-                    last if n&lt;0<br>
+                    ex : &quot;/ : 66 %used  (&lt;  80) : OK&quot;<br>
+  &lt;where&gt;: (optional) if = 1, put the OK/WARN/CRIT at the beginning<br>
+  &lt;cut&gt;: take the &lt;n&gt; first caracters or &lt;n&gt; last if n&lt;0<br>
                     -o, --octetlength=INTEGER<br>
-                    max-size of the SNMP message, usefull in case of Too Long 
-                    responses.<br>
-                    Be carefull with network filters. Range 484 - 65535, default 
-                    are<br>
+                    max-size of the SNMP message, usefull in case of Too Long responses.<br>
+                    Be carefull with network filters. Range 484 - 65535, default are<br>
                     usually 1472,1452,1460 or 1440. <br>
                     -t, --timeout=INTEGER<br>
                     timeout for SNMP in seconds (Default: 5)<br>
@@ -1237,23 +1225,22 @@
                     Note : <br>
                     with T=pu or T=bu : OK &lt; warn &lt; crit<br>
                     with T=pl ot T=bl : crit &lt; warn &lt; OK<br>
-                    <br>
-                    If multiple storage are selected, the worse condition will 
-                    be returned<br>
+  <br>
+                    If multiple storage are selected, the worse condition will be returned<br>
                     i.e if one disk is critical, the return is critical<br>
-                    <br>
+  <br>
                     example : <br>
-                    Browse storage list : &lt;script&gt; -C &lt;community&gt; 
-                    -H &lt;host&gt; -m &lt;anything&gt; -w 1 -c 2 -v <br>
+                    Browse storage list : &lt;script&gt; -C &lt;community&gt; -H &lt;host&gt; -m &lt;anything&gt; -w 1 -c 2 -v <br>
                     the -m option allows regexp in perl format : <br>
-                    Test drive C,F,G,H,I on Windows : -m ^[CFGHI]: <br>
-                    Test all mounts containing /var : -m /var<br>
-                    Test all mounts under /var : -m ^/var<br>
-                    Test only /var : -m /var -r<br>
-                    Test all swap spaces : -m ^Swap<br>
-                    Test all but swap spaces : -m ^Swap -e<br>
+                    Test drive C,F,G,H,I on Windows       : -m ^[CFGHI]: <br>
+                    Test all mounts containing /var       : -m /var<br>
+                    Test all mounts under /var            : -m ^/var<br>
+                    Test only /var                        : -m /var -r<br>
+                    Test all swap spaces                  : -m ^Swap<br>
+                    Test all but swap spaces              : -m ^Swap -e<br>
                   </p>
-                  </td>
+                  <p class="SectionBody"><br>
+                </td>
 
 
 

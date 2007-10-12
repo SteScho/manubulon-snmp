@@ -54,7 +54,7 @@
         <tr> 
           <td> 
             <p class="NewsItemDate">Script : check_snmp_process.pl</p>
-            <p class="SectionTitle"> Last update : March 12 2007</p>
+            <p class="SectionTitle"> Last update : Jun 09 2007</p>
           </td>
         </tr>
         <tr> 
@@ -78,7 +78,33 @@
               critical levels are set. <br>
               The filter is treated as a regular expression by default, but you 
               can deactivate this (<b>-r</b>)</p>
-            <p class="SectionBody">You can use -w and -c options to set the warning 
+            <p class="SectionBody">With the following options, you can add to your process selection : </p>
+            <p class="SectionBody">-f : get full path of the script instead of only it's name</p>
+            <p class="SectionBody">-A : add parameters with the script name</p>
+            <table border="1">
+              <tr>
+                <th class="SectionBody" scope="col">Option</th>
+                <th class="SectionBody" scope="col">how the script will see the process </th>
+              </tr>
+              <tr>
+                <td class="SectionBody">None</td>
+                <td><span class="SectionBody">named</span></td>
+              </tr>
+              <tr>
+                <td class="SectionBody">-f</td>
+                <td><span class="SectionBody">/usr/sbin/named</span></td>
+              </tr>
+              <tr>
+                <td class="SectionBody">-A</td>
+                <td><span class="SectionBody">named -u named -t /var/named/chroot</span></td>
+              </tr>
+              <tr>
+                <td class="SectionBody">-f -A </td>
+                <td><span class="SectionBody">/usr/sbin/named -u named -t /var/named/chroot</span></td>
+              </tr>
+            </table>
+            <p class="SectionBody">Warning : the -f &amp; -A option will not function properly for Windows hosts (the snmp agent don't give this information)</p>
+            <p class="SectionBody"> You can use -w and -c options to set the warning 
               and critical levels : <br>
               <b>-w &lt;minW&gt;,&lt;maxW&gt; </b>: with minW and maxW the minimum 
               and maximum number of processes.<br>
@@ -141,7 +167,7 @@
               - file 'utils.pm' in plugin diretory<br>
             </p>
             <p class="SectionBody"><a href="check_snmp_process.pl" class="SectionTitle">Dowload 
-              latest version : 1.4</a> </p>
+              latest version : 1.5</a> </p>
             <p class="SectionBody"><a href="index_commands.html" class="SectionTitle">Configurations 
               examples</a></p>
             <p class="SectionBody"><span class="SectionTitle">Changelog</span> 
@@ -243,14 +269,9 @@
             <table border="1" cellspacing="5">
               <tr> 
                 <td class="SectionBody" valign = top> 
-                  <p>SNMP Process Monitor for Nagios version 1.4<br>
-                    GPL licence, (c)2004-2006 Patrick Proy</p>
-                  <p>Usage: ./check_snmp_process.pl [-v] -H &lt;host&gt; -C &lt;snmp_community&gt; 
-                    [-2] | (-l login -x passwd) [-p &lt;port&gt;] -n &lt;name&gt; 
-                    [-w &lt;min_proc&gt;[,&lt;max_proc&gt;] -c &lt;min_proc&gt;[,max_proc] 
-                    ] [-m&lt;warn Mb&gt;,&lt;crit Mb&gt; -a -u&lt;warn %&gt;,&lt;crit%&gt; 
-                    ] [-t &lt;timeout&gt;] [-o &lt;octet_length&gt;] [-f ] [-r] 
-                    [-V] [-g]<br>
+                  <p>SNMP Process Monitor for Nagios version 1.5<br>
+                  GPL licence, (c)2004-2006 Patrick Proy</p>
+                  <p>Usage: ./check_snmp_process.pl [-v] -H &lt;host&gt; -C &lt;snmp_community&gt; [-2] | (-l login -x passwd) [-p &lt;port&gt;] -n &lt;name&gt; [-w &lt;min_proc&gt;[,&lt;max_proc&gt;] -c &lt;min_proc&gt;[,max_proc] ] [-m&lt;warn Mb&gt;,&lt;crit Mb&gt; -a -u&lt;warn %&gt;,&lt;crit%&gt; -d&lt;delta&gt; ] [-t &lt;timeout&gt;] [-o &lt;octet_length&gt;] [-f -A -F ] [-r] [-V] [-g]<br>
                     -v, --verbose<br>
                     print extra debugging information (and lists all storages)<br>
                     -h, --help<br>
@@ -258,8 +279,7 @@
                     -H, --hostname=HOST<br>
                     name or IP address of host to check<br>
                     -C, --community=COMMUNITY NAME<br>
-                    community name for the host's SNMP agent (implies SNMP v1 
-                    or v2c with option)<br>
+                    community name for the host's SNMP agent (implies SNMP v1 or v2c with option)<br>
                     -l, --login=LOGIN ; -x, --passwd=PASSWD, -2, --v2c<br>
                     Login and auth password for snmpv3 authentication <br>
                     If no priv password exists, implies AuthNoPriv <br>
@@ -267,10 +287,8 @@
                     -X, --privpass=PASSWD<br>
                     Priv password for snmpv3 (AuthPriv protocol)<br>
                     -L, --protocols=&lt;authproto&gt;,&lt;privproto&gt;<br>
-                    &lt;authproto&gt; : Authentication protocol (md5|sha : default 
-                    md5)<br>
-                    &lt;privproto&gt; : Priv protocole (des|aes : default des) 
-                    <br>
+  &lt;authproto&gt; : Authentication protocol (md5|sha : default md5)<br>
+  &lt;privproto&gt; : Priv protocole (des|aes : default des) <br>
                     -p, --port=PORT<br>
                     SNMP port (Default 161)<br>
                     -n, --name=NAME<br>
@@ -281,6 +299,12 @@
                     -f, --fullpath<br>
                     Use full path name instead of process name <br>
                     (Windows doesn't provide full path name)<br>
+                    -A, --param<br>
+                    Add parameters to select processes.<br>
+                    ex : &quot;named.*-t /var/named/chroot&quot; will only select named process with this parameter <br>
+                    -F, --perfout<br>
+                    Add performance output<br>
+                    outputs : memory_usage, num_process, cpu_usage<br>
                     -w, --warn=MIN[,MAX]<br>
                     Number of process that will cause a warning <br>
                     -1 for no warning, MAX must be &gt;0. Ex : -w-1,50<br>
@@ -300,29 +324,28 @@
                     checks cpu usage of all process<br>
                     values are warning and critical values in % of CPU usage<br>
                     if more than one CPU, value can be &gt; 100% : 100%=1 CPU<br>
+                    -d, --delta=seconds<br>
+                    make an average of &lt;delta&gt; seconds for CPU (default 300=5min) <br>
                     -g, --getall<br>
                     In some cases, it is necessary to get all data at once because<br>
                     process die very frequently.<br>
                     This option eats bandwidth an cpu (for remote host) at breakfast.<br>
                     -o, --octetlength=INTEGER<br>
-                    max-size of the SNMP message, usefull in case of Too Long 
-                    responses.<br>
-                    Be carefull with network filters. Range 484 - 65535, default 
-                    are<br>
+                    max-size of the SNMP message, usefull in case of Too Long responses.<br>
+                    Be carefull with network filters. Range 484 - 65535, default are<br>
                     usually 1472,1452,1460 or 1440. <br>
                     -t, --timeout=INTEGER<br>
                     timeout for SNMP in seconds (Default: 5)<br>
                     -V, --version<br>
                     prints version number<br>
                     Note : <br>
-                    CPU usage is in % of one cpu, so maximum can be 100% * number 
-                    of CPU <br>
+                    CPU usage is in % of one cpu, so maximum can be 100% * number of CPU <br>
                     example : <br>
-                    Browse process list : &lt;script&gt; -C &lt;community&gt; 
-                    -H &lt;host&gt; -n &lt;anything&gt; -v <br>
+                    Browse process list : &lt;script&gt; -C &lt;community&gt; -H &lt;host&gt; -n &lt;anything&gt; -v <br>
                     the -n option allows regexp in perl format : <br>
-                    All process of /opt/soft/bin : -n /opt/soft/bin/ -f<br>
-                    All 'named' process : -n named<br>
+                    All process of /opt/soft/bin          : -n /opt/soft/bin/ -f<br>
+                  All 'named' process                   : -n named<br>
+                  <br>
                   </p>
                 </td>
               </tr>
