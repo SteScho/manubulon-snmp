@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_win ##############
-# Version : 1.0
+my $Version='1.1';
 # Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com/
@@ -19,7 +19,7 @@ use Getopt::Long;
 
 #use lib "/usr/local/nagios/libexec";
 #use utils qw(%ERRORS $TIMEOUT);
-my $TIMEOUT = 5;
+my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas for processes (MIB II)
@@ -45,7 +45,6 @@ my $win_serv_uninst = '1.3.6.1.4.1.77.1.2.3.1.4';
 
 # Globals
 
-my $Version='1.0';
 my $Name='check_snmp_win';
 
 my $o_host = 	undef; 		# hostname 

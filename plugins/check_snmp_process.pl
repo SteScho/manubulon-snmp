@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
-my $Version='1.9';
+my $Version='1.10';
 # Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy dot org)
 # Help : http://nagios.manubulon.com
@@ -23,7 +23,7 @@ my $delta_of_time_to_make_average=300;  # 5minutes by default
 
 # Nagios specific
 
-my $TIMEOUT = 5;
+my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
