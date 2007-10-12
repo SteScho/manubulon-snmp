@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-# Version : 1.4.8
-# Date : May 24 2007
+my $Version='1.24';
+# Date : Oct 10 2007
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
@@ -47,7 +47,6 @@ my %status=(1=>'UP',2=>'DOWN',3=>'TESTING',4=>'UNKNOWN',5=>'DORMANT',6=>'NotPres
 
 # Globals
 
-my $Version='1.4.7';
 
 # Standard options
 my $o_host = 		undef; 	# hostname
@@ -786,16 +785,16 @@ for (my $i=0;$i < $num_int; $i++) {
 	  }
 	} else { # output in octet counter
       $perf_out .= "'" . $descr[$i] ."_in_octet'=". $$result{$oid_perf_inoct[$i]} ."c ";  
-      $perf_out .= "'" . $descr[$i] ."_out_octet'=". $$result{$oid_perf_outoct[$i]} ."c";  
+      $perf_out .= "'" . $descr[$i] ."_out_octet'=". $$result{$oid_perf_outoct[$i]} ."c ";  
 	}
     if (defined ($o_perfe)) {
-      $perf_out .= " '" . $descr[$i] ."_in_error'=". $$result{$oid_perf_inerr[$i]} ."c ";
+      $perf_out .= "'" . $descr[$i] ."_in_error'=". $$result{$oid_perf_inerr[$i]} ."c ";
       $perf_out .= "'" . $descr[$i] ."_in_discard'=". $$result{$oid_perf_indisc[$i]} ."c ";
       $perf_out .= "'" . $descr[$i] ."_out_error'=". $$result{$oid_perf_outerr[$i]} ."c ";
-      $perf_out .= "'" . $descr[$i] ."_out_discard'=". $$result{$oid_perf_outdisc[$i]} ."c";
+      $perf_out .= "'" . $descr[$i] ."_out_discard'=". $$result{$oid_perf_outdisc[$i]} ."c ";
     }
 	if (defined ($o_perfs)) {
-	  $perf_out .= " '" . $descr[$i] ."_speed_bps'=".$speed_real; 
+	  $perf_out .= "'" . $descr[$i] ."_speed_bps'=".$speed_real; 
 	}
   } 
 }
