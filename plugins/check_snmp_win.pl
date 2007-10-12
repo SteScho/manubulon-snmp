@@ -1,10 +1,11 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_win ##############
-# Version : 0.6
-# Date : Nov 29 2006 
+# Version : 1.0
+# Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# Contrib : Tenaku
 # TODO : 
 ###############################################################
 #
@@ -16,10 +17,10 @@ use Getopt::Long;
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 5;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+#use lib "/usr/local/nagios/libexec";
+#use utils qw(%ERRORS $TIMEOUT);
+my $TIMEOUT = 5;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas for processes (MIB II)
 my $process_table= '1.3.6.1.2.1.25.4.2.1';
@@ -44,7 +45,7 @@ my $win_serv_uninst = '1.3.6.1.4.1.77.1.2.3.1.4';
 
 # Globals
 
-my $Version='0.6';
+my $Version='1.0';
 my $Name='check_snmp_win';
 
 my $o_host = 	undef; 		# hostname 
@@ -93,7 +94,7 @@ $SIG{'ALRM'} = sub {
 
 sub help {
    print "\nSNMP Windows Monitor for Nagios version ",$Version,"\n";
-   print "GPL licence, (c)2004-2005 Patrick Proy\n\n";
+   print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -344,7 +345,11 @@ my $force_critical=0;
 foreach my $List (@o_descrL) {
   my $test=0;
   for (my $i=0; $i< $num_int; $i++) {
-    if ( $descr[$i] =~ /$List/i  ) { $test++; }
+    if (defined($o_noreg)){
+      if ($descr[$i] eq $List) { $test++;}
+    } else {
+      if ( $descr[$i] =~ /$List/i ) { $test++; }
+    }
   }
   if ($test==0) {
     $output .= ", " if defined($output);
