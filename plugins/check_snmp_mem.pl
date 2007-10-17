@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_mem ##############
-my $Version='1.4';
+my $Version='1.5';
 # Date : 17 October 2007
 # Author  : Patrick Proy (nagios at proy.org)
 # Help : http://nagios.manubulon.com/
@@ -28,7 +28,7 @@ my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 my $nets_ram_free	= "1.3.6.1.4.1.2021.4.6.0";  # Real memory free
 my $nets_ram_total	= "1.3.6.1.4.1.2021.4.5.0";  # Real memory total
 my $nets_ram_buffer	= "1.3.6.1.4.1.2021.4.14.0"; # Real memory buffered
-my $nets_ram_cache      = "1.3.6.1.4.1.2021.4.15.0"; # Real memory cached
+my $nets_ram_cache	= "1.3.6.1.4.1.2021.4.15.0"; # Real memory cached
 my $nets_swap_free	= "1.3.6.1.4.1.2021.4.4.0";  # swap memory free
 my $nets_swap_total	= "1.3.6.1.4.1.2021.4.3.0";  # Swap memory total
 my @nets_oids		= ($nets_ram_free,$nets_ram_total,$nets_swap_free,$nets_swap_total,$nets_ram_cache,$nets_ram_buffer);
@@ -112,7 +112,7 @@ sub help {
    print_usage();
    print <<EOT;
 -v, --verbose
-   print extra debugging information (including interface list on the system)
+   print extra debugging information
 -h, --help
    print this help message
 -H, --hostname=HOST
@@ -269,6 +269,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
+	  -port             => $o_port,
       -timeout          => $o_timeout
     );  
   } else {
@@ -281,6 +282,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
 	  -privprotocol => $o_privproto,
+	  -port             => $o_port,	  
       -timeout      => $o_timeout
     );
   }
