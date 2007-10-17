@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_mem ##############
-# Version : 1.1
-# Date : Jul 09 2006
+my $Version='1.4';
+# Date : 17 October 2007
 # Author  : Patrick Proy (nagios at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Contrib : Jan Jungmann
+# Contrib : Jan Jungmann, Patrick Griffin
 # TODO : 
 #################################################################
 #
@@ -18,10 +18,8 @@ use Getopt::Long;
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 15;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 
@@ -29,10 +27,11 @@ use utils qw(%ERRORS $TIMEOUT);
 
 my $nets_ram_free	= "1.3.6.1.4.1.2021.4.6.0";  # Real memory free
 my $nets_ram_total	= "1.3.6.1.4.1.2021.4.5.0";  # Real memory total
+my $nets_ram_buffer	= "1.3.6.1.4.1.2021.4.14.0"; # Real memory buffered
 my $nets_ram_cache      = "1.3.6.1.4.1.2021.4.15.0"; # Real memory cached
 my $nets_swap_free	= "1.3.6.1.4.1.2021.4.4.0";  # swap memory free
 my $nets_swap_total	= "1.3.6.1.4.1.2021.4.3.0";  # Swap memory total
-my @nets_oids		= ($nets_ram_free,$nets_ram_total,$nets_swap_free,$nets_swap_total,$nets_ram_cache);
+my @nets_oids		= ($nets_ram_free,$nets_ram_total,$nets_swap_free,$nets_swap_total,$nets_ram_cache,$nets_ram_buffer);
 
 # Cisco 
 
@@ -60,7 +59,6 @@ my $hp_mem_free_seg	= "1.3.6.1.4.1.11.2.14.11.5.1.1.2.2.1.1.3"; # Free segments
 
 # Globals
 
-my $Version='1.1';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -79,6 +77,7 @@ my $o_critR=	undef;		# critical level for Real memory
 my $o_critS=	undef;		# critical level for swap
 my $o_perf=	undef;		# Performance data option
 my $o_cache=	undef;		# Include cached memory as used memory
+my $o_buffer=	undef;		# Exclude buffered memory as used memory
 my $o_timeout=  undef; 		# Timeout (Default 5)
 my $o_version2= undef;          # use snmp v2c
 # SNMPv3 specific
@@ -94,7 +93,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_mem version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -w <warn level> -c <crit level> [-I|-N|-E] [-f] [-m] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -w <warn level> -c <crit level> [-I|-N|-E] [-f] [-m -b] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -109,7 +108,7 @@ sub round ($$) {
 
 sub help {
    print "\nSNMP Memory Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 to my cat Ratoune - Author: Patrick Proy\n\n";
+   print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
@@ -144,6 +143,8 @@ sub help {
    check linux memory & swap provided by Net SNMP 
 -m, --memcache
    include cached memory in used memory (only with Net-SNMP)
+-b, --membuffer
+   exclude buffered memory in used memory (only with Net-SNMP)
 -I, --cisco
    check cisco memory (sum of all memory pools)
 -E, --hp
@@ -187,6 +188,7 @@ sub check_options {
         'c:s'   => \$o_crit,            'critical:s'    => \$o_crit,
         'w:s'   => \$o_warn,            'warn:s'        => \$o_warn,
         'm'   	=> \$o_cache,           'memcache'      => \$o_cache,
+       'b'     => \$o_buffer,          'membuffer'     => \$o_buffer,
         'f'     => \$o_perf,            'perfdata'      => \$o_perf
     );
     if (defined ($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
@@ -473,22 +475,23 @@ if (defined ($o_netsnmp)) {
   }
   
   my ($realused,$swapused)=(undef,undef);
+  my $totalcachedbuffered = 0;
+  if (defined($o_buffer)) {
+    $totalcachedbuffered = $$resultat{$nets_ram_buffer};
+  }
+  if (!defined($o_cache)) {
+    $totalcachedbuffered = $totalcachedbuffered + $$resultat{$nets_ram_cache};
+  }
   
-  $realused= defined($o_cache) ? 
-    ($$resultat{$nets_ram_total}-$$resultat{$nets_ram_free})/$$resultat{$nets_ram_total}
-  :
-    ($$resultat{$nets_ram_total}-($$resultat{$nets_ram_free}+$$resultat{$nets_ram_cache}))/$$resultat{$nets_ram_total};
-
+  $realused = ($$resultat{$nets_ram_total}-($$resultat{$nets_ram_free}+$totalcachedbuffered)) / $$resultat{$nets_ram_total};
+  
   if($$resultat{$nets_ram_total} == 0) { $realused = 0; }
 
   $swapused= ($$resultat{$nets_swap_total} == 0) ? 0 :
 		($$resultat{$nets_swap_total}-$$resultat{$nets_swap_free})/$$resultat{$nets_swap_total}; 
   $realused=round($realused*100,0);
   $swapused=round($swapused*100,0);
-  defined($o_cache) ? 
-    verb ("Ram : $$resultat{$nets_ram_free} / $$resultat{$nets_ram_total} : $realused")
-    :
-    verb ("Ram : $$resultat{$nets_ram_free} ($$resultat{$nets_ram_cache} cached) / $$resultat{$nets_ram_total} : $realused");
+  verb ("Ram : $$resultat{$nets_ram_free} ($$resultat{$nets_ram_cache} cached, $$resultat{$nets_ram_buffer} buff) / $$resultat{$nets_ram_total} : $realused");
   verb ("Swap : $$resultat{$nets_swap_free} / $$resultat{$nets_swap_total} : $swapused");
   
   my $n_status="OK";
