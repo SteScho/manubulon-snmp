@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_vrrp ##############
-# Version : 1.3
-# Date : Aug 23 2006
+my $Version='1.4';
+# Date : Oct 17 2007
 # Author  : Patrick Proy (patrick at proy.org)
-# Help : http://www.manubulon.com/nagios/
+# Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
-# Contrib : C. Maser (Alteon + Netscreen) 
+# Contrib : C. Maser (Alteon + Netscreen),  Harm-Jan Blok (Foundry)
 #################################################################
 #
 # Help : ./check_snmp_vrrp.pl -h
@@ -17,10 +17,8 @@ use Getopt::Long;
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 15;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 
@@ -59,32 +57,43 @@ my $ns_vrrp_oper = "1.3.6.1.4.1.3224.6.2.2.1.3";
 my $ns_vrrp_admin = "";
 my $ns_vrrp_prio = "1.3.6.1.4.1.3224.6.2.2.1.4";
 
+######## Foundry
+my $foundry_base_vrrp = "1.3.6.1.4.1.1991.1.2.12.3.1.1";   # oid for vrrp
+my $foundry_vrrp_oper = "1.3.6.1.4.1.1991.1.2.12.3.1.1.10";   # vrrp operational status
+my $foundry_vrrp_admin ="1.3.6.1.4.1.1991.1.2.12.3.1.1.3";   # vrrp admin status
+my $foundry_vrrp_prio = "1.3.6.1.4.1.1991.1.2.12.3.1.1.6";   # vrrp vrid priority
+
+
 ######### Make an array
 my %base_vrrp = ("nokia",$nokia_base_vrrp,
 		"lp",$lp_base_vrrp,
 		"alteon",$alteon_base_vrrp,
-		"nsc",$ns_base_vrrp
+		"nsc",$ns_base_vrrp,
+		"foundry",$foundry_base_vrrp
 		);
 my %vrrp_oper = ("nokia",$nokia_vrrp_oper,
 		"lp",$lp_vrrp_oper,
 		"alteon",$alteon_vrrp_oper,
-		"nsc",$ns_vrrp_oper
+		"nsc",$ns_vrrp_oper,
+		"foundry",$foundry_vrrp_oper
 		);
 my %vrrp_admin =("nokia",$nokia_vrrp_admin,
 		"lp",$lp_vrrp_admin,
 		"alteon",$alteon_vrrp_admin,
-		"nsc",$ns_vrrp_admin
+		"nsc",$ns_vrrp_admin,
+		"foundry",$foundry_vrrp_admin
 		);
 my %vrrp_prio = ("nokia",$nokia_vrrp_prio,
 		"lp",$lp_vrrp_prio,
 		"alteon",$alteon_vrrp_prio,
-		"nsc",$ns_vrrp_prio);
-my %state_master=("nokia",3,"alteon",2,"lp",3,"nsc",2);
-my %state_backup=("nokia",2,"alteon",3,"lp",2,"nsc",3);
+		"nsc",$ns_vrrp_prio,
+		"foundry",$foundry_vrrp_oper
+		);
+
+my %state_master=("nokia",3,"alteon",2,"lp",3,"nsc",2,"foundry",1);
+my %state_backup=("nokia",2,"alteon",3,"lp",2,"nsc",3,"foundry",2);
 
 # Globals
-
-my $Version='1.3';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -96,7 +105,7 @@ my $o_version=	undef;		# print version
 my $o_state=	undef;		# Check master or backup state for ok
 my $o_clustnum=	undef; 		# number of cluster members
 my $o_clustprct=	undef;	# Max % assigned to one cluster.
-my $o_type=	'nokia';	# Check type : nokia|alteon|lp|nsc
+my $o_type=	'nokia';	# Check type : nokia|alteon|lp|nsc|foundry
 my $o_long=		undef;		# Make output long
 my $o_timeout=  5;              # Default 5s Timeout
 
@@ -113,7 +122,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_vrrp version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) -s <master|backup|num,%> [-T <nokia|alteon|lp|nsc|ipsocluster>] [-p <port>] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) -s <master|backup|num,%> [-T <nokia|alteon|lp|nsc|ipsocluster|foundry>] [-p <port>] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -124,11 +133,11 @@ sub isnnum { # Return true if arg is not a number
 
 sub help {
    print "\nSNMP VRRP Monitor for Nagios version ",$Version,"\n";
-   print "(c)2004-2006 to my cat Ratoune - Author : Patrick Proy\n\n";
+   print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
    print_usage();
    print <<EOT;
 -v, --verbose
-   print extra debugging information (including interface list on the system)
+   print extra debugging information
 -h, --help
    print this help message
 -H, --hostname=HOST
@@ -149,11 +158,12 @@ sub help {
    SNMP port (Default 161)
 -T, --type=<nokia|alteon|lp|nsc|ipso>
    Type of vrrp router to check
-   nokia (default) : Nokai vrrp. Should be working for most vrrp routers
+   nokia (default) : Nokia vrrp. Should be working for most vrrp routers
    alteon : for Alteon AD4 Loadbalancers
    lp : Radware Linkproof
    nsc : Nescreen (ScreenOS 5.x NSRP)
    ipso : Nokia IPSO clustering
+   foundry : Foundry VRRP
 -s, --state=master|backup|num,%
    Nokia ipso clustering : number of members, max % assigned to nodes.
    Other : check vrrp interface to be master or backup
@@ -226,7 +236,7 @@ sub check_options {
  	  { print "state must be master or backup\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
     }
 	# Check type
-     if ( !defined($o_type) || (($o_type ne "nokia") && ($o_type ne "alteon") && ($o_type ne "lp") && ($o_type ne"nsc") && ($o_type ne"ipso")) ) 
+     if ( !defined($o_type) || (($o_type ne "nokia") && ($o_type ne "alteon") && ($o_type ne "lp") && ($o_type ne"nsc") && ($o_type ne"ipso") && ($o_type ne "foundry")) ) 
   	{ print "type must be alteon,nokia,lp,nsc or ipso\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
 
 }
@@ -257,6 +267,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
+	  -port             => $o_port,
       -timeout          => $o_timeout
     );  
   } else {
@@ -269,6 +280,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
 	  -privprotocol => $o_privproto,
+	  -port             => $o_port,
       -timeout          => $o_timeout
     );
   }
@@ -429,7 +441,11 @@ for (my $i=0;$i<$nvrid;$i++) {
      $key= $vrrp_admin{$o_type} . "." . $vrid[$i];
      $value = ($$resultat{$key} == 1) ? "up" : "down";
      $output.= $value . "/";
-     ($value eq "up" ) && $ok++;
+     if (($o_type eq 'foundry')  && ($o_state eq 'backup') && ($value eq "down")) {
+        $ok++
+     } else {
+       ($value eq "up") && $ok++;
+     }
    }
    # Get the priority
    $key=$vrrp_prio{$o_type}.".".$vrid[$i];
