@@ -1,10 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_cpfw ##############
-# Version : 1.2.1
-# Date : April 19 2007
+my $Version='1.8';
+# Date : Oct 20 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# Contrib : StaGue
 # TODO : 
 # - check sync method
 #################################################################
@@ -18,10 +19,8 @@ use Getopt::Long;
 
 # Nagios specific
 
-use lib "/usr/local/nagios/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 15;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 ########### SNMP Datas ########### 
 
@@ -72,8 +71,6 @@ my %mgmt_checks_n	= ($mgmt_status,"Mgmt status",$mgmt_alive,"Mgmt alive");
 my @mgmt_checks_oid	= ($mgmt_status,$mgmt_alive);
 
 #################################### Globals ##############################""
-
-my $Version='1.2.1';
 
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
@@ -247,7 +244,7 @@ if (defined($TIMEOUT)) {
 }
 
 $SIG{'ALRM'} = sub {
- print "No answer from host\n";
+ print "No answer from host $o_host:$o_port\n";
  exit $ERRORS{"UNKNOWN"};
 };
 
@@ -332,15 +329,15 @@ $resultat = $session->get_request(
       }  
     }
   } else {
-    $svn_print .= "cannot find oids";
+    $svn_print .= "cannot find OIDs";
     #Critical state if not found because it means soft is not activated
     $svn_state=2;
   }
 
   if ($svn_state == 0) {
-    $svn_print="SVN : OK";
+    $svn_print="SVN: OK";
   } else {
-    $svn_print="SVN : " . $svn_print;
+    $svn_print="SVN: " . $svn_print;
   }
   verb("$svn_print");
 }
@@ -363,14 +360,14 @@ if (defined ($o_mgmt)) {
       }
     }
   } else {
-    $mgmt_print .= "cannot find oids";
+    $mgmt_print .= "cannot find OIDs";
     #Critical state if not found because it means soft is not activated
     $mgmt_state=2;
   }  
   if ($mgmt_state == 0) {
-    $mgmt_print="MGMT : OK";
+    $mgmt_print="MGMT: OK";
   } else {
-    $mgmt_print="MGMT : " . $mgmt_print;
+    $mgmt_print="MGMT: " . $mgmt_print;
   }
   verb("$svn_print");
 }
@@ -402,7 +399,7 @@ if (defined ($o_fw)) {
     if (defined($o_policy)) {
       if ($$resultat{$policy_name} ne $o_policy) {
 	    $fw_state=2;
-	    $fw_print .= "Policy installed : $$resultat{$policy_name}";
+	    $fw_print .= "Policy installed: $$resultat{$policy_name}";
       }
     }
 
@@ -419,15 +416,15 @@ if (defined ($o_fw)) {
       $perf_conn=$$resultat{$connections};
     }
   } else {
-    $fw_print .= "cannot find oids";
+    $fw_print .= "cannot find OIDs";
     #Critical state if not found because it means soft is not activated
     $fw_state=2;
   }
 
   if ($fw_state==0) {
-    $fw_print="FW : OK";
+    $fw_print="FW: OK";
   } else {
-    $fw_print="FW : " . $fw_print;
+    $fw_print="FW: " . $fw_print;
   }
 
 }
@@ -460,7 +457,7 @@ if (defined ($o_ha)) {
     }
     #my $ha_mode		= "1.3.6.1.4.1.2620.1.5.11.0";  # "Sync only" : ha Working mode
   } else {
-    $ha_print .= "cannot find oids";
+    $ha_print .= "cannot find OIDs";
     #Critical state if not found because it means soft is not activated
     $ha_state_n=2;
   }
@@ -484,7 +481,7 @@ if (defined ($o_ha)) {
       }
     }
   } else {
-    $ha_print .= "cannot find oids" if ($ha_state_n ==0);
+    $ha_print .= "cannot find OIDs" if ($ha_state_n ==0);
     #Critical state if not found because it means soft is not activated
     $ha_state_n=2;
   }
@@ -513,9 +510,9 @@ if (defined ($o_ha)) {
   }
 
   if ($ha_state_n == 0) {
-    $ha_print = "HA : OK";
+    $ha_print = "HA: OK";
   } else {
-    $ha_print = "HA : " . $ha_print;
+    $ha_print = "HA: " . $ha_print;
   }
 
 }
@@ -532,9 +529,9 @@ if (defined ($o_ha)) { $f_print = (defined ($f_print)) ? $f_print . " / ". $ha_p
 if (defined ($o_mgmt)) { $f_print = (defined ($f_print)) ? $f_print . " / ". $mgmt_print : $mgmt_print }
 
 my $exit_status=undef;
-$f_print .= " / CPFW Status : ";
+$f_print .= " / CPFW Status: ";
 if (($ha_state_n+$svn_state+$fw_state+$mgmt_state) == 0 ) {
-  $f_print .= "OK";
+  $f_print .= "OK, " . $perf_conn . " conn.";
   $exit_status= $ERRORS{"OK"}; 
 } else {
   if (($fw_state==1) || ($ha_state_n==1) || ($svn_state==1) || ($mgmt_state==1)) {
@@ -547,7 +544,7 @@ if (($ha_state_n+$svn_state+$fw_state+$mgmt_state) == 0 ) {
 }
 
 if (defined($o_perf) && defined ($perf_conn)) {
-  $f_print .= " | fw_connexions=" . $perf_conn;
+  $f_print .= " | fw_connexions=" . $perf_conn . ";" . $o_warn . ";" . $o_crit . ";0";
 }
 
 print "$f_print\n";
