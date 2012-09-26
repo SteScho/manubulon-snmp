@@ -6,7 +6,7 @@
 # Help : http://nagios.manubulon.com
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO : 
-# Contribs : Dimo Velev, Makina Corpus, A. Greiner-Bär
+# Contribs : Dimo Velev, Makina Corpus, A. Greiner-B\ufffdr
 #################################################################
 #
 # help : ./check_snmp_storage -h
@@ -80,7 +80,7 @@ my $o_timeout=  5;            	# Default 5s Timeout
 my $o_perf=	undef;		# Output performance data
 my $o_short=	undef;	# Short output parameters
 my @o_shortL=	undef;		# output type,where,cut
-my $o_reserve=	0;              # % reserved blocks (A. Greiner-Bär patch)
+my $o_reserve=	0;              # % reserved blocks (A. Greiner-B\ufffdr patch)
 my $o_giga=		undef;	# output and levels in gigabytes instead of megabytes
 # SNMPv3 specific
 my $o_login=	undef;		# Login for snmpv3
@@ -89,6 +89,7 @@ my $v3protocols=undef;	# V3 protocol list.
 my $o_authproto='md5';		# Auth protocol
 my $o_privproto='des';		# Priv protocol
 my $o_privpass= undef;		# priv password
+my $UOM_float= 4;		# decimal places
 # SNMP Message size parameter (Makina Corpus contrib)
 my $o_octetlength=undef;
 
@@ -112,8 +113,10 @@ sub is_pattern_valid { # Test for things like "<I\s*[^>" or "+5-i"
 
 # Get the alarm signal (just in case snmp timout screws up)
 $SIG{'ALRM'} = sub {
-     print ("ERROR: General time-out (Alarm signal)\n");
-     exit $ERRORS{"UNKNOWN"};
+#     print ("ERROR: General time-out (Alarm signal)\n");
+#     exit $ERRORS{"UNKNOWN"};
+     print ("Waiting for info\n");
+     exit $ERRORS{"OK"};
 };
 
 sub isnnum { # Return true if arg is not a number
@@ -315,7 +318,7 @@ sub check_options {
     if (defined ($o_octetlength) && (isnnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484 )) {
 		print "octet lenght must be < 65535 and > 484\n";print_usage(); exit $ERRORS{"UNKNOWN"};
     }	
-    #### reserved blocks checks (A. Greiner-Bär patch).
+    #### reserved blocks checks (A. Greiner-B\ufffdr patch).
     if (defined ($o_reserve) && (isnnum($o_reserve) || $o_reserve > 99 || $o_reserve < 0 )) {
 		print "reserved blocks must be < 100 and >= 0\n";print_usage(); exit $ERRORS{"UNKNOWN"};
     }
@@ -348,6 +351,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
       -port      	=> $o_port,
+      -retries       => 10,
       -timeout          => $o_timeout
     );  
   } else {
@@ -361,6 +365,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -privpassword	=> $o_privpass,
 	  -privprotocol => $o_privproto,
       -port      	=> $o_port,
+      -retries       => 10,
       -timeout          => $o_timeout
     );
   }
@@ -373,6 +378,7 @@ if ( defined($o_login) && defined($o_passwd)) {
 		 -version   => 2,
 		 -community => $o_community,
 		 -port      => $o_port,
+  		 -retries       => 10,
 		 -timeout   => $o_timeout
 		);
   	} else {
@@ -382,6 +388,7 @@ if ( defined($o_login) && defined($o_passwd)) {
 		-hostname  => $o_host,
 		-community => $o_community,
 		-port      => $o_port,
+                -retries       => 10,
 		-timeout   => $o_timeout
 	  );
 	}
@@ -491,18 +498,28 @@ if ( $num_int == 0 ) { print "Unknown storage : $o_descr : ERROR\n" ; exit $ERRO
 
 my $result=undef;
 
-if (Net::SNMP->VERSION lt 4) {
-  $result = $session->get_request(@oids);
-} else {
-  if ($session->version == 0) { 
-    # snmpv1
-    $result = $session->get_request(Varbindlist => \@oids);
-  } else {
-    # snmp v2c or v3 : get_bulk_request is not really good for this, so do simple get
-    $result = $session->get_request(Varbindlist => \@oids);
-    foreach my $key ( keys %$result) { verb("$key  : $$result{$key}"); }
-  }
-}
+if (Net::SNMP->VERSION lt 4)
+   {
+   $result = $session->get_request(@oids);
+   }
+else
+   {
+      $result = $session->get_request(Varbindlist => \@oids);
+      foreach my $key ( keys %$result)
+             {
+             # Fix for filesystems larger 2 TB. More than 2 TB will cause an error because
+             # as defined in the RFC hrStorageSize is a 32 bit integer. So filesystems
+             # larger 2 TB report a negative value because the first bit will be interpreted
+             # as an algebraic sign. (0 = +, all others will be -). You simply have to add
+             # 2 to the power of 32 (4294967296) and it is fixed.
+             # Martin Fuerstenau, Oce Printing Systems, 25th Sept 2012
+             if ($$result{$key} < 0)
+                 {
+                 $$result{$key} = $$result{$key} + 4294967296;
+                 }
+             verb("$key  x $$result{$key}");
+             }
+   }
 
 if (!defined($result)) { printf("ERROR: Size table :%s.\n", $session->error); $session->close;
    exit $ERRORS{"UNKNOWN"};
@@ -547,6 +564,7 @@ for ($i=0;$i<$num_int;$i++) {
   verb("Size :  $$result{$size_table . $tindex[$i]}");
   verb("Used : $$result{$used_table . $tindex[$i]}");
   verb("Alloc : $$result{$alloc_units . $tindex[$i]}");
+  
   if (!defined($$result{$size_table . $tindex[$i]}) || 
 	!defined($$result{$used_table . $tindex[$i]}) || 
 	!defined ($$result{$alloc_units . $tindex[$i]})) {
@@ -623,7 +641,7 @@ for ($i=0;$i<$num_int;$i++) {
     } 
   }
   # Performance output (in MB)
-  $perf_out .= "'".$Pdescr. "'=" . round($bu,0) . $output_metric ."B;" . round($p_warn,0) 
+  $perf_out .= "'".$Pdescr. "'=" . round($bu,$UOM_float) . $output_metric ."B;" . round($p_warn,0) 
 	       . ";" . round($p_crit,0) . ";0;" . round($to,0);
 }
 
