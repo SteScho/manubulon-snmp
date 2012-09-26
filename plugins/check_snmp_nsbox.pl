@@ -265,7 +265,7 @@ if (!defined($session)) {
 
 ########### check global status ##############
 my @oidlist=($ns_service_status);
-my $resultat = (Net::SNMP->VERSION < 4) ?
+my $resultat = (Net::SNMP->VERSION lt 4) ?
           $session->get_request(@oidlist)
         : $session->get_request(-varbindlist => \@oidlist);
 
@@ -282,7 +282,7 @@ if ($$resultat{$ns_service_status} != 1) {
 
 ########### check vhost & diode status ##############
 $resultat=undef;
-$resultat = (Net::SNMP->VERSION < 4) ? 
+$resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($ns_service_table)
 		: $session->get_table(Baseoid => $ns_service_table); 
 

@@ -390,7 +390,7 @@ if ($o_check_type eq "cisco") {
 verb("Checking cisco env");
 
 # Get load table
-my $resultat = (Net::SNMP->VERSION < 4) ? 
+my $resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($ciscoEnvMonMIB)
 		: $session->get_table(Baseoid => $ciscoEnvMonMIB); 
 		
@@ -594,7 +594,7 @@ my ($num_fan_nok,$num_ps_nok)=(0,0);
 my $global_status=0;
 my $output="";
 # get temp
-$resultat = (Net::SNMP->VERSION < 4) ? 
+$resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($nokia_temp_tbl)
 		: $session->get_table(Baseoid => $nokia_temp_tbl); 
 if (defined($resultat)) {
@@ -609,7 +609,7 @@ if (defined($resultat)) {
 }
 		
 # Get fan table
-$resultat = (Net::SNMP->VERSION < 4) ? 
+$resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($nokia_fan_table)
 		: $session->get_table(Baseoid => $nokia_fan_table); 
 		
@@ -631,7 +631,7 @@ if (defined($resultat)) {
 }
 
 # Get ps table
-$resultat = (Net::SNMP->VERSION < 4) ? 
+$resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($nokia_ps_table)
 		: $session->get_table(Baseoid => $nokia_ps_table); 
 		
@@ -697,7 +697,7 @@ if ($o_check_type eq "bc") {
 
 
 	# get sensor table
-	$resultat = (Net::SNMP->VERSION < 4) ? 
+	$resultat = (Net::SNMP->VERSION lt 4) ? 
 			  $session->get_table($bc_sensor_table)
 			: $session->get_table(Baseoid => $bc_sensor_table); 
 	if (defined($resultat)) {
@@ -740,7 +740,7 @@ if ($o_check_type eq "bc") {
 	}
 			
 	# Get disk table
-	$resultat = (Net::SNMP->VERSION < 4) ? 
+	$resultat = (Net::SNMP->VERSION lt 4) ? 
 			  $session->get_table($bc_dsk_table)
 			: $session->get_table(Baseoid => $bc_dsk_table); 
 			
@@ -811,7 +811,7 @@ my $output="";
 # get temp if $o_temp is defined
 if (defined($o_temp)) {
   verb("Checking temp < $o_temp");
-  $resultat = (Net::SNMP->VERSION < 4) ? 
+  $resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($iron_tmp_table)
 		: $session->get_table(Baseoid => $iron_tmp_table); 
   if (defined($resultat)) {
@@ -843,7 +843,7 @@ if (defined($o_temp)) {
 # Get fan status if $o_fan is defined
 if (defined($o_fan)) {
   verb("Checking fan > $o_fan");
-  $resultat = (Net::SNMP->VERSION < 4) ?
+  $resultat = (Net::SNMP->VERSION lt 4) ?
                   $session->get_table($iron_fan_table)
                 : $session->get_table(Baseoid => $iron_fan_table);
   if (defined($resultat)) {
@@ -874,7 +874,7 @@ if (defined($o_fan)) {
 
 # Get power supply status
   verb("Checking PS");
-  $resultat = (Net::SNMP->VERSION < 4) ?
+  $resultat = (Net::SNMP->VERSION lt 4) ?
                   $session->get_table($iron_ps_table)
                 : $session->get_table(Baseoid => $iron_ps_table);
   if (defined($resultat)) {
@@ -966,7 +966,7 @@ if (defined($result_temp)) {
 
 # Get PS table (TODO : Bug in FAN table, see with Foundry).
 
-my $result_ps = (Net::SNMP->VERSION < 4) ? 
+my $result_ps = (Net::SNMP->VERSION lt 4) ? 
                     $session->get_table($foundry_ps_table)
                   : $session->get_table(Baseoid => $foundry_ps_table);
 

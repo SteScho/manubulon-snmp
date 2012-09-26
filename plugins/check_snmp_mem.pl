@@ -320,7 +320,7 @@ my $resultat=undef;
 if (defined ($o_cisco)) {
 
   # Get Cisco memory table
-  $resultat = (Net::SNMP->VERSION < 4) ?
+  $resultat = (Net::SNMP->VERSION lt 4) ?
                  $session->get_table($cisco_mem_pool)
                  :$session->get_table(Baseoid => $cisco_mem_pool);
   
@@ -397,7 +397,7 @@ if (defined ($o_cisco)) {
 if (defined ($o_hp)) {
 
   # Get hp memory table
-  $resultat = (Net::SNMP->VERSION < 4) ?
+  $resultat = (Net::SNMP->VERSION lt 4) ?
                  $session->get_table($hp_mem_pool)
                  :$session->get_table(Baseoid => $hp_mem_pool);
   
@@ -466,7 +466,7 @@ if (defined ($o_hp)) {
 if (defined ($o_netsnmp)) {
 
   # Get NetSNMP memory values
-  $resultat = (Net::SNMP->VERSION < 4) ?
+  $resultat = (Net::SNMP->VERSION lt 4) ?
 		$session->get_request(@nets_oids)
 		:$session->get_request(-varbindlist => \@nets_oids);
   

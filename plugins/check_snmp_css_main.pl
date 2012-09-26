@@ -219,7 +219,7 @@ $session->max_msg_size(10000);
 ########### Cisco CSS checks ##############
 
 # Get load table
-my $resultat = (Net::SNMP->VERSION < 4) ? 
+my $resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($css_svc_name)
 		: $session->get_table(Baseoid => $css_svc_name); 
 		

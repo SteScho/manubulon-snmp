@@ -411,13 +411,13 @@ my $stype=undef;
 # Get rid of UTF8 translation in case of accentuated caracters (thanks to Dimo Velev).
 $session->translate(Net::SNMP->TRANSLATE_NONE);
 if (defined ($o_index)){
-  if (Net::SNMP->VERSION < 4) {
+  if (Net::SNMP->VERSION lt 4) {
     $resultat = $session->get_table($index_table);
   } else {
 	$resultat = $session->get_table(Baseoid => $index_table);
   }
 } else {
-  if (Net::SNMP->VERSION < 4) {
+  if (Net::SNMP->VERSION lt 4) {
     $resultat = $session->get_table($descr_table);
   } else {
     $resultat = $session->get_table(Baseoid => $descr_table);
@@ -425,7 +425,7 @@ if (defined ($o_index)){
 }
 #get storage typetable for reference
 if (defined($o_storagetype)){
-  if (Net::SNMP->VERSION < 4) {
+  if (Net::SNMP->VERSION lt 4) {
     $stype = $session->get_table($storagetype_table);
   } else {
     $stype = $session->get_table(Baseoid => $storagetype_table);
@@ -491,7 +491,7 @@ if ( $num_int == 0 ) { print "Unknown storage : $o_descr : ERROR\n" ; exit $ERRO
 
 my $result=undef;
 
-if (Net::SNMP->VERSION < 4) {
+if (Net::SNMP->VERSION lt 4) {
   $result = $session->get_request(@oids);
 } else {
   if ($session->version == 0) { 

@@ -346,7 +346,7 @@ if ($o_check_type eq "netsl") {
 
 verb("Checking linux load");
 # Get load table
-my $resultat = (Net::SNMP->VERSION < 4) ? 
+my $resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($linload_table)
 		: $session->get_table(Baseoid => $linload_table); 
 		
@@ -410,7 +410,7 @@ exit $exit_val;
 
 if ($o_check_type eq "cisco") {
 my @oidlists = ($cisco_cpu_5m, $cisco_cpu_1m, $cisco_cpu_5s);
-my $resultat = (Net::SNMP->VERSION < 4) ?
+my $resultat = (Net::SNMP->VERSION lt 4) ?
 	  $session->get_request(@oidlists)
 	: $session->get_request(-varbindlist => \@oidlists);
 
@@ -465,7 +465,7 @@ exit $exit_val;
 
 if ($o_check_type eq "cata") {
 my @oidlists = ($ciscocata_cpu_5m, $ciscocata_cpu_1m, $ciscocata_cpu_5s);
-my $resultat = (Net::SNMP->VERSION < 4) ?
+my $resultat = (Net::SNMP->VERSION lt 4) ?
 	  $session->get_request(@oidlists)
 	: $session->get_request(-varbindlist => \@oidlists);
 
@@ -520,7 +520,7 @@ exit $exit_val;
 
 if ($o_check_type eq "nsc") {
 my @oidlists = ($nsc_cpu_5m, $nsc_cpu_1m, $nsc_cpu_5s);
-my $resultat = (Net::SNMP->VERSION < 4) ?
+my $resultat = (Net::SNMP->VERSION lt 4) ?
 	  $session->get_request(@oidlists)
 	: $session->get_request(-varbindlist => \@oidlists);
 
@@ -577,7 +577,7 @@ if ( $o_check_type =~ /netsc|as400|bc|nokia|^hp$|lp|fg/ ) {
 # Get load table
 my @oidlist = $cpu_oid{$o_check_type}; 
 verb("Checking OID : @oidlist");
-my $resultat = (Net::SNMP->VERSION < 4) ? 
+my $resultat = (Net::SNMP->VERSION lt 4) ? 
 	  $session->get_request(@oidlist)
 	: $session->get_request(-varbindlist => \@oidlist);
 if (!defined($resultat)) {
@@ -625,7 +625,7 @@ if ($o_check_type eq "hpux") {
 verb("Checking hpux load");
 
 my @oidlists = ($hpux_load_1_min, $hpux_load_5_min, $hpux_load_15_min);
-my $resultat = (Net::SNMP->VERSION < 4) ?
+my $resultat = (Net::SNMP->VERSION lt 4) ?
 	  $session->get_request(@oidlists)
 	: $session->get_request(-varbindlist => \@oidlists);
 
@@ -678,7 +678,7 @@ exit $exit_val;
 
 ########## Standard cpu usage check ############
 # Get desctiption table
-my $resultat =  (Net::SNMP->VERSION < 4) ?
+my $resultat =  (Net::SNMP->VERSION lt 4) ?
 	  $session->get_table($base_proc)
 	: $session->get_table(Baseoid => $base_proc);
 

@@ -356,7 +356,7 @@ if (defined($o_dir_set)) {
 	}
 	close (FILE);
 } else {
-	$resultat = (Net::SNMP->VERSION < 4) ? 
+	$resultat = (Net::SNMP->VERSION lt 4) ? 
 			  $session->get_table($css_svc_name)
 			: $session->get_table(Baseoid => $css_svc_name); 
 			
@@ -392,7 +392,7 @@ if ($numsvc == 0) {
 }
 
 $resultat = undef;
-$resultat = (Net::SNMP->VERSION < 4) ?
+$resultat = (Net::SNMP->VERSION lt 4) ?
           $session->get_request(@oid_list)
         : $session->get_request(-varbindlist => \@oid_list);
 
@@ -402,7 +402,7 @@ if (!defined($resultat)) {
    exit $ERRORS{"UNKNOWN"};
 }
 my $resultat2 = undef;
-$resultat2 = (Net::SNMP->VERSION < 4) ?
+$resultat2 = (Net::SNMP->VERSION lt 4) ?
           $session->get_request(@oid_list2)
         : $session->get_request(-varbindlist => \@oid_list2);
 
