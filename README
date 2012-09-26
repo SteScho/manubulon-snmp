@@ -4,3 +4,6 @@ http://sourceforge.net/projects/nagios-snmp/develop
 the support tracker is still located at sf.net
 http://sourceforge.net/tracker/?group_id=134917
 
+if you're missing utils.pm, either install the nagios-plugins package,
+or copy plugins/utils.pm to your perl lib path, or the one included like
+use lib "/usr/local/icinga/libexec";
