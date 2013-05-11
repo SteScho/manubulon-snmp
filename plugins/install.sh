@@ -130,10 +130,10 @@ if [ $INSTSCRIPT != "AUTO" ] ; then
       else TRANS="$TRANS -e s#/usr/local/nagios/libexec#$PLUGHOME#";fi
     fi
 
-    # Change 'my $o_base_dir="/tmp/tmp_Nagios_'
+    # Change 'my $o_base_dir="/tmp/tmp_Icinga_'
     if [ $TMPDATA != "/tmp" ] ; then
-      if [ "z$TRANS" == "z" ]; then TRANS="-r -e s#/tmp/tmp_Nagios#$TMPDATA/tmp_Nagios#"
-      else TRANS="$TRANS -e s#/tmp/tmp_Nagios#$TMPDATA/tmp_Nagios#";fi
+      if [ "z$TRANS" == "z" ]; then TRANS="-r -e s#/tmp/tmp_Icinga#$TMPDATA/tmp_Icinga#"
+      else TRANS="$TRANS -e s#/tmp/tmp_Icinga#$TMPDATA/tmp_Icinga#";fi
     fi
 
     ######################### script install
@@ -234,10 +234,10 @@ else
       else TRANS="$TRANS -e s#/usr/local/nagios/libexec#$PLUGHOME#";fi
     fi
 
-    # Change 'my $o_base_dir="/tmp/tmp_Nagios_'
+    # Change 'my $o_base_dir="/tmp/tmp_Icinga_'
     if [ $TMPDATA != "/tmp" ] ; then
-      if [ "z$TRANS" == "z" ]; then TRANS="-r -e s#/tmp/tmp_Nagios#$TMPDATA/tmp_Nagios#"
-      else TRANS="$TRANS -e s#/tmp/tmp_Nagios#$TMPDATA/tmp_Nagios#";fi
+      if [ "z$TRANS" == "z" ]; then TRANS="-r -e s#/tmp/tmp_Icinga#$TMPDATA/tmp_Icinga#"
+      else TRANS="$TRANS -e s#/tmp/tmp_Icinga#$TMPDATA/tmp_Icinga#";fi
     fi
 
     ######################### script install

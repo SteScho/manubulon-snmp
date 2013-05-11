@@ -17,7 +17,7 @@ use Net::SNMP;
 use Getopt::Long;
 
 ############### BASE DIRECTORY FOR TEMP FILE ########
-my $o_base_dir="/tmp/tmp_Nagios_int.";
+my $o_base_dir="/tmp/tmp_Icinga_int.";
 my $file_history=200;   # number of data to keep in files.
 
 # Nagios specific

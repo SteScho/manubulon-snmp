@@ -17,7 +17,7 @@ use Net::SNMP;
 use Getopt::Long;
 
 ############### BASE DIRECTORY FOR TEMP FILE ########
-my $o_base_dir="/tmp/tmp_Nagios_proc.";
+my $o_base_dir="/tmp/tmp_Icinga_proc.";
 my $file_history=200;   # number of data to keep in files.
 my $delta_of_time_to_make_average=300;  # 5minutes by default
 
