@@ -178,8 +178,8 @@ sub help {
 		hp    : HP procurve switch CPU usage
 		lp    : Linkproof CPU usage
 		hpux  : HP-UX load (1,5 & 15 minutes values)
--f, --perfparse
-   Perfparse compatible output
+-f, --perfparse, --perfdata
+   Performance data output
 -t, --timeout=INTEGER
    timeout for SNMP in seconds (Default: 5)
 -V, --version
@@ -207,7 +207,7 @@ sub check_options {
 	'2'     => \$o_version2,        'v2c'           => \$o_version2,
         'c:s'   => \$o_crit,            'critical:s'    => \$o_crit,
         'w:s'   => \$o_warn,            'warn:s'        => \$o_warn,
-        'f'     => \$o_perf,            'perfparse'     => \$o_perf,
+        'f'     => \$o_perf,            'perfparse'     => \$o_perf, 'perfdata'     => \$o_perf
 	'T:s'	=> \$o_check_type,	'type:s'	=> \$o_check_type
 	);
     # check the -T option

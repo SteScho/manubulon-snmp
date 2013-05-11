@@ -199,8 +199,8 @@ sub help {
   max-size of the SNMP message, usefull in case of Too Long responses.
   Be carefull with network filters. Range 484 - 65535, default are
   usually 1472,1452,1460 or 1440.     
--f, --perfparse
-   Perfparse compatible output (no output when interface is down).
+-f, --perfparse, --perfdata
+   Performance data output (no output when interface is down).
 -e, --error
    Add error & discard to Perfparse output
 -S, --intspeed
@@ -267,7 +267,7 @@ sub check_options {
 	'a'	=> \$o_admin,		'admin'		=> \$o_admin,
 	'r'	=> \$o_noreg,		'noregexp'	=> \$o_noreg,
 	'V'	=> \$o_version,		'version'	=> \$o_version,
-        'f'     => \$o_perf,            'perfparse'     => \$o_perf,
+        'f'     => \$o_perf,            'perfparse'     => \$o_perf, 'perfdata'     => \$o_perf,
         'e'     => \$o_perfe,           'error'     	=> \$o_perfe,
         'k'     => \$o_checkperf,       'perfcheck'   	=> \$o_checkperf,
         'q'     => \$o_ext_checkperf,   'extperfcheck'  => \$o_ext_checkperf,

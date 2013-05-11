@@ -189,8 +189,8 @@ warn if %used > warn and critical if %used > crit
    For ext2/3 filesystems, it is 5% by default
 -G, --gigabyte
    output, warning & critical levels in gigabytes
--f, --perfparse
-   Perfparse compatible output
+-f, --perfparse, --perfdata
+   Performance data output
 -S, --short=<type>[,<where>,<cut>]
    <type>: Make the output shorter :
      0 : only print the global result except the disk in warning or critical
@@ -255,7 +255,7 @@ sub check_options {
 		'q:s'  	=> \$o_storagetype,	'storagetype:s'=> \$o_storagetype,
 	'S:s'   => \$o_short,         	'short:s'       => \$o_short,
 	'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
-	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf,
+	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf, 'perfdata' => \$o_perf,
 	'R:i'	=> \$o_reserve,	        'reserved:i'	=> \$o_reserve,
 	'G'	=> \$o_giga,	        'gigabyte'	=> \$o_giga
     );

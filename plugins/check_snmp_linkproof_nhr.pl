@@ -100,8 +100,8 @@ CRITICAL if all nhr are inactive.
    <privproto> : Priv protocole (des|aes : default des) 
 -P, --port=PORT
    SNMP port (Default 161)
--f, --perfparse
-   Perfparse compatible output
+-f, --perfparse, --perfdata
+   Performance data output
 -t, --timeout=INTEGER
    timeout for SNMP in seconds (Default: 5)
 -V, --version
@@ -127,7 +127,7 @@ sub check_options {
         't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
 	'V'	=> \$o_version,		'version'	=> \$o_version,
 	'2'     => \$o_version2,        'v2c'           => \$o_version2,
-        'f'     => \$o_perf,            'perfparse'     => \$o_perf,
+        'f'     => \$o_perf,            'perfparse'     => \$o_perf, 'perfdata'     => \$o_perf
 	);
     # Basic checks
 	if (defined($o_timeout) && (isnnum($o_timeout) || ($o_timeout < 2) || ($o_timeout > 60))) 

@@ -148,8 +148,8 @@ sub help {
    check if installed policy is POLICY_NAME (must have -w)
 -c, --connexions=WARN,CRIT
    check warn and critical number of connexions (must have -w)
--f, --perfparse
-   perfparse output (only works with -c)
+-f, --perfparse, --perfdata
+   performance data output (only works with -c)
 -P, --port=PORT
    SNMP port (Default 161)
 -t, --timeout=INTEGER
@@ -183,7 +183,7 @@ sub check_options {
 	'm'	=> \$o_mgmt,		'mgmt'		=> \$o_mgmt,
 	'p:s'	=> \$o_policy,		'policy:s'	=> \$o_policy,
 	'c:s'	=> \$o_conn,		'connexions:s'	=> \$o_conn,
-	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf
+	'f'	=> \$o_perf,		'perfparse'	=> \$o_perf, 'perfdata' => \$o_perf
     );
     if (defined ($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"}};
@@ -222,7 +222,7 @@ sub check_options {
         { print "Put a policy name !\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
     }
     if (defined($o_perf) && ! defined ($o_conn))
-	{ print "Nothing selected for perfparse !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+	{ print "Nothing selected for performance data output !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
     if (!defined($o_fw) && !defined($o_ha) && !defined($o_mgmt) && !defined($o_svn))
 	{ print "Must select a product to check !\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
     if (defined ($o_ha) && ($o_ha ne "") && ($o_ha ne "standby")) 
