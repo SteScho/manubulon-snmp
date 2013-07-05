@@ -207,7 +207,7 @@ sub check_options {
 	'2'     => \$o_version2,        'v2c'           => \$o_version2,
         'c:s'   => \$o_crit,            'critical:s'    => \$o_crit,
         'w:s'   => \$o_warn,            'warn:s'        => \$o_warn,
-        'f'     => \$o_perf,            'perfparse'     => \$o_perf, 'perfdata'     => \$o_perf
+        'f'     => \$o_perf,            'perfparse'     => \$o_perf, 'perfdata'     => \$o_perf,
 	'T:s'	=> \$o_check_type,	'type:s'	=> \$o_check_type
 	);
     # check the -T option
