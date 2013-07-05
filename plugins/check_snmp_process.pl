@@ -42,6 +42,7 @@ my $proc_run_state = '1.3.6.1.2.1.25.4.2.1.7';
 my $o_host = 	undef; 		# hostname 
 my $o_community =undef; 	# community 
 my $o_port = 	161; 		# port
+my $o_domain=   'udp/ipv4';	# Default to UDP over IPv4
 my $o_version2	= undef;	#use snmp v2c
 my $o_descr = 	undef; 		# description filter 
 my $o_warn = 	0; 		# warning limit 
@@ -80,7 +81,7 @@ my $o_delta=	$delta_of_time_to_make_average;		# delta time for CPU check
 sub p_version { print "check_snmp_process version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> -d<delta> ] [-t <timeout>] [-o <octet_length>] [-f -A -F ] [-r] [-V] [-g]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] [-P <IP Protocol>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> -d<delta> ] [-t <timeout>] [-o <octet_length>] [-f -A -F ] [-r] [-V] [-g]\n";
 }
 
 sub isnotnum { # Return true if arg is not a number
@@ -166,6 +167,12 @@ sub help {
    <privproto> : Priv protocole (des|aes : default des) 
 -p, --port=PORT
    SNMP port (Default 161)
+-P, --protocol=PROTOCOL
+   Network protcol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
 -n, --name=NAME
    Name of the process (regexp)
    No trailing slash !
@@ -233,6 +240,7 @@ sub check_options {
         'h'     => \$o_help,    	'help'        	=> \$o_help,
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
+	'P:s'	=> \$o_domain,		'protocol:s'	=> \$o_domain,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
         'l:s'   => \$o_login,           'login:s'       => \$o_login,
         'x:s'   => \$o_passwd,          'passwd:s'      => \$o_passwd,
@@ -240,20 +248,20 @@ sub check_options {
 	'L:s'	=> \$v3protocols,		'protocols:s'	=> \$v3protocols,   
 	'c:s'   => \$o_crit,    	'critical:s'	=> \$o_crit,
         'w:s'   => \$o_warn,    	'warn:s'	=> \$o_warn,
-		't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
+	't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
         'n:s'   => \$o_descr,		'name:s'	=> \$o_descr,
         'r'     => \$o_noreg,           'noregexp'      => \$o_noreg,
         'f'     => \$o_path,           	'fullpath'      => \$o_path,
         'm:s'   => \$o_mem,           	'memory:s'    	=> \$o_mem,
         'a'     => \$o_mem_avg,       	'average'      	=> \$o_mem_avg,
         'u:s'   => \$o_cpu,       	'cpu'      	=> \$o_cpu,
-		'2'	=> \$o_version2,	'v2c'		=> \$o_version2,
-		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
-		'g'   	=> \$o_get_all,       	'getall'      	=> \$o_get_all,
-		'A'     => \$o_param,         'param'       => \$o_param,
-		'F'     => \$o_perf,         'perfout'       => \$o_perf,
+	'2'	=> \$o_version2,	'v2c'		=> \$o_version2,
+	'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
+	'g'   	=> \$o_get_all,       	'getall'      	=> \$o_get_all,
+	'A'     => \$o_param,         'param'       => \$o_param,
+	'F'     => \$o_perf,         'perfout'       => \$o_perf,
         'd:i'   => \$o_delta,           'delta:i'       => \$o_delta,		
-		'V'     => \$o_version,         'version'       => \$o_version
+	'V'     => \$o_version,         'version'       => \$o_version
     );
     if (defined ($o_help)) { help(); exit $ERRORS{"UNKNOWN"}};
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"}};
@@ -343,6 +351,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -hostname   	=> $o_host,
       -version		=> '3',
       -port      	=> $o_port,
+      -domain           => $o_domain,
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
@@ -355,6 +364,7 @@ if ( defined($o_login) && defined($o_passwd)) {
       -version		=> '3',
       -username		=> $o_login,
       -port      	=> $o_port,
+      -domain           => $o_domain,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
@@ -370,6 +380,7 @@ if ( defined($o_login) && defined($o_passwd)) {
 	   -version   => 2,
        -community => $o_community,
        -port      => $o_port,
+      -domain           => $o_domain,
        -timeout   => $o_timeout
     );
   } else {
@@ -378,6 +389,7 @@ if ( defined($o_login) && defined($o_passwd)) {
        -hostname  => $o_host,
        -community => $o_community,
        -port      => $o_port,
+      -domain           => $o_domain,
        -timeout   => $o_timeout
     );
   }

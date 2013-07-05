@@ -95,6 +95,7 @@ my %cpu_oid = ("netsc",$ns_cpu_idle,"as400",$as400_cpu,"bc",$bluecoat_cpu,"nokia
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
 my $o_port = 	161; 		# port
+my $o_domain=   'udp/ipv4';	# protocol
 my $o_help=	undef; 		# wan't some help ?
 my $o_verb=	undef;		# verbose mode
 my $o_version=	undef;		# print version
@@ -121,7 +122,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_load version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -153,8 +154,16 @@ sub help {
 -L, --protocols=<authproto>,<privproto>
    <authproto> : Authentication protocol (md5|sha : default md5)
    <privproto> : Priv protocole (des|aes : default des) 
--P, --port=PORT
+-p, --port=PORT
    SNMP port (Default 161)
+-P, --protocol=PROTOCOL
+   Network protcol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
+
+   Network protocol (Default udp/ipv4)
 -w, --warn=INTEGER | INT,INT,INT
    1 value check : warning level for cpu in percent (on one minute)
    3 value check : comma separated level for load or cpu for 1min, 5min, 15min 
@@ -197,6 +206,7 @@ sub check_options {
         'h'     => \$o_help,    	'help'        	=> \$o_help,
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
+        'P:s'	=> \$o_domain,		'protocol:s'	=> \$o_domain,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
 	'x:s'	=> \$o_passwd,		'passwd:s'	=> \$o_passwd,
@@ -297,7 +307,8 @@ if ( defined($o_login) && defined($o_passwd)) {
       -username		=> $o_login,
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
-      -timeout          => $o_timeout
+      -timeout          => $o_timeout,
+      -domain		=> $o_domain
     );  
   } else {
     verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
@@ -309,7 +320,8 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authprotocol	=> $o_authproto,
       -privpassword	=> $o_privpass,
 	  -privprotocol => $o_privproto,
-      -timeout          => $o_timeout
+      -timeout          => $o_timeout,
+      -domain		=> $o_domain
     );
   }
 } else {
@@ -321,7 +333,8 @@ if ( defined($o_login) && defined($o_passwd)) {
 		 -version   => 2,
 		 -community => $o_community,
 		 -port      => $o_port,
-		 -timeout   => $o_timeout
+		 -timeout   => $o_timeout,
+		 -domain    => $o_domain
 		);
   	} else {
 	  # SNMPV1 login
@@ -330,7 +343,8 @@ if ( defined($o_login) && defined($o_passwd)) {
 		-hostname  => $o_host,
 		-community => $o_community,
 		-port      => $o_port,
-		-timeout   => $o_timeout
+		-timeout   => $o_timeout,
+		-domain	   => $o_domain
 	  );
 	}
 }

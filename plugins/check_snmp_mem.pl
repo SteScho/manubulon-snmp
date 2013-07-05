@@ -63,6 +63,7 @@ my $hp_mem_free_seg	= "1.3.6.1.4.1.11.2.14.11.5.1.1.2.2.1.1.3"; # Free segments
 my $o_host = 	undef; 		# hostname
 my $o_community = undef; 	# community
 my $o_port = 	161; 		# port
+my $o_domain=   'udp/ipv4';	# Default to UDP over IPv4
 my $o_help=	undef; 		# wan't some help ?
 my $o_verb=	undef;		# verbose mode
 my $o_version=	undef;		# print version
@@ -93,7 +94,7 @@ my $o_privpass= undef;		# priv password
 sub p_version { print "check_snmp_mem version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] -w <warn level> -c <crit level> [-I|-N|-E] [-f] [-m -b] [-t <timeout>] [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> [-I|-N|-E] [-f] [-m -b] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -129,8 +130,14 @@ sub help {
 -L, --protocols=<authproto>,<privproto>
    <authproto> : Authentication protocol (md5|sha : default md5)
    <privproto> : Priv protocole (des|aes : default des) 
--P, --port=PORT
+-p, --port=PORT
    SNMP port (Default 161)
+-P, --protocol=PROTOCOL
+   Network protcol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
 -w, --warn=INTEGER | INT,INT
    warning level for memory in percent (0 for no checks) 
      Default (-N switch) : comma separated level for Real Memory and Swap 
@@ -174,6 +181,7 @@ sub check_options {
         'h'     => \$o_help,    	'help'        	=> \$o_help,
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
+	'P:s'   => \$o_domain,          'protocol:s'    => \$o_domain,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
 	'x:s'	=> \$o_passwd,		'passwd:s'	=> \$o_passwd,
@@ -270,7 +278,8 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authpassword	=> $o_passwd,
       -authprotocol	=> $o_authproto,
 	  -port             => $o_port,
-      -timeout          => $o_timeout
+      -timeout          => $o_timeout,
+      -domain           => $o_domain
     );  
   } else {
     verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
@@ -283,7 +292,8 @@ if ( defined($o_login) && defined($o_passwd)) {
       -privpassword	=> $o_privpass,
 	  -privprotocol => $o_privproto,
 	  -port             => $o_port,	  
-      -timeout      => $o_timeout
+      -timeout      => $o_timeout,
+      -domain           => $o_domain
     );
   }
 } else {
@@ -295,7 +305,8 @@ if ( defined($o_login) && defined($o_passwd)) {
 	    -version   => 2,
 	-community => $o_community,
 	-port      => $o_port,
-	-timeout   => $o_timeout
+	-timeout   => $o_timeout,
+	-domain    => $o_domain
      );
    } else {
     # SNMPV1 login
@@ -304,7 +315,8 @@ if ( defined($o_login) && defined($o_passwd)) {
        -hostname  => $o_host,
        -community => $o_community,
        -port      => $o_port,
-       -timeout   => $o_timeout
+       -timeout   => $o_timeout,
+       -domain    => $o_domain
     );
   }
 }

@@ -62,6 +62,7 @@ my $Version='1.3.3';
 my $o_host = 	undef; 		# hostname 
 my $o_community = undef; 	# community 
 my $o_port = 	161; 		# port
+my $o_domain=   'udp/ipv4';	# Default to UDP over IPv4
 my $o_version2	= undef;	#use snmp v2c
 my $o_descr = 	undef; 		# description filter 
 my $o_storagetype = undef;    # parse storage type also
@@ -98,7 +99,7 @@ my $o_octetlength=undef;
 sub p_version { print "$Name version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
+    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] [-P <protocol>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
 }
 
 sub round ($$) {
@@ -154,6 +155,12 @@ warn if %used > warn and critical if %used > crit
    Password for snmpv3 authentication
 -p, --port=PORT
    SNMP port (Default 161)
+-P, --protocol=PROTOCOL
+   Network protcol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
 -m, --name=NAME
    Name in description OID (can be mounpoints '/home' or 'Swap Space'...)
    This is treated as a regexp : -m /var will match /var , /var/log, /opt/var ...
@@ -236,6 +243,7 @@ sub check_options {
         'h'     => \$o_help,    	'help'        	=> \$o_help,
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
+	'P:s'	=> \$o_domain,		'protocol:s'	=> \$o_domain,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
 	'2'     => \$o_version2,        'v2c'           => \$o_version2,
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
@@ -352,7 +360,8 @@ if ( defined($o_login) && defined($o_passwd)) {
       -authprotocol	=> $o_authproto,
       -port      	=> $o_port,
       -retries       => 10,
-      -timeout          => $o_timeout
+      -timeout          => $o_timeout,
+      -domain           => $o_domain
     );  
   } else {
     verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
@@ -366,7 +375,8 @@ if ( defined($o_login) && defined($o_passwd)) {
 	  -privprotocol => $o_privproto,
       -port      	=> $o_port,
       -retries       => 10,
-      -timeout          => $o_timeout
+      -timeout          => $o_timeout,
+      -domain           => $o_domain
     );
   }
 } else {
@@ -379,7 +389,8 @@ if ( defined($o_login) && defined($o_passwd)) {
 		 -community => $o_community,
 		 -port      => $o_port,
   		 -retries       => 10,
-		 -timeout   => $o_timeout
+		 -timeout   => $o_timeout,
+		 -domain    => $o_domain
 		);
   	} else {
 	  # SNMPV1 login
@@ -389,7 +400,8 @@ if ( defined($o_login) && defined($o_passwd)) {
 		-community => $o_community,
 		-port      => $o_port,
                 -retries       => 10,
-		-timeout   => $o_timeout
+		-timeout   => $o_timeout,
+		-domain    => $o_domain
 	  );
 	}
 }
