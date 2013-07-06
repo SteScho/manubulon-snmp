@@ -1,9 +1,18 @@
-this is an unofficial cvs2git import from 
+Manubulon SNMP Plugins
+======================
+
+This is an unofficial cvs2git import from
 http://sourceforge.net/projects/nagios-snmp/develop
+with own and collected patches applied.
 
-the support tracker is still located at sf.net
+The original documentation and sourcecode is located at
+http://nagios.manubulon.com
+
+The support tracker is still located at sf.net
 http://sourceforge.net/tracker/?group_id=134917
+but you may head over to http://www.monitoring-portal.org
+for questions and feedback as well (rich community portal).
 
-if you're missing utils.pm, either install the nagios-plugins package,
+NOTE: If you're missing utils.pm, either install the nagios-plugins package,
 or copy plugins/utils.pm to your perl lib path, or the one included like
 use lib "/usr/local/icinga/libexec";
