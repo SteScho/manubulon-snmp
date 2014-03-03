@@ -168,7 +168,7 @@ sub help {
 -p, --port=PORT
    SNMP port (Default 161)
 -P, --protocol=PROTOCOL
-   Network protcol to be used
+   Network protocol to be used
    ['udp/ipv4'] : UDP over IPv4
     'udp/ipv6'  : UDP over IPv6
     'tcp/ipv4'  : TCP over IPv4
