@@ -55,6 +55,9 @@ my $nsc_cpu_5s = "1.3.6.1.4.1.3224.16.1.3.0"; # NS CPU load (5sec %)
 
 my $as400_cpu = "1.3.6.1.4.1.2.6.4.5.1.0"; # AS400 CPU load (10000=100%);
 
+# N5K CPU 
+my $n5k_cpu = "1.3.6.1.4.1.9.9.305.1.1.1.0"; # N5K CPU load (%)
+
 # Net-SNMP CPU
 
 my $ns_cpu_idle   = "1.3.6.1.4.1.2021.11.11.0"; # Net-snmp cpu idle
@@ -85,9 +88,9 @@ my $hpux_load_5_min="1.3.6.1.4.1.11.2.3.1.1.4.0";
 my $hpux_load_15_min="1.3.6.1.4.1.11.2.3.1.1.5.0";
  
 # valid values 
-my @valid_types = ("stand","netsc","netsl","as400","cisco","cata","nsc","fg","bc","nokia","hp","lp","hpux");
+my @valid_types = ("stand","netsc","netsl","as400","cisco","cata","nsc","fg","bc","nokia","hp","lp","hpux","n5k");
 # CPU OID array
-my %cpu_oid = ("netsc",$ns_cpu_idle,"as400",$as400_cpu,"bc",$bluecoat_cpu,"nokia",$nokia_cpu,"hp",$procurve_cpu,"lp",$linkproof_cpu,"fg",$fortigate_cpu);
+my %cpu_oid = ("netsc",$ns_cpu_idle,"as400",$as400_cpu,"bc",$bluecoat_cpu,"nokia",$nokia_cpu,"hp",$procurve_cpu,"lp",$linkproof_cpu,"fg",$fortigate_cpu, "n5k",$n5k_cpu);
 
 # Globals
 
@@ -179,6 +182,7 @@ sub help {
 		netsc : cpu usage given by net-snmp (100-idle)
 		as400 : as400 CPU usage
 		cisco : Cisco CPU usage
+		n5k   : Cisco Nexus CPU Usage
 		cata  : Cisco catalyst CPU usage
 		nsc   : NetScreen CPU usage
 		fg    : Fortigate CPU usage
@@ -475,6 +479,48 @@ if (defined($o_perf)) {
 exit $exit_val;
 }
 
+############## Cisco N5K CPU Check ###################
+if ($o_check_type eq "n5k") {
+my @oidlists = ($n5k_cpu);
+my $resultat = (Net::SNMP->VERSION lt 4) ?
+          $session->get_request(@oidlists)
+        : $session->get_request(-varbindlist => \@oidlists);
+if (!defined($resultat)) {
+   printf("ERROR: Description table : %s.\n", $session->error);
+   $session->close;
+   exit $ERRORS{"UNKNOWN"};
+}
+
+$session->close;
+if (!defined ($$resultat{$n5k_cpu})) {
+  print "No CPU information : UNKNOWN\n";
+  exit $ERRORS{"UNKNOWN"};
+}
+
+my $n5k_load = $$resultat{$n5k_cpu};
+if ($n5k_load > $o_crit ) {
+	print "$n5k_load% > $o_crit% : CRITICAL";
+	$exit_val=$ERRORS{"CRITICAL"};
+}
+elsif ($n5k_load > $o_warn) {
+	print "$n5k_load% > $o_warn% : WARNING";
+        $exit_val=$ERRORS{"WARNING"};
+}
+else{
+	print "CPU: $n5k_load%"; 
+	$exit_val=$ERRORS{"OK"};
+}
+if (defined($o_perf)) {
+	print " | n5k_load=$n5k_load%";
+}
+print "\n";
+exit $exit_val;
+
+
+
+
+
+}
 ############## Cisco Catalyst CPU check ################
 
 if ($o_check_type eq "cata") {
