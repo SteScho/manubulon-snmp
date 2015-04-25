@@ -363,6 +363,20 @@ my $exit_val=undef;
 if ($o_check_type eq "netsl") {
 
 verb("Checking linux load");
+
+# Get number of CPUs
+my $resultat =  (Net::SNMP->VERSION < 4) ?
+	  $session->get_table($proc_id)
+	: $session->get_table(Baseoid => $proc_id);
+
+if (!defined($resultat)) {
+   printf("ERROR: Description table : %s.\n", $session->error);
+   $session->close;
+   exit $ERRORS{"UNKNOWN"};
+}
+
+my $ncpu = keys %$resultat;
+
 # Get load table
 my $resultat = (Net::SNMP->VERSION lt 4) ? 
 		  $session->get_table($linload_table)
@@ -397,10 +411,13 @@ if ($exist == 0) {
 
 for (my $i=0;$i<3;$i++) { $load[$i] = $$resultat{$linload_load . "." . $iload[$i]}};
 
-print "Load : $load[0] $load[1] $load[2] :";
+print "Load (CPUs: $ncpu) : $load[0] $load[1] $load[2] :";
 
 $exit_val=$ERRORS{"OK"};
 for (my $i=0;$i<3;$i++) {
+  # Multiply warning and critical levels by the number of CPUs
+  $o_warnL[$i] *= $ncpu;
+  $o_critL[$i] *= $ncpu;
   if ( $load[$i] > $o_critL[$i] ) {
    print " $load[$i] > $o_critL[$i] : CRITICAL";
    $exit_val=$ERRORS{"CRITICAL"};
