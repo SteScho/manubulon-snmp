@@ -378,10 +378,10 @@ if (!defined($resultat)) {
 my $ncpu = keys %$resultat;
 
 # Get load table
-my $resultat = (Net::SNMP->VERSION lt 4) ? 
+$resultat = (Net::SNMP->VERSION lt 4) ?
 		  $session->get_table($linload_table)
-		: $session->get_table(Baseoid => $linload_table); 
-		
+		: $session->get_table(Baseoid => $linload_table);
+
 if (!defined($resultat)) {
    printf("ERROR: Description table : %s.\n", $session->error);
    $session->close;
