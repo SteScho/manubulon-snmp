@@ -21,16 +21,14 @@ Feel free to use & distribute it under the original license.
 ## Requirements
 
 * perl in /usr/bin/perl
-* Net::SNMP and Getopt::Long
-* File `utils.pm` in Nagios plugin directory (default /usr/local/icinga/libexec)
+* Perl modules `Net::SNMP` and `Getopt::Long` (RHEL: `perl-Net-SNMP perl-Getopt-Long`)
 * Icinga user is able to write files in /tmp/ directory
 
 Perl, default directory and temp files location can be changed using the install.sh script.
 
-> **NOTE:** If you're missing utils.pm, either install the
-> nagios-plugins-common debian package or copy plugins/utils.pm
-> to your perl lib path, or the one included like
-> `use lib "/usr/local/icinga/libexec";`
+> **Note**
+>
+> `utils.pm` from `Monitoring::Plugin::Perl` is no longer required.
 
 ## Documentation
 

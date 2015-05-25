@@ -16,8 +16,7 @@ use strict;
 use Net::SNMP;
 use Getopt::Long;
 
-# Nagios specific
-
+# Icinga specific
 my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 

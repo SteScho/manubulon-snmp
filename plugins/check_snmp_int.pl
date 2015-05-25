@@ -20,8 +20,7 @@ use Getopt::Long;
 my $o_base_dir="/tmp/tmp_Icinga_int.";
 my $file_history=200;   # number of data to keep in files.
 
-# Nagios specific
-
+# Icinga specific
 my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 

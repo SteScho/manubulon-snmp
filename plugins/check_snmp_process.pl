@@ -21,8 +21,7 @@ my $o_base_dir="/tmp/tmp_Icinga_proc.";
 my $file_history=200;   # number of data to keep in files.
 my $delta_of_time_to_make_average=300;  # 5minutes by default
 
-# Nagios specific
-
+# Icinga specific
 my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 

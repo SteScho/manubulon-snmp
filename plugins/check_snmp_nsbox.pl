@@ -16,12 +16,9 @@ use strict;
 use Net::SNMP;
 use Getopt::Long;
 
-# Nagios specific
-
-use lib "/usr/local/icinga/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 15;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+# Icinga specific
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 my $ns_service_status=	"1.3.6.1.4.1.14020.2.2.1.3.0"; # service status 1= ok ??

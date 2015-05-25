@@ -15,12 +15,9 @@ use strict;
 use Net::SNMP;
 use Getopt::Long;
 
-# Nagios specific
-
-use lib "/usr/local/icinga/libexec";
-use utils qw(%ERRORS $TIMEOUT);
-#my $TIMEOUT = 15;
-#my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+# Icinga specific
+my $TIMEOUT = 15;
+my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas
 my $storage_table= '1.3.6.1.2.1.25.2.3.1';
