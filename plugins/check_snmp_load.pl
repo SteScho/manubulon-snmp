@@ -284,7 +284,6 @@ sub check_options {
 sub is_legacy_snmp_version {
     my $version=Net::SNMP->VERSION; #using a variable for easier testing
     if ($version=~/^\D*(\d)/ and $1 < 4){
-        print "$1 wee";
         return 1;
     }else{
         return 0;
