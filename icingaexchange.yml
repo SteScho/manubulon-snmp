@@ -1,0 +1,8 @@
+name: manubulon-snmp
+description: "file:///README.md"
+url: "https://github.com/dnsmichi/manubulon-snmp"
+tags: SNMP,Storage,Network,Windows,NAS
+vendor: Linux,Cisco,HP,Fortinet,Juniper
+target: Operating System,Snmp,Storage,Network
+type: Plugin
+license: gpl
