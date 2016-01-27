@@ -29,6 +29,7 @@ my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 my $inter_table= '.1.3.6.1.2.1.2.2.1';
 my $index_table = '1.3.6.1.2.1.2.2.1.1';
 my $descr_table = '1.3.6.1.2.1.2.2.1.2';
+my $name_table = '1.3.6.1.2.1.31.1.1.1.1';
 my $oper_table = '1.3.6.1.2.1.2.2.1.8.';
 my $admin_table = '1.3.6.1.2.1.2.2.1.7.';
 my $speed_table = '1.3.6.1.2.1.2.2.1.5.';
@@ -79,6 +80,7 @@ my $o_highperf=		undef;	# Use 64 bits counters
 my $o_meg=		undef; # output in MBytes or Mbits (-M)
 my $o_gig=		undef; # output in GBytes or Gbits (-G)
 my $o_prct=		undef; # output in % of max speed  (-u)
+my $o_use_ifname=	undef;  # use IF-MIB::ifName instead of IF-MIB::ifDescr
 
 my $o_timeout=  undef; 		# Timeout (Default 5)
 # SNMP Message size parameter (Makina Corpus contrib)
@@ -188,6 +190,8 @@ sub help {
    Test it before, because there are known bugs (ex : trailling /)
 -r, --noregexp
    Do not use regexp to match NAME in description OID
+-N, --use-ifname
+   Use IF-MIB::ifName as source for NIC name instead of IF-MIB::ifDescr
 -i, --inverse
    Make critical when up
 -a, --admin
@@ -255,6 +259,7 @@ sub check_options {
         'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
 	'n:s'   => \$o_descr,           'name:s'        => \$o_descr,
+	'N'	=> \$o_use_ifname,	'use-ifname'	=> \$o_use_ifname,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
 		'2'	=> \$o_version2,	'v2c'		=> \$o_version2,		
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
@@ -444,9 +449,13 @@ if (defined($o_octetlength)) {
 	verb(" new max octets:: $oct_test");
 }
 
-# Get desctiption table
+# Get description table
+my $query_table = $descr_table;
+if (defined($o_use_ifname)) {
+	$query_table = $name_table;
+}
 my $resultat = $session->get_table( 
-	Baseoid => $descr_table 
+	Baseoid => $query_table
 );
 
 if (!defined($resultat)) {
