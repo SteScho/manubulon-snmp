@@ -465,7 +465,7 @@ my $perf_out=	undef;
 
 verb("Filter : $o_descr");
 
-foreach my $key ( keys %$resultat) {
+foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
    verb("OID : $key, Desc : $$resultat{$key}");
    # test by regexp or exact match / include or exclude
    if (defined($o_negate)) {
