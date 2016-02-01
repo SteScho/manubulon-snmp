@@ -30,6 +30,7 @@ my $inter_table= '.1.3.6.1.2.1.2.2.1';
 my $index_table = '1.3.6.1.2.1.2.2.1.1';
 my $descr_table = '1.3.6.1.2.1.2.2.1.2';
 my $name_table = '1.3.6.1.2.1.31.1.1.1.1';
+my $alias_table = '.1.3.6.1.2.1.31.1.1.1.18';
 my $oper_table = '1.3.6.1.2.1.2.2.1.8.';
 my $admin_table = '1.3.6.1.2.1.2.2.1.7.';
 my $speed_table = '1.3.6.1.2.1.2.2.1.5.';
@@ -81,6 +82,7 @@ my $o_meg=		undef; # output in MBytes or Mbits (-M)
 my $o_gig=		undef; # output in GBytes or Gbits (-G)
 my $o_prct=		undef; # output in % of max speed  (-u)
 my $o_use_ifname=	undef;  # use IF-MIB::ifName instead of IF-MIB::ifDescr
+my $o_use_ifalias=	undef;  # use IF-MIB::ifAlias instead of IF-MIB::ifDescr
 
 my $o_timeout=  undef; 		# Timeout (Default 5)
 # SNMP Message size parameter (Makina Corpus contrib)
@@ -151,7 +153,7 @@ sub write_file {
 sub p_version { print "check_snmp_int version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-i -a -D] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-N -A -i -a -D] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -192,6 +194,8 @@ sub help {
    Do not use regexp to match NAME in description OID
 -N, --use-ifname
    Use IF-MIB::ifName as source for NIC name instead of IF-MIB::ifDescr
+-A, --use-ifalias
+   Use IF-MIB::ifAlias as source for NIC name instead of IF-MIB::ifDescr
 -i, --inverse
    Make critical when up
 -a, --admin
@@ -260,6 +264,7 @@ sub check_options {
         'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
 	'n:s'   => \$o_descr,           'name:s'        => \$o_descr,
 	'N'	=> \$o_use_ifname,	'use-ifname'	=> \$o_use_ifname,
+	'A'	=> \$o_use_ifalias,	'use-ifalias'	=> \$o_use_ifalias,
         'C:s'   => \$o_community,	'community:s'	=> \$o_community,
 		'2'	=> \$o_version2,	'v2c'		=> \$o_version2,		
 	'l:s'	=> \$o_login,		'login:s'	=> \$o_login,
@@ -451,8 +456,16 @@ if (defined($o_octetlength)) {
 
 # Get description table
 my $query_table = $descr_table;
+if (defined($o_use_ifalias) and defined($o_use_ifname)) {
+	printf("ERROR: Options -N and -A are exclusive. Please select only one.\n");
+	$session->close;
+	exit $ERRORS{"UNKNOWN"};
+}
 if (defined($o_use_ifname)) {
 	$query_table = $name_table;
+}
+if (defined($o_use_ifalias)) {
+	$query_table = $alias_table;
 }
 my $resultat = $session->get_table( 
 	Baseoid => $query_table
