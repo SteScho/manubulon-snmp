@@ -496,7 +496,7 @@ if (defined($o_highperf)) {
 # and put the oid to query in an array
 
 verb("Filter : $o_descr");
-foreach my $key ( keys %$resultat) {
+foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
    verb("OID : $key, Desc : $$resultat{$key}");
    # test by regexp or exact match
    my $test = defined($o_noreg) 
