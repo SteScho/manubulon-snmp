@@ -530,7 +530,7 @@ if (defined ($o_mgmt)) { $f_print = (defined ($f_print)) ? $f_print . " / ". $mg
 my $exit_status=undef;
 $f_print .= " / CPFW Status: ";
 if (($ha_state_n+$svn_state+$fw_state+$mgmt_state) == 0 ) {
-  $f_print .= "OK, " . $perf_conn . " conn.";
+  $f_print .= 'OK' . ($perf_conn ? ', ' . $perf_conn . ' conn.' : '');
   $exit_status= $ERRORS{"OK"}; 
 } else {
   if (($fw_state==1) || ($ha_state_n==1) || ($svn_state==1) || ($mgmt_state==1)) {
