@@ -24,6 +24,9 @@ my $file_history=200;   # number of data to keep in files.
 my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
+# split big SNMP requests to smaller ones
+my $snmp_splice_size = 50;
+
 # SNMP Datas
 
 my $inter_table= '.1.3.6.1.2.1.2.2.1';
@@ -57,6 +60,7 @@ my $o_help=		undef; 	# wan't some help ?
 my $o_admin=		undef;	# admin status instead of oper
 my $o_inverse=  	undef;	# Critical when up
 my $o_dormant=        	undef;  # Dormant state is OK
+my $o_down=   undef;  # Down state is OK
 my $o_verb=		undef;	# verbose mode
 my $o_version=		undef;	# print version
 my $o_noreg=		undef;	# Do not use Regexp for name
@@ -153,7 +157,7 @@ sub write_file {
 sub p_version { print "check_snmp_int version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-N -A -i -a -D] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
+    print "Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-N -A -i -a -D --down] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
 }
 
 sub isnnum { # Return true if arg is not a number
@@ -202,6 +206,8 @@ sub help {
    Use administrative status instead of operational
 -D, --dormant
    Dormant state is an OK state
+--down
+   Down state is an OK state
 -o, --octetlength=INTEGER
   max-size of the SNMP message, usefull in case of Too Long responses.
   Be carefull with network filters. Range 484 - 65535, default are
@@ -294,7 +300,8 @@ sub check_options {
 		'o:i'   => \$o_octetlength,    	'octetlength:i' => \$o_octetlength,
 		'label'   => \$o_label,    	
         'd:i'   => \$o_delta,           'delta:i'     	=> \$o_delta,
-	'D'   => \$o_dormant,           'dormant'             => \$o_dormant
+	'D'   => \$o_dormant,           'dormant'             => \$o_dormant,
+	'down' => \$o_down
     );
     if (defined ($o_help) ) { help(); exit $ERRORS{"UNKNOWN"}};
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"}};
@@ -546,13 +553,15 @@ if (defined($o_perf)||defined($o_checkperf)) {
 }
 
 # Get the requested oid values
-$result = $session->get_request(
-   Varbindlist => \@oids
-);
-if (!defined($result)) { printf("ERROR: Status/statistics table : %s.\n", $session->error); $session->close;
-   exit $ERRORS{"UNKNOWN"};
+while(my @oids_part = splice(@oids, 0, $snmp_splice_size)) {
+  my $result_part = $session->get_request(Varbindlist => \@oids_part);
+  if (!defined($result_part)) {
+    printf("ERROR: Status/statistics table : %s.\n             ", $session->error);
+    $session->close;
+    exit $ERRORS{"UNKNOWN"};
+  }
+  $result = defined($result) ? {%$result, %$result_part} : $result_part;
 }
-
 $session->close;
 
 my $num_ok=0;
@@ -743,7 +752,7 @@ for (my $i=0;$i < $num_int; $i++) {
   }
   # Get rid of special caracters for performance in description
   $descr[$i] =~ s/'\/\(\)/_/g;
-  if (( $int_status == $ok_val)||(defined($o_dormant) && $int_status == 5)) {
+  if (( $int_status == $ok_val)||(defined($o_down) && $int_status == 2)||(defined($o_dormant) && $int_status == 5)) {
     $num_ok++;
   }
   if (( $int_status == 1 ) && defined ($o_perf)) {
