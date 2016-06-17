@@ -317,7 +317,7 @@ my $key=undef;
 if ($o_type eq "ipso") {
 # Get cluster table
 my $resultat;
-if (Net::SNMP->VERSION lt 4) {
+if (version->parse(Net::SNMP->VERSION) < 4) {
   $resultat = $session->get_table( $nokia_clust_table );
 } else {
   $resultat = $session->get_table( Baseoid => $nokia_clust_table );
@@ -375,7 +375,7 @@ exit $ERRORS{"OK"};
 
 # Get vrrp table
 my $resultat;
-if (Net::SNMP->VERSION lt 4) {
+if (version->parse(Net::SNMP->VERSION) < 4) {
   $resultat = $session->get_table( $base_vrrp{$o_type} );
 } else {
   $resultat = $session->get_table( Baseoid => $base_vrrp{$o_type} );

@@ -253,7 +253,7 @@ verb($session->max_msg_size);
 # Look for process in name or path name table
 my $resultat=undef;
 
-$resultat = (Net::SNMP->VERSION lt 4) ? 
+$resultat = (version->parse(Net::SNMP->VERSION) < 4) ? 
 		$session->get_table($win_serv_name)
 		: $session->get_table(Baseoid => $win_serv_name);
 
@@ -311,7 +311,7 @@ if ( $num_int == 0) {
 my $result=undef;
 my $num_int_ok=0;
 
-$result = (Net::SNMP->VERSION lt 4) ? 
+$result = (version->parse(Net::SNMP->VERSION) < 4) ? 
     $session->get_request(@oids)
   : $session->get_request(Varbindlist => \@oids);
 

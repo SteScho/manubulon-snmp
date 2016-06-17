@@ -247,7 +247,7 @@ if (!defined($session)) {
 
 # Get global status
 my @oidlist=($be_global_status);
-my $resultat = (Net::SNMP->VERSION lt 4) ?
+my $resultat = (version->parse(Net::SNMP->VERSION) < 4) ?
           $session->get_request(@oidlist)
         : $session->get_request(-varbindlist => \@oidlist);
 
@@ -264,7 +264,7 @@ if ($$resultat{$be_global_status} != 1) {
 
 $resultat=undef;
 # Get service  table
-$resultat = (Net::SNMP->VERSION lt 4) ? 
+$resultat = (version->parse(Net::SNMP->VERSION) < 4) ? 
 		  $session->get_table($be_service_table)
 		: $session->get_table(Baseoid => $be_service_table); 
 		

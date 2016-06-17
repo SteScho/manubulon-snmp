@@ -229,7 +229,7 @@ my $inactive_nhr=0;
 my $global_status=0;
 
 # Get load table
-my $resultat = (Net::SNMP->VERSION lt 4) ? 
+my $resultat = (version->parse(Net::SNMP->VERSION) < 4) ? 
 		  $session->get_table($lp_type)
 		: $session->get_table(Baseoid => $lp_type); 
 		
@@ -258,7 +258,7 @@ if ($nhr_num==0) {
 }
 
 my $result=undef;
-if (Net::SNMP->VERSION lt 4) {
+if (version->parse(Net::SNMP->VERSION) < 4) {
   $result = $session->get_request(@oids);
 } else {
   if ($session->version == 0) { 
