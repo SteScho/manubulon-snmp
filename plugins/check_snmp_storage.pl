@@ -514,7 +514,7 @@ if (version->parse(Net::SNMP->VERSION) < 4)
 else
    {
       $result = $session->get_request(Varbindlist => \@oids);
-      foreach my $key ( keys %$result)
+      foreach my $key ( sort keys %$result)
              {
              # Fix for filesystems larger 2 TB. More than 2 TB will cause an error because
              # as defined in the RFC hrStorageSize is a 32 bit integer. So filesystems
