@@ -4,7 +4,7 @@
 # Date :  Jun 1 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://nagios.manubulon.com
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO :
 # Contribs : Dimo Velev, Makina Corpus, A. Greiner-B\ufffdr
 #################################################################
@@ -53,7 +53,7 @@ $hrStorage{"1.3.6.1.2.1.25.2.1.10"} = 'NetworkDisk';
 # Globals
 
 my $Name    = 'check_snmp_storage';
-my $Version = '1.3.3';
+my $VERSION = "2.0.0";
 
 my $o_host        = undef;                       # hostname
 my $o_community   = undef;                       # community
@@ -94,7 +94,7 @@ my $o_octetlength = undef;
 
 # functions
 
-sub p_version { print "$Name version : $Version\n"; }
+sub p_version { print "$Name version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -127,7 +127,7 @@ sub isnnum {    # Return true if arg is not a number
 }
 
 sub help {
-    print "\nSNMP Disk Monitor for Nagios version ", $Version, "\n";
+    print "\nSNMP Disk Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
     print "(c)2004-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;

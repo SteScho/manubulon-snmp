@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_int ##############
-my $Version = '1.24';
+my $VERSION = "2.0.0";
 
 # Date : Oct 10 2007
 # Author  : Patrick Proy ( patrick at proy.org )
 # Help : http://nagios.manubulon.com
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : J. Jungmann, S. Probst, R. Leroy, M. Berger
 # TODO :
 # Maybe put base directory for performance as an option
@@ -47,8 +47,15 @@ my $out_octet_table_64 = '1.3.6.1.2.1.31.1.1.1.10.';
 my $out_error_table    = '1.3.6.1.2.1.2.2.1.20.';
 my $out_discard_table  = '1.3.6.1.2.1.2.2.1.19.';
 
-my %status = (1 => 'UP', 2 => 'DOWN', 3 => 'TESTING', 4 => 'UNKNOWN', 5 => 'DORMANT', 6 => 'NotPresent',
-    7 => 'lowerLayerDown');
+my %status = (
+    1 => 'UP',
+    2 => 'DOWN',
+    3 => 'TESTING',
+    4 => 'UNKNOWN',
+    5 => 'DORMANT',
+    6 => 'NotPresent',
+    7 => 'lowerLayerDown'
+);
 
 # Globals
 
@@ -161,7 +168,7 @@ sub write_file {
     }
 }
 
-sub p_version { print "check_snmp_int version : $Version\n"; }
+sub p_version { print "check_snmp_int version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -175,8 +182,8 @@ sub isnnum {    # Return true if arg is not a number
 }
 
 sub help {
-    print "\nSNMP Network Interface Monitor for Nagios version ", $Version, "\n";
-    print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
+    print "\nSNMP Network Interface Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL license, (c)2004-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose
@@ -796,20 +803,16 @@ for (my $i = 0; $i < $num_int; $i++) {
                         if (defined($o_ext_checkperf)) {
                             $checkperf_out[2]
                                 = (($$result{ $oid_perf_inerr[$i] } - $file_values[$j][3])
-                                / ($timenow - $file_values[$j][0]))
-                                * 60;
+                                / ($timenow - $file_values[$j][0])) * 60;
                             $checkperf_out[3]
                                 = (($$result{ $oid_perf_outerr[$i] } - $file_values[$j][4])
-                                / ($timenow - $file_values[$j][0]))
-                                * 60;
+                                / ($timenow - $file_values[$j][0])) * 60;
                             $checkperf_out[4]
                                 = (($$result{ $oid_perf_indisc[$i] } - $file_values[$j][5])
-                                / ($timenow - $file_values[$j][0]))
-                                * 60;
+                                / ($timenow - $file_values[$j][0])) * 60;
                             $checkperf_out[5]
                                 = (($$result{ $oid_perf_outdisc[$i] } - $file_values[$j][6])
-                                / ($timenow - $file_values[$j][0]))
-                                * 60;
+                                / ($timenow - $file_values[$j][0])) * 60;
                         }
                     }
                 }

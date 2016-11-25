@@ -4,7 +4,7 @@
 # Date : Aug 24 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Changelog :
 # Contributors :
 #################################################################
@@ -29,7 +29,7 @@ my $lp_port  = "1.3.6.1.4.1.89.35.1.38.1.1.15";    # nhr users
 
 # Globals
 
-my $Version = '1.0';
+my $VERSION = "2.0.0";
 
 my $o_host      = undef;                           # hostname
 my $o_community = undef;                           # community
@@ -56,7 +56,7 @@ my $o_privpass  = undef;                           # priv password
 
 # functions
 
-sub p_version { print "check_snmp_linkproof_nhr version : $Version\n"; }
+sub p_version { print "check_snmp_linkproof_nhr version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -70,7 +70,7 @@ sub isnnum {                                       # Return true if arg is not a
 }
 
 sub help {
-    print "\nSNMP Radware Linkproof NHR monitor for Nagios version ", $Version, "\n";
+    print "\nSNMP Radware Linkproof NHR monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
     print "(c)2004-2006 Patrick Proy\n\n";
     print_usage();
     print <<EOT;

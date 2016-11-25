@@ -4,7 +4,7 @@
 # Date : Jan 16 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Changelog :
 # Contributors :
 #################################################################
@@ -38,7 +38,7 @@ my $be_service_connect
 
 # Globals
 
-my $Version = '1.0';
+my $VERSION = "2.0.0";
 
 my $o_host      = undef;                                 # hostname
 my $o_community = undef;                                 # community
@@ -64,7 +64,7 @@ my $o_privpass  = undef;                                 # priv password
 
 # functions
 
-sub p_version { print "check_snmp_boostedge version : $Version\n"; }
+sub p_version { print "check_snmp_boostedge version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -93,8 +93,8 @@ sub is_pattern_valid {    # Test for things like "<I\s*[^>" or "+5-i"
 }
 
 sub help {
-    print "\nSNMP Boostedge service monitor for Nagios version ", $Version, "\n";
-    print "GPL Licensen, (c)2006-2007 Patrick Proy\n\n";
+    print "\nSNMP Boostedge service monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL License, (c)2006-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

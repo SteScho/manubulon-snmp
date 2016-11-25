@@ -4,7 +4,7 @@
 # Date : 27 Sept 2006
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Changelog :
 # Contributors :
 #################################################################
@@ -35,7 +35,7 @@ my @css_svc_state_nag = (3, 2, 2, 3, 0, 2);
 
 # Globals
 
-my $Version = '1.0';
+my $VERSION = "2.0.0";
 
 my $o_host      = undef;                                    # hostname
 my $o_community = undef;                                    # community
@@ -59,7 +59,7 @@ my $o_privpass  = undef;                                    # priv password
 
 # functions
 
-sub p_version { print "check_snmp_css_main version : $Version\n"; }
+sub p_version { print "check_snmp_css_main version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -67,8 +67,8 @@ sub print_usage {
 }
 
 sub help {
-    print "\nSNMP Cisco CSS monitor MAIN script for Nagios version ", $Version, "\n";
-    print "GPL Licence, (c)2004-2006 Patrick Proy\n\n";
+    print "\nSNMP Cisco CSS monitor MAIN script for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL License, (c)2004-2006 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

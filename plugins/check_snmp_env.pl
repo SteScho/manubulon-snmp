@@ -4,7 +4,7 @@
 # Date : May 24 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Changelog :
 # Contributors : Fredrik Vocks
 #################################################################
@@ -167,7 +167,7 @@ my $linux_misc_value = "1.3.6.1.4.1.2021.13.16.4.1.3";    # misc entry value
 
 # Globals
 
-my $Version = '1.3';
+my $VERSION = "2.0.0";
 
 my $o_host      = undef;                                  # hostname
 my $o_community = undef;                                  # community
@@ -195,7 +195,7 @@ my $o_privpass  = undef;                                                   # pri
 
 # functions
 
-sub p_version { print "check_snmp_env version : $Version\n"; }
+sub p_version { print "check_snmp_env version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -218,8 +218,8 @@ sub set_status {    # return worst status with this order : OK, unknwonw, warnin
 }
 
 sub help {
-    print "\nSNMP environmental Monitor for Nagios version ", $Version, "\n";
-    print "GPL Licence, (c)2006-2007 Patrick Proy\n\n";
+    print "\nSNMP environmental Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL License, (c)2006-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

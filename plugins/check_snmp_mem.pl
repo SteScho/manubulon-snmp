@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_mem ##############
-my $Version = '1.5';
+my $VERSION = "2.0.0";
 
 # Date : 17 October 2007
 # Author  : Patrick Proy (nagios at proy.org)
 # Help : http://nagios.manubulon.com/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : Jan Jungmann, Patrick Griffin
 # TODO :
 #################################################################
@@ -91,7 +91,7 @@ my $o_privpass  = undef;         # priv password
 
 # functions
 
-sub p_version { print "check_snmp_mem version : $Version\n"; }
+sub p_version { print "check_snmp_mem version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -109,8 +109,8 @@ sub round ($$) {
 }
 
 sub help {
-    print "\nSNMP Memory Monitor for Nagios version ", $Version, "\n";
-    print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
+    print "\nSNMP Memory Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL license, (c)2004-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

@@ -4,7 +4,7 @@
 # Date : Jan 16 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://www.manubulon.com/nagios/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Changelog :
 # Contributors :
 #################################################################
@@ -37,7 +37,7 @@ my $ns_rsa_oper_second = ".1.3.6.1.4.1.14020.1.1.3.4.0;"; # number of RSA operat
 
 # Globals
 
-my $Version = '1.0';
+my $VERSION = "2.0.0";
 
 my $o_host      = undef;                                  # hostname
 my $o_community = undef;                                  # community
@@ -65,7 +65,7 @@ my $o_privpass  = undef;                                  # priv password
 
 # functions
 
-sub p_version { print "check_snmp_nsbox version : $Version\n"; }
+sub p_version { print "check_snmp_nsbox version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -94,7 +94,7 @@ sub is_pattern_valid {    # Test for things like "<I\s*[^>" or "+5-i"
 }
 
 sub help {
-    print "\nSNMP NetSecureOne Netbox monitor for Nagios version ", $Version, "\n";
+    print "\nSNMP NetSecureOne Netbox monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
     print "(c)2004-2006 Patrick Proy\n\n";
     print_usage();
     print <<EOT;

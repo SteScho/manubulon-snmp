@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_load #################
-my $Version = '1.12';
+my $VERSION = "2.0.0";
 
 # Date : Oct 12 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://nagios.manubulon.com/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contributors : F. Lacroix and many others !!!
 #################################################################
 #
@@ -129,7 +129,7 @@ my $o_privpass  = undef;         # priv password
 
 # functions
 
-sub p_version { print "check_snmp_load version : $Version\n"; }
+sub p_version { print "check_snmp_load version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -143,8 +143,8 @@ sub isnnum {                     # Return true if arg is not a number
 }
 
 sub help {
-    print "\nSNMP Load & CPU Monitor for Nagios version ", $Version, "\n";
-    print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
+    print "\nSNMP Load & CPU Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL license, (c)2004-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_process ##############
-my $Version = '1.10';
+my $VERSION = "2.0.0";
 
 # Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy dot org)
 # Help : http://nagios.manubulon.com
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : Makina Corpus, adam At greekattic d0t com
 # TODO : put $o_delta as an option
 # 	 If testing on localhost, selects itself....
@@ -80,7 +80,7 @@ my $o_delta   = $delta_of_time_to_make_average;                # delta time for 
 
 # functions
 
-sub p_version { print "check_snmp_process version : $Version\n"; }
+sub p_version { print "check_snmp_process version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -144,8 +144,8 @@ sub write_file {
 }
 
 sub help {
-    print "\nSNMP Process Monitor for Nagios version ", $Version, "\n";
-    print "GPL licence, (c)2004-2006 Patrick Proy\n\n";
+    print "\nSNMP Process Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL license, (c)2004-2006 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

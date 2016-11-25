@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_vrrp ##############
-my $Version = '1.4';
+my $VERSION = "2.0.0";
 
 # Date : Oct 17 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : C. Maser (Alteon + Netscreen),  Harm-Jan Blok (Foundry)
 #################################################################
 #
@@ -109,7 +109,7 @@ my $o_privpass  = undef;      # priv password
 
 # functions
 
-sub p_version { print "check_snmp_vrrp version : $Version\n"; }
+sub p_version { print "check_snmp_vrrp version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -123,8 +123,8 @@ sub isnnum {                  # Return true if arg is not a number
 }
 
 sub help {
-    print "\nSNMP VRRP Monitor for Nagios version ", $Version, "\n";
-    print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
+    print "\nSNMP VRRP Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL license, (c)2004-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose

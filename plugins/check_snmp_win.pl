@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_win ##############
-my $Version = '1.1';
+my $VERSION = "2.0.0";
 
 # Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com/
-# Licence : GPL - http://www.fsf.org/licenses/gpl.txt
+# License : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : Tenaku
 # TODO :
 ###############################################################
@@ -68,7 +68,7 @@ my $o_passwd = undef;           # snmp v3 passwd
 
 # functions
 
-sub p_version { print "$Name version : $Version\n"; }
+sub p_version { print "$Name version : $VERSION\n"; }
 
 sub print_usage {
     print
@@ -94,8 +94,8 @@ $SIG{'ALRM'} = sub {
 };
 
 sub help {
-    print "\nSNMP Windows Monitor for Nagios version ", $Version, "\n";
-    print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
+    print "\nSNMP Windows Monitor for Icinga/Nagios/Naemon/Shinken, Version ", $VERSION, "\n";
+    print "GPL license, (c)2004-2007 Patrick Proy\n\n";
     print_usage();
     print <<EOT;
 -v, --verbose
