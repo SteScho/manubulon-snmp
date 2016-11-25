@@ -1,12 +1,13 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_win ##############
-my $Version='1.1';
+my $Version = '1.1';
+
 # Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : Tenaku
-# TODO : 
+# TODO :
 ###############################################################
 #
 # help : ./check_snmp_win.pl -h
@@ -16,82 +17,87 @@ use Net::SNMP;
 use Getopt::Long;
 
 # Icinga specific
-my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
+my %ERRORS = ('OK' => 0, 'WARNING' => 1, 'CRITICAL' => 2, 'UNKNOWN' => 3, 'DEPENDENT' => 4);
 
 # SNMP Datas for processes (MIB II)
-my $process_table= '1.3.6.1.2.1.25.4.2.1';
-my $index_table = '1.3.6.1.2.1.25.4.2.1.1';
+my $process_table  = '1.3.6.1.2.1.25.4.2.1';
+my $index_table    = '1.3.6.1.2.1.25.4.2.1.1';
 my $run_name_table = '1.3.6.1.2.1.25.4.2.1.2';
 my $run_path_table = '1.3.6.1.2.1.25.4.2.1.4';
-my $proc_mem_table = '1.3.6.1.2.1.25.5.1.1.2'; # Kbytes
-my $proc_cpu_table = '1.3.6.1.2.1.25.5.1.1.1'; # Centi sec of CPU
+my $proc_mem_table = '1.3.6.1.2.1.25.5.1.1.2';    # Kbytes
+my $proc_cpu_table = '1.3.6.1.2.1.25.5.1.1.1';    # Centi sec of CPU
 my $proc_run_state = '1.3.6.1.2.1.25.4.2.1.7';
 
 # Windows SNMP DATA
 
-my $win_serv_table = '1.3.6.1.4.1.77.1.2.3.1'; # Windows services table
-my $win_serv_name = '1.3.6.1.4.1.77.1.2.3.1.1'; # Name of the service
+my $win_serv_table = '1.3.6.1.4.1.77.1.2.3.1';      # Windows services table
+my $win_serv_name  = '1.3.6.1.4.1.77.1.2.3.1.1';    # Name of the service
+
 # Install state : uninstalled(1), install-pending(2), uninstall-pending(3), installed(4)
-my $win_serv_inst = '1.3.6.1.4.1.77.1.2.3.1.2'; 
+my $win_serv_inst = '1.3.6.1.4.1.77.1.2.3.1.2';
+
 # Operating state : active(1),  continue-pending(2),  pause-pending(3),  paused(4)
-my $win_serv_state = '1.3.6.1.4.1.77.1.2.3.1.3'; 
-my %win_serv_state_label = ( 1 => 'active', 2=> 'continue-pending', 3=> 'pause-pending', 4=> 'paused');
+my $win_serv_state = '1.3.6.1.4.1.77.1.2.3.1.3';
+my %win_serv_state_label = (1 => 'active', 2 => 'continue-pending', 3 => 'pause-pending', 4 => 'paused');
+
 # Can be uninstalled : cannot-be-uninstalled(1), can-be-uninstalled(2)
-my $win_serv_uninst = '1.3.6.1.4.1.77.1.2.3.1.4'; 
+my $win_serv_uninst = '1.3.6.1.4.1.77.1.2.3.1.4';
 
 # Globals
 
-my $Name='check_snmp_win';
+my $Name = 'check_snmp_win';
 
-my $o_host = 	undef; 		# hostname 
-my $o_community =undef; 	# community 
-my $o_port = 	161; 		# port
-my $o_version2	= undef;	#use snmp v2c
-my $o_descr = 	undef; 		# description filter 
-my @o_descrL = 	undef;		# Service descriprion list.
-my $o_showall = undef;	# Show all services even if OK
-my $o_type = "service";	# Check type (service, ...)
-my $o_number = undef;  # Number of service for warn and crit levels
-my $o_help=	undef; 		# wan't some help ?
-my $o_verb=	undef;		# verbose mode
-my $o_version=   undef;         # print version
-my $o_noreg=	undef;		# Do not use Regexp for name
-my $o_timeout=  5;            	# Default 5s Timeout
+my $o_host      = undef;        # hostname
+my $o_community = undef;        # community
+my $o_port      = 161;          # port
+my $o_version2  = undef;        #use snmp v2c
+my $o_descr     = undef;        # description filter
+my @o_descrL    = undef;        # Service descriprion list.
+my $o_showall   = undef;        # Show all services even if OK
+my $o_type      = "service";    # Check type (service, ...)
+my $o_number    = undef;        # Number of service for warn and crit levels
+my $o_help      = undef;        # wan't some help ?
+my $o_verb      = undef;        # verbose mode
+my $o_version   = undef;        # print version
+my $o_noreg     = undef;        # Do not use Regexp for name
+my $o_timeout   = 5;            # Default 5s Timeout
+
 # SNMP V3 specific
-my $o_login=	undef;		# snmp v3 login
-my $o_passwd=	undef;		# snmp v3 passwd
+my $o_login  = undef;           # snmp v3 login
+my $o_passwd = undef;           # snmp v3 passwd
 
 # functions
 
 sub p_version { print "$Name version : $Version\n"; }
 
 sub print_usage {
-    print "Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name>[,<name2] [-T=service] [-r] [-s] [-N=<n>] [-t <timeout>] [-V]\n";
+    print
+"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name>[,<name2] [-T=service] [-r] [-s] [-N=<n>] [-t <timeout>] [-V]\n";
 }
 
-sub isnotnum { # Return true if arg is not a number
-  my $num = shift;
-  if ( $num =~ /^-?(\d+\.?\d*)|(^\.\d+)$/ ) { return 0 ;}
-  return 1;
+sub isnotnum {                  # Return true if arg is not a number
+    my $num = shift;
+    if ($num =~ /^-?(\d+\.?\d*)|(^\.\d+)$/) { return 0; }
+    return 1;
 }
 
-sub is_pattern_valid { # Test for things like "<I\s*[^>" or "+5-i"
- my $pat = shift;
- if (!defined($pat)) { $pat=" ";} # Just to get rid of compilation time warnings
- return eval { "" =~ /$pat/; 1 } || 0;
+sub is_pattern_valid {          # Test for things like "<I\s*[^>" or "+5-i"
+    my $pat = shift;
+    if (!defined($pat)) { $pat = " "; }    # Just to get rid of compilation time warnings
+    return eval { "" =~ /$pat/; 1 } || 0;
 }
 
 # Get the alarm signal (just in case snmp timout screws up)
 $SIG{'ALRM'} = sub {
-     print ("ERROR: Alarm signal (Nagios time-out)\n");
-     exit $ERRORS{"UNKNOWN"};
+    print("ERROR: Alarm signal (Nagios time-out)\n");
+    exit $ERRORS{"UNKNOWN"};
 };
 
 sub help {
-   print "\nSNMP Windows Monitor for Nagios version ",$Version,"\n";
-   print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
-   print_usage();
-   print <<EOT;
+    print "\nSNMP Windows Monitor for Nagios version ", $Version, "\n";
+    print "GPL licence, (c)2004-2007 Patrick Proy\n\n";
+    print_usage();
+    print <<EOT;
 -v, --verbose
    print extra debugging information (and lists all services)
 -h, --help
@@ -135,59 +141,85 @@ Note :
 EOT
 }
 
-sub verb { my $t=shift; print $t,"\n" if defined($o_verb) ; }
+sub verb { my $t = shift; print $t, "\n" if defined($o_verb); }
 
-sub decode_utf8 { # just replaces UFT8 caracters by "."
-  my $utfstr=shift;
-  if (substr($utfstr,0,2) ne "0x") { return $utfstr; }
-  my @stringL=split(//,$utfstr);
-  my $newstring="";
-  for (my $i=2;$i<$#stringL;$i+=2) {
-    if ( ($stringL[$i] . $stringL[$i+1]) eq "c3") {
-	  $i+=2;$newstring .= ".";
-	} else {
-	  $newstring .= chr(hex($stringL[$i] . $stringL[$i+1]));
-	}
-  }
-  return $newstring;
+sub decode_utf8 {    # just replaces UFT8 caracters by "."
+    my $utfstr = shift;
+    if (substr($utfstr, 0, 2) ne "0x") { return $utfstr; }
+    my @stringL = split(//, $utfstr);
+    my $newstring = "";
+    for (my $i = 2; $i < $#stringL; $i += 2) {
+        if (($stringL[$i] . $stringL[$i + 1]) eq "c3") {
+            $i += 2;
+            $newstring .= ".";
+        } else {
+            $newstring .= chr(hex($stringL[$i] . $stringL[$i + 1]));
+        }
+    }
+    return $newstring;
 }
 
 sub check_options {
-    Getopt::Long::Configure ("bundling");
+    Getopt::Long::Configure("bundling");
     GetOptions(
-   	'v'	=> \$o_verb,		'verbose'	=> \$o_verb,
-        'h'     => \$o_help,    	'help'        	=> \$o_help,
-        'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
-        'p:i'   => \$o_port,   		'port:i'	=> \$o_port,
-        'C:s'   => \$o_community,	'community:s'	=> \$o_community,
-        'l:s'   => \$o_login,           'login:s'       => \$o_login,
-        'x:s'   => \$o_passwd,          'passwd:s'      => \$o_passwd,
-	't:i'   => \$o_timeout,       	'timeout:i'     => \$o_timeout,
-        'n:s'   => \$o_descr,		'name:s'	=> \$o_descr,
-        'r'     => \$o_noreg,           'noregexp'      => \$o_noreg,
-        'T:s'   => \$o_type,           	'type:s'      	=> \$o_type,
-        'N:i'   => \$o_number,          'number:i'      => \$o_number,
-	'2'	=> \$o_version2,	'v2c'		=> \$o_version2,
-	's'     => \$o_showall,  	'showall'       => \$o_showall,  
-	'V'     => \$o_version,         'version'       => \$o_version
+        'v'           => \$o_verb,
+        'verbose'     => \$o_verb,
+        'h'           => \$o_help,
+        'help'        => \$o_help,
+        'H:s'         => \$o_host,
+        'hostname:s'  => \$o_host,
+        'p:i'         => \$o_port,
+        'port:i'      => \$o_port,
+        'C:s'         => \$o_community,
+        'community:s' => \$o_community,
+        'l:s'         => \$o_login,
+        'login:s'     => \$o_login,
+        'x:s'         => \$o_passwd,
+        'passwd:s'    => \$o_passwd,
+        't:i'         => \$o_timeout,
+        'timeout:i'   => \$o_timeout,
+        'n:s'         => \$o_descr,
+        'name:s'      => \$o_descr,
+        'r'           => \$o_noreg,
+        'noregexp'    => \$o_noreg,
+        'T:s'         => \$o_type,
+        'type:s'      => \$o_type,
+        'N:i'         => \$o_number,
+        'number:i'    => \$o_number,
+        '2'           => \$o_version2,
+        'v2c'         => \$o_version2,
+        's'           => \$o_showall,
+        'showall'     => \$o_showall,
+        'V'           => \$o_version,
+        'version'     => \$o_version
     );
-    if (defined ($o_help)) { help(); exit $ERRORS{"UNKNOWN"}};
-    if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"}};
+    if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
+    if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"} }
+
     # check snmp information
-    if ( !defined($o_community) && (!defined($o_login) || !defined($o_passwd)) )
-        { print "Put snmp login info!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+    if (!defined($o_community) && (!defined($o_login) || !defined($o_passwd))) {
+        print "Put snmp login info!\n";
+        print_usage();
+        exit $ERRORS{"UNKNOWN"};
+    }
+
     # Check compulsory attributes
-    if ( $o_type ne "service" ) {
-      print "Invalid check type !\n"; print_usage(); exit $ERRORS{"UNKNOWN"} 
+    if ($o_type ne "service") {
+        print "Invalid check type !\n";
+        print_usage();
+        exit $ERRORS{"UNKNOWN"};
     }
-    if ( ! defined($o_descr) ||  ! defined($o_host) ) { print_usage(); exit $ERRORS{"UNKNOWN"}};
-    @o_descrL=split(/,/,$o_descr);	
+    if (!defined($o_descr) || !defined($o_host)) { print_usage(); exit $ERRORS{"UNKNOWN"} }
+    @o_descrL = split(/,/, $o_descr);
     foreach my $List (@o_descrL) {
-      if ( ! is_pattern_valid ($List) ) { print "Invalid pattern ! ";print_usage(); exit $ERRORS{"UNKNOWN"} }
+        if (!is_pattern_valid($List)) { print "Invalid pattern ! "; print_usage(); exit $ERRORS{"UNKNOWN"} }
     }
-    if (defined ($o_number)) {
-      if (isnotnum($o_number) || ($o_number<0) ) 
-        { print "Invalid number of services!\n";print_usage(); exit $ERRORS{"UNKNOWN"}}
+    if (defined($o_number)) {
+        if (isnotnum($o_number) || ($o_number < 0)) {
+            print "Invalid number of services!\n";
+            print_usage();
+            exit $ERRORS{"UNKNOWN"};
+        }
     }
 
 }
@@ -198,186 +230,199 @@ check_options();
 
 # Check timeout if snmp screws up
 if (defined($o_timeout)) {
-  verb("Alarm in $o_timeout seconds");
-  alarm($o_timeout);
+    verb("Alarm in $o_timeout seconds");
+    alarm($o_timeout);
 }
 
 $SIG{'ALRM'} = sub {
-  print "No answer from host $o_host:$o_port\n";
-  exit $ERRORS{"UNKNOWN"};
+    print "No answer from host $o_host:$o_port\n";
+    exit $ERRORS{"UNKNOWN"};
 };
 
 # Connect to host
-my ($session,$error);
-if ( defined($o_login) && defined($o_passwd)) {
-  # SNMPv3 login
-  verb("SNMPv3 login");
-  ($session, $error) = Net::SNMP->session(
-      -hostname         => $o_host,
-      -version          => '3',
-      -username         => $o_login,
-      -authpassword     => $o_passwd,
-      -authprotocol     => 'md5',
-      -privpassword     => $o_passwd,
-      -timeout          => $o_timeout
-   );
-} else {
-  if (defined ($o_version2)) {
-    # SNMPv2 Login
-	($session, $error) = Net::SNMP->session(
-       -hostname  => $o_host,
-	   -version   => 2,
-       -community => $o_community,
-       -port      => $o_port,
-       -timeout   => $o_timeout
-    );
-  } else {
-  # SNMPV1 login
+my ($session, $error);
+if (defined($o_login) && defined($o_passwd)) {
+
+    # SNMPv3 login
+    verb("SNMPv3 login");
     ($session, $error) = Net::SNMP->session(
-       -hostname  => $o_host,
-       -community => $o_community,
-       -port      => $o_port,
-       -timeout   => $o_timeout
+        -hostname     => $o_host,
+        -version      => '3',
+        -username     => $o_login,
+        -authpassword => $o_passwd,
+        -authprotocol => 'md5',
+        -privpassword => $o_passwd,
+        -timeout      => $o_timeout
     );
-  }
+} else {
+    if (defined($o_version2)) {
+
+        # SNMPv2 Login
+        ($session, $error) = Net::SNMP->session(
+            -hostname  => $o_host,
+            -version   => 2,
+            -community => $o_community,
+            -port      => $o_port,
+            -timeout   => $o_timeout
+        );
+    } else {
+
+        # SNMPV1 login
+        ($session, $error) = Net::SNMP->session(
+            -hostname  => $o_host,
+            -community => $o_community,
+            -port      => $o_port,
+            -timeout   => $o_timeout
+        );
+    }
 }
 
-
 if (!defined($session)) {
-   printf("ERROR: %s.\n", $error);
-   exit $ERRORS{"UNKNOWN"};
+    printf("ERROR: %s.\n", $error);
+    exit $ERRORS{"UNKNOWN"};
 }
 
 $session->max_msg_size(5000);
 verb($session->max_msg_size);
 
 # Look for process in name or path name table
-my $resultat=undef;
+my $resultat = undef;
 
-$resultat = (version->parse(Net::SNMP->VERSION) < 4) ? 
-		$session->get_table($win_serv_name)
-		: $session->get_table(Baseoid => $win_serv_name);
+$resultat
+    = (version->parse(Net::SNMP->VERSION) < 4)
+    ? $session->get_table($win_serv_name)
+    : $session->get_table(Baseoid => $win_serv_name);
 
 if (!defined($resultat)) {
-   printf("ERROR: Process name table : %s.\n", $session->error);
-   $session->close;
-   exit $ERRORS{"UNKNOWN"};
+    printf("ERROR: Process name table : %s.\n", $session->error);
+    $session->close;
+    exit $ERRORS{"UNKNOWN"};
 }
 
-my @tindex = undef;
-my @oids = undef;
-my @descr = undef;
-my $num_int = 0;
+my @tindex    = undef;
+my @oids      = undef;
+my @descr     = undef;
+my $num_int   = 0;
 my $count_oid = 0;
+
 # Select storage by regexp of exact match
 # and put the oid to query in an array
 
 verb("Filter : $o_descr");
 
-foreach my $key ( keys %$resultat) {
-   my $descr_d=decode_utf8($$resultat{$key});
-   verb("Desc : $descr_d");
-   # test by regexp or exact match
-   my $test=undef;
-   foreach my $List (@o_descrL) {
-     if (!($test)) {
-  	    $test = defined($o_noreg)
-			 ? $descr_d eq $List
-			 : $descr_d =~ /$List/i;
-     }
-  }
-  if ($test) {
-      # get the full description
-     $descr[$num_int]=$descr_d;
-	 # get the index number of the process
-	 $key =~ s/$win_serv_name\.//;
-     $tindex[$num_int] = $key;
-     # put the oid of running state in an array.
-     $oids[$count_oid++]=$win_serv_state . "." . $tindex[$num_int];
-     verb("Name : $descr[$num_int], Index : $tindex[$num_int]");
-     $num_int++;
-  }
+foreach my $key (keys %$resultat) {
+    my $descr_d = decode_utf8($$resultat{$key});
+    verb("Desc : $descr_d");
+
+    # test by regexp or exact match
+    my $test = undef;
+    foreach my $List (@o_descrL) {
+        if (!($test)) {
+            $test
+                = defined($o_noreg)
+                ? $descr_d eq $List
+                : $descr_d =~ /$List/i;
+        }
+    }
+    if ($test) {
+
+        # get the full description
+        $descr[$num_int] = $descr_d;
+
+        # get the index number of the process
+        $key =~ s/$win_serv_name\.//;
+        $tindex[$num_int] = $key;
+
+        # put the oid of running state in an array.
+        $oids[$count_oid++] = $win_serv_state . "." . $tindex[$num_int];
+        verb("Name : $descr[$num_int], Index : $tindex[$num_int]");
+        $num_int++;
+    }
 }
 
-if ( $num_int == 0) {
-   if (defined ($o_number) && ($o_number ==0)) {
-    print "No services ",(defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\" found : OK\n";
-    exit $ERRORS{"OK"};
-  } else  {
-    print "No services ",(defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\" found : CRITICAL\n";
-    exit $ERRORS{"CRITICAL"};
-  }
+if ($num_int == 0) {
+    if (defined($o_number) && ($o_number == 0)) {
+        print "No services ", (defined($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\" found : OK\n";
+        exit $ERRORS{"OK"};
+    } else {
+        print "No services ", (defined($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\" found : CRITICAL\n";
+        exit $ERRORS{"CRITICAL"};
+    }
 }
 
-my $result=undef;
-my $num_int_ok=0;
+my $result     = undef;
+my $num_int_ok = 0;
 
-$result = (version->parse(Net::SNMP->VERSION) < 4) ? 
-    $session->get_request(@oids)
-  : $session->get_request(Varbindlist => \@oids);
+$result
+    = (version->parse(Net::SNMP->VERSION) < 4)
+    ? $session->get_request(@oids)
+    : $session->get_request(Varbindlist => \@oids);
 
-if (!defined($result)) { printf("ERROR: running table : %s.\n", $session->error); $session->close;
-   exit $ERRORS{"UNKNOWN"};
+if (!defined($result)) {
+    printf("ERROR: running table : %s.\n", $session->error);
+    $session->close;
+    exit $ERRORS{"UNKNOWN"};
 }
 
 $session->close;
 
-my $output=undef;
+my $output = undef;
+
 #Check if service are in active state
-for (my $i=0; $i< $num_int; $i++) {
-   my $state=$$result{$win_serv_state . "." . $tindex[$i]};
-   verb ("Process $tindex[$i] in state $state");
-   if ($state == 1) {
-     $num_int_ok++
-   } else {
-     $output .= ", " if defined($output);
-     $output .= $descr[$i] . " : " . $win_serv_state_label{$state};
-   }
+for (my $i = 0; $i < $num_int; $i++) {
+    my $state = $$result{ $win_serv_state . "." . $tindex[$i] };
+    verb("Process $tindex[$i] in state $state");
+    if ($state == 1) {
+        $num_int_ok++;
+    } else {
+        $output .= ", " if defined($output);
+        $output .= $descr[$i] . " : " . $win_serv_state_label{$state};
+    }
 }
 
-my $force_critical=0;
+my $force_critical = 0;
 
 # Show the services that are not present
 # Or all of them with -s option
 foreach my $List (@o_descrL) {
-  my $test=0;
-  for (my $i=0; $i< $num_int; $i++) {
-    if (defined($o_noreg)){
-      if ($descr[$i] eq $List) { $test++;}
-    } else {
-      if ( $descr[$i] =~ /$List/i ) { $test++; }
+    my $test = 0;
+    for (my $i = 0; $i < $num_int; $i++) {
+        if (defined($o_noreg)) {
+            if ($descr[$i] eq $List) { $test++; }
+        } else {
+            if ($descr[$i] =~ /$List/i) { $test++; }
+        }
     }
-  }
-  if ($test==0) {
-    $output .= ", " if defined($output);
-    $output .= "\"" . $List . "\" not active";
-    # Force a critical state (could otherwise lead to false OK)
-    $force_critical=1; 
-  } elsif ( defined ($o_showall) ) {
-    $output .= ", " if defined($output);
-    $output .= "\"" . $List . "\" active";
-    if ($test != 1) {
-      $output .= "(" .$test . " services)";
+    if ($test == 0) {
+        $output .= ", " if defined($output);
+        $output .= "\"" . $List . "\" not active";
+
+        # Force a critical state (could otherwise lead to false OK)
+        $force_critical = 1;
+    } elsif (defined($o_showall)) {
+        $output .= ", " if defined($output);
+        $output .= "\"" . $List . "\" active";
+        if ($test != 1) {
+            $output .= "(" . $test . " services)";
+        }
     }
-  }
 }
 
-if (defined ($output) ) {
-  print $output, " : ";  
+if (defined($output)) {
+    print $output, " : ";
 } else {
-  print $num_int_ok, " services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\") : ";
+    print $num_int_ok, " services active (", (defined($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\") : ";
 }
 
-$o_number = $#o_descrL+1 if (!defined($o_number));
+$o_number = $#o_descrL + 1 if (!defined($o_number));
 
-if (($num_int_ok < $o_number)||($force_critical == 1)) { 
-	print "CRITICAL\n";
-	exit $ERRORS{"CRITICAL"};
+if (($num_int_ok < $o_number) || ($force_critical == 1)) {
+    print "CRITICAL\n";
+    exit $ERRORS{"CRITICAL"};
 } elsif ($num_int_ok > $o_number) {
-  print "WARNING\n";
-  exit $ERRORS{"WARNING"};
+    print "WARNING\n";
+    exit $ERRORS{"WARNING"};
 }
 print "OK\n";
 exit $ERRORS{"OK"};
-
 
