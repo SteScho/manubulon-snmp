@@ -89,12 +89,6 @@ sub isnotnum { # Return true if arg is not a number
   return 1;
 }
 
-# Get the alarm signal (just in case snmp timout screws up)
-$SIG{'ALRM'} = sub {
-     print ("ERROR: Alarm signal (Nagios time-out)\n");
-     exit $ERRORS{"UNKNOWN"};
-};
-
 sub read_file { 
         # Input : File, items_number
         # Returns : array of value : [line][item] 
@@ -331,14 +325,16 @@ sub check_options {
 
 check_options();
 
-# Check gobal timeout if snmp screws up
-if (defined($TIMEOUT)) {
-  verb("Alarm at $TIMEOUT");
-  alarm($TIMEOUT);
-} else {
-  verb("no timeout defined : $o_timeout + 10");
-  alarm ($o_timeout+10);
+# Check timeout if snmp screws up
+if (defined($o_timeout)) {
+  verb("Alarm in $o_timeout seconds");
+  alarm($o_timeout);
 }
+
+$SIG{'ALRM'} = sub {
+  print "No answer from host $o_host:$o_port\n";
+  exit $ERRORS{"UNKNOWN"};
+};
 
 # Connect to host
 my ($session,$error);

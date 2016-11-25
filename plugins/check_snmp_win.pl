@@ -16,7 +16,6 @@ use Net::SNMP;
 use Getopt::Long;
 
 # Icinga specific
-my $TIMEOUT = 15;
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 
 # SNMP Datas for processes (MIB II)
@@ -197,14 +196,16 @@ sub check_options {
 
 check_options();
 
-# Check gobal timeout if snmp screws up
-if (defined($TIMEOUT)) {
-  verb("Alarm at $TIMEOUT");
-  alarm($TIMEOUT);
-} else {
-  verb("no timeout defined : $o_timeout + 10");
-  alarm ($o_timeout+10);
+# Check timeout if snmp screws up
+if (defined($o_timeout)) {
+  verb("Alarm in $o_timeout seconds");
+  alarm($o_timeout);
 }
+
+$SIG{'ALRM'} = sub {
+  print "No answer from host $o_host:$o_port\n";
+  exit $ERRORS{"UNKNOWN"};
+};
 
 # Connect to host
 my ($session,$error);
