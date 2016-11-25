@@ -43,4 +43,14 @@ for questions and feedback.
 
 The original support tracker is still located on [sourceforge](https://sourceforge.net/p/nagios-snmp/feature-requests/).
 
+## Development
+
+Fork this repository on Github and send in a PR.
+
+There's a `.perltidyrc` file in the main repository tree. If you are uncertain about the coding style,
+create your patch and then run:
+
+    $ perltidy -b plugins/*.pl
+
+This requires the `perltidy` module being installed.
 
