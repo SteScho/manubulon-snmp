@@ -1,0 +1,28 @@
+## basic options
+--maximum-line-length=120
+--indent-columns=4
+
+## code indentation control
+--continuation-indentation=4
+
+## whilespace control
+--paren-tightness=2
+--square-bracket-tightness=2
+--block-brace-tightness=0
+--nospace-for-semicolon
+#--add-semicolons
+--nospace-function-paren
+
+## line break control
+--cuddled-else
+
+#--closing-token-indentation=0
+#--nooutdent-long-quotes
+#--nooutdent-labels
+#--brace-tightness=1
+#--vertical-tightness=0
+#--stack-opening-tokens
+#--stack-closing-tokens
+--want-break-before="% + - * / x != == >= <= =~ !~ < > | & = **= += *= &= <<= &&= -= /= |= >>= ||= //= .= %= ^= x="
+#--format-skipping-begin="#+\s*no tidy"
+#--format-skipping-end="#+\s*tidy"
