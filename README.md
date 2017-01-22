@@ -15,9 +15,19 @@ Feel free to use & distribute it under the original license.
 
 ## Requirements
 
-* perl in /usr/bin/perl
-* Perl modules `Net::SNMP` and `Getopt::Long` (RHEL: `perl-Net-SNMP perl-Getopt-Long`)
+* Perl in `/usr/bin/perl`
+* Perl modules
+  [Net::SNMP](http://search.cpan.org/~dtown/Net-SNMP-v6.0.1/lib/Net/SNMP.pm) and
+  [Getopt::Long](http://search.cpan.org/~jv/Getopt-Long-2.49.1/lib/Getopt/Long.pm)
 * `icinga` user able to write files in /tmp/ directory
+* SNMP v3 authentication: Perl modules
+  [Crypt::DES](http://search.cpan.org/~dparis/Crypt-DES-2.07/DES.pm),
+  [Crypt::Rijndael](http://search.cpan.org/~leont/Crypt-Rijndael-1.13/Rijndael.pm) and
+  [Digest::HMAC](http://search.cpan.org/~gaas/Digest-HMAC-1.03/lib/Digest/HMAC.pm)
+
+Distribution-specific packages:
+* Debian/Ubuntu: `libnet-snmp-perl` and `libcrypt-des-perl libcrypt-rijndael-perl libdigest-hmac-perl`
+* RHEL/CentOS: `perl-Net-SNMP perl-Getopt-Long` and `perl-Crypt-DES perl-Crypt-Rijndael perl-Digest-HMAC`
 
 Perl, default directory and temp files location can be changed using the install.sh script.
 
@@ -53,4 +63,3 @@ create your patch and then run:
     $ perltidy -b plugins/*.pl
 
 This requires the `perltidy` module being installed.
-
