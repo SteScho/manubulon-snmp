@@ -718,7 +718,7 @@ for (my $i = 0; $i < $num_int; $i++) {
     if (defined($o_checkperf) && $int_status == 1) {
         $temp_file_name = $descr[$i];
         $temp_file_name =~ s/[ ;\/]/_/g;
-        $temp_file_name = $o_base_dir . $o_host . "." . $temp_file_name;
+        $temp_file_name = $o_base_dir . $o_host . "." . $o_port . "." . $temp_file_name;
 
         # First, read entire file
         my @ret_array = read_file($temp_file_name, $n_items_check);
