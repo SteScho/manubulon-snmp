@@ -73,6 +73,7 @@ my $o_version = undef;    # print version
 my $o_noreg   = undef;    # Do not use Regexp for name
 my $o_short   = undef;    # set maximum of n chars to be displayed
 my $o_label   = undef;    # add label before speed (in, out, etc...).
+my $o_weather = undef;    # output "weathermap" data for NagVis
 
 # Performance data options
 my $o_perf  = undef;      # Output performance data
@@ -229,6 +230,8 @@ sub help {
   usually 1472,1452,1460 or 1440.     
 -f, --perfparse, --perfdata
    Performance data output (no output when interface is down).
+-W, --weather
+   Output data for "weathermap" lines in NagVis with performance data
 -e, --error
    Add error & discard to Perfparse output
 -S, --intspeed
@@ -353,7 +356,9 @@ sub check_options {
         'delta:i'       => \$o_delta,
         'D'             => \$o_dormant,
         'dormant'       => \$o_dormant,
-        'down'          => \$o_down
+        'down'          => \$o_down,
+        'W'             => \$o_weather,
+        'weather'       => \$o_weather
     );
     if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"} }
@@ -415,6 +420,11 @@ sub check_options {
     # check if -e without -f
     if (defined($o_perfe) && !defined($o_perf)) {
         print "Cannot output error without -f option!\n";
+        print_usage();
+        exit $ERRORS{"UNKNOWN"};
+    }
+    if (defined($o_weather) && !defined($o_perf)) {
+        print "Cannot output weathermap line data without -f option!\n";
         print_usage();
         exit $ERRORS{"UNKNOWN"};
     }
@@ -963,7 +973,11 @@ for (my $i = 0; $i < $num_int; $i++) {
             $perf_out .= "'" . $descr[$i] . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
         }
         if (defined($o_perfs)) {
-            $perf_out .= "'" . $descr[$i] . "_speed_bps'=" . $speed_real;
+            $perf_out .= "'" . $descr[$i] . "_speed_bps'=" . $speed_real . " ";
+        }
+        if (defined($o_weather) && $usable_data == 1) {
+            $perf_out .= "in=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
+            $perf_out .= "out=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
         }
     }
 }
