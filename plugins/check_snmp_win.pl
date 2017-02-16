@@ -247,6 +247,7 @@ if (defined($o_login) && defined($o_passwd)) {
     verb("SNMPv3 login");
     ($session, $error) = Net::SNMP->session(
         -hostname     => $o_host,
+        -port         => $o_port,
         -version      => '3',
         -username     => $o_login,
         -authpassword => $o_passwd,

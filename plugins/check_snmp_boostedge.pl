@@ -247,6 +247,7 @@ if (defined($o_login) && defined($o_passwd)) {
         verb("SNMPv3 AuthNoPriv login : $o_login, $o_authproto");
         ($session, $error) = Net::SNMP->session(
             -hostname     => $o_host,
+            -port         => $o_port,
             -version      => '3',
             -username     => $o_login,
             -authpassword => $o_passwd,
@@ -257,6 +258,7 @@ if (defined($o_login) && defined($o_passwd)) {
         verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
         ($session, $error) = Net::SNMP->session(
             -hostname     => $o_host,
+            -port         => $o_port,
             -version      => '3',
             -username     => $o_login,
             -authpassword => $o_passwd,
