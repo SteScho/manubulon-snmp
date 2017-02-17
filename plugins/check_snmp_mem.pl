@@ -156,7 +156,7 @@ sub help {
 -I, --cisco
    check cisco memory (sum of all memory pools)
 -E, --hp
-   check HP proccurve memory
+   check HP Procurve memory
 -f, --perfdata
    Performance data output
 -t, --timeout=INTEGER
