@@ -44,6 +44,12 @@ my $ciscocata_cpu_5m = ".1.3.6.1.4.1.9.9.109.1.1.1.1.5.9";    # Cisco CPU load (
 my $ciscocata_cpu_1m = ".1.3.6.1.4.1.9.9.109.1.1.1.1.3.9";    # Cisco CPU load (1min %)
 my $ciscocata_cpu_5s = ".1.3.6.1.4.1.9.9.109.1.1.1.1.4.9";    # Cisco CPU load (5sec %)
 
+# Cisco small business (SG500) cpu/load
+
+my $cisg_cpu_5m = "1.3.6.1.4.1.9.6.1.101.1.9.0";      # Cisco CPU load (5min %)
+my $cisg_cpu_1m = "1.3.6.1.4.1.9.6.1.101.1.8.0";      # Cisco CPU load (1min %)
+my $cisg_cpu_5s = "1.3.6.1.4.1.9.6.1.101.1.7.0";      # Cisco CPU load (5sec %)
+
 # Netscreen cpu/load
 
 my $nsc_cpu_5m = "1.3.6.1.4.1.3224.16.1.4.0";                 # NS CPU load (5min %)
@@ -89,7 +95,7 @@ my $hpux_load_15_min = "1.3.6.1.4.1.11.2.3.1.1.5.0";
 
 # valid values
 my @valid_types
-    = ("stand", "netsc", "netsl", "as400", "cisco", "cata", "nsc", "fg", "bc", "nokia", "hp", "lp", "hpux", "n5k");
+    = ("stand", "netsc", "netsl", "as400", "cisco", "cata", "cisg", "nsc", "fg", "bc", "nokia", "hp", "lp", "hpux", "n5k");
 
 # CPU OID array
 my %cpu_oid = (
@@ -107,7 +113,7 @@ my $o_help      = undef;         # wan't some help ?
 my $o_verb      = undef;         # verbose mode
 my $o_version   = undef;         # print version
 
-# check type  : stand | netsc |  netsl | as400 | cisco | cata | nsc | fg | bc | nokia | hp | lp  | hpux
+# check type  : stand | netsc |  netsl | as400 | cisco | cata | cisg | nsc | fg | bc | nokia | hp | lp  | hpux
 my $o_check_type = "stand";
 
 # End compatibility
@@ -133,7 +139,7 @@ sub p_version { print "check_snmp_load version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
+"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|cisg|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum {                     # Return true if arg is not a number
@@ -182,7 +188,7 @@ sub help {
    critical level for cpu in percent (on one minute)
    1 value check : critical level for cpu in percent (on one minute)
    3 value check : comma separated level for load or cpu for 1min, 5min, 15min 
--T, --type=stand|netsl|netsc|as400|cisco|bc|nokia|hp|lp
+-T, --type=stand|netsl|netsc|as400|cisco|cisg|bc|nokia|hp|lp
 	CPU check : 
 		stand : standard MIBII (works with Windows), 
 		        can handle multiple CPU.
@@ -192,6 +198,7 @@ sub help {
 		cisco : Cisco CPU usage
 		n5k   : Cisco Nexus CPU Usage
 		cata  : Cisco catalyst CPU usage
+		cisg  : Cisco small business (SG500) CPU usage (1,5 & 15 minutes values)
 		nsc   : NetScreen CPU usage
 		fg    : Fortigate CPU usage
 		bc    : Bluecoat CPU usage
@@ -315,6 +322,7 @@ sub check_options {
     if (   ($o_check_type eq "netsl")
         || ($o_check_type eq "cisco")
         || ($o_check_type eq "cata")
+        || ($o_check_type eq "cisg")
         || ($o_check_type eq "nsc")
         || ($o_check_type eq "hpux"))
     {
@@ -682,6 +690,64 @@ if ($o_check_type eq "cata") {
 
     exit $exit_val;
 }
+
+############## Cisco SG CPU check ################
+
+if ($o_check_type eq "cisg") {
+    my @oidlists = ($cisg_cpu_5m, $cisg_cpu_1m, $cisg_cpu_5s);
+    my $resultat
+        = (is_legacy_snmp_version())
+        ? $session->get_request(@oidlists)
+        : $session->get_request(-varbindlist => \@oidlists);
+
+    if (!defined($resultat)) {
+        printf("ERROR: Description table : %s.\n", $session->error);
+        $session->close;
+        exit $ERRORS{"UNKNOWN"};
+    }
+
+    $session->close;
+
+    if (!defined($$resultat{$cisg_cpu_5s})) {
+        print "No CPU information : UNKNOWN\n";
+        exit $ERRORS{"UNKNOWN"};
+    }
+
+    my @load = undef;
+
+    $load[0] = $$resultat{$cisg_cpu_5s};
+    $load[1] = $$resultat{$cisg_cpu_1m};
+    $load[2] = $$resultat{$cisg_cpu_5m};
+
+    print "CPU : $load[0] $load[1] $load[2] :";
+
+    $exit_val = $ERRORS{"OK"};
+    for (my $i = 0; $i < 3; $i++) {
+        if ($load[$i] > $o_critL[$i]) {
+            print " $load[$i] > $o_critL[$i] : CRITICAL";
+            $exit_val = $ERRORS{"CRITICAL"};
+        }
+        if ($load[$i] > $o_warnL[$i]) {
+
+            # output warn error only if no critical was found
+            if ($exit_val eq $ERRORS{"OK"}) {
+                print " $load[$i] > $o_warnL[$i] : WARNING";
+                $exit_val = $ERRORS{"WARNING"};
+            }
+        }
+    }
+    print " OK" if ($exit_val eq $ERRORS{"OK"});
+    if (defined($o_perf)) {
+        print " | load_5_sec=$load[0]%;$o_warnL[0];$o_critL[0] ";
+        print "load_1_min=$load[1]%;$o_warnL[1];$o_critL[1] ";
+        print "load_5_min=$load[2]%;$o_warnL[2];$o_critL[2]\n";
+    } else {
+        print "\n";
+    }
+
+    exit $exit_val;
+}
+
 
 ############## Netscreen CPU check ################
 
