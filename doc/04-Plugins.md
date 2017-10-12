@@ -389,72 +389,7 @@ Usage: ./check_snmp_load.pl [-v] -H <host> -C <snmp_community> [-2] | (-l login 
 ## check\_snmp\_mem <a href="manubulon-snmp-plugins-mem"></a>
 
 ```
-$ ./check_snmp_load.pl --help
-
-SNMP Load & CPU Monitor for Icinga/Nagios/Naemon/Shinken, Version 2.1.0
-GPL license, (c)2004-2007 Patrick Proy
-
-Usage: ./check_snmp_load.pl [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|cisg|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]
--v, --verbose
-   print extra debugging information
--h, --help
-   print this help message
--H, --hostname=HOST
-   name or IP address of host to check
--C, --community=COMMUNITY NAME
-   community name for the host's SNMP agent (implies v1 protocol)
--2, --v2c
-   Use snmp v2c
--l, --login=LOGIN ; -x, --passwd=PASSWD
-   Login and auth password for snmpv3 authentication
-   If no priv password exists, implies AuthNoPriv
--X, --privpass=PASSWD
-   Priv password for snmpv3 (AuthPriv protocol)
--L, --protocols=<authproto>,<privproto>
-   <authproto> : Authentication protocol (md5|sha : default md5)
-   <privproto> : Priv protocole (des|aes : default des)
--p, --port=PORT
-   SNMP port (Default 161)
--P, --protocol=PROTOCOL
-   Network protocol to be used
-   ['udp/ipv4'] : UDP over IPv4
-    'udp/ipv6'  : UDP over IPv6
-    'tcp/ipv4'  : TCP over IPv4
-    'tcp/ipv6'  : TCP over IPv6
-
-   Network protocol (Default udp/ipv4)
--w, --warn=INTEGER | INT,INT,INT
-   1 value check : warning level for cpu in percent (on one minute)
-   3 value check : comma separated level for load or cpu for 1min, 5min, 15min
--c, --crit=INTEGER | INT,INT,INT
-   critical level for cpu in percent (on one minute)
-   1 value check : critical level for cpu in percent (on one minute)
-   3 value check : comma separated level for load or cpu for 1min, 5min, 15min
--T, --type=stand|netsl|netsc|as400|cisco|cisg|bc|nokia|hp|lp
-	CPU check :
-		stand : standard MIBII (works with Windows),
-		        can handle multiple CPU.
-		netsl : linux load provided by Net SNMP (1,5 & 15 minutes values)
-		netsc : cpu usage given by net-snmp (100-idle)
-		as400 : as400 CPU usage
-		cisco : Cisco CPU usage
-		n5k   : Cisco Nexus CPU Usage
-		cata  : Cisco catalyst CPU usage
-		cisg  : Cisco small business (SG500) CPU usage (1,5 & 15 minutes values)
-		nsc   : NetScreen CPU usage
-		fg    : Fortigate CPU usage
-		bc    : Bluecoat CPU usage
-		nokia : Nokia CPU usage
-		hp    : HP procurve switch CPU usage
-		lp    : Linkproof CPU usage
-		hpux  : HP-UX load (1,5 & 15 minutes values)
--f, --perfparse, --perfdata
-   Performance data output
--t, --timeout=INTEGER
-   timeout for SNMP in seconds (Default: 5)
--V, --version
-   prints version number
-michi@mbmif ~/coding/addons/manubulon-snmp/plugins (master *=) $ ./check_snmp_mem.pl --help
+$ ./check_snmp_mem.pl --help
 
 SNMP Memory Monitor for Icinga/Nagios/Naemon/Shinken, Version 2.1.0
 GPL license, (c)2004-2007 Patrick Proy
