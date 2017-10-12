@@ -1,0 +1,21 @@
+#dist: trusty
+sudo: false
+
+language: perl
+perl:
+  - "5.14"
+  - "5.12"
+  - "5.10"
+
+before_install:
+  - "cpanm Net::SNMP"
+  - "cpanm Getopt::Long"
+  - "cpanm Crypt::DES"
+  - "cpanm Crypt::Rijndael"
+  - "cpanm Digest::HMAC"
+
+install:
+  - cpanm --quiet --notest .
+
+script:
+  - ./plugins/*.pl --help
