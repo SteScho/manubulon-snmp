@@ -1,17 +1,52 @@
 # Manubulon SNMP Plugins
 
-## General information
+#### Table of Contents
+
+1. [About](#about)
+2. [License](#license)
+3. [Support](#support)
+4. [Requirements](#requirements)
+5. [Installation](#installation)
+6. [Configuration](#configuration)
+7. [FAQ](#faq)
+8. [Thanks](#thanks)
+9. [Contributing](#contributing)
+
+## About
 
 Manubulon SNMP plugins is a set of Icinga/Nagios plugins
-to check hosts/devices using the SNMP protocol. Check
-[http://nagios.manubulon.com](http://nagios.manubulon.com) for more details.
+to check hosts/devices using the SNMP protocol.
 
-This is a fork using a [cvs2git import](http://sourceforge.net/projects/nagios-snmp/develop) which includes community patches.
+### Plugin Overview
 
-The original project was last active in 2007 so this project
-helps collect all patches and feature requests.
+Plugin                        | Description
+------------------------------|----------------------------------------
+check\_snmp\_storage          | Storage checks (disks, swap, memory, etc.)
+check\_snmp\_int              | Interface states, usage on hosts, switches, routers, etc.
+check\_snmp\_process          | Running processes, their number, used CPU and memory.
+check\_snmp\_load             | Load/CPU checks
+check\_snmp\_mem              | Memory and swap usage
+check\_snmp\_env              | Environmental status of fan, temp, power supplies.
+check\_snmp\_vrrp             | Interface state of a VRRP cluster
+check\_snmp\_cpfw             | Checkpoint Firewall-1 status
+check\_snmp\_win              | Windows services
+check\_snmp\_css              | CSS service states
+check\_snmp\_nsbox            | Nsbox VHost and diode status
+check\_snmp\_boostedge        | Boostedge services
+check\_snmp\_linkproof\_ndr   | Linkproof NHR
 
-Feel free to use & distribute it under the original license.
+## License
+
+These plugins are licensed under the terms of the GNU General Public License.
+You will find a copy of this license in the LICENSE file included in the source package.
+
+## Support
+
+Join the [Icinga community channels](https://www.icinga.com/about/get-involved/) for questions.
+
+If you want to help maintain this project, just contact
+me on [twitter](https://twitter.com/dnsmichi) and I'll
+happily grant commit access.
 
 ## Requirements
 
@@ -25,41 +60,30 @@ Feel free to use & distribute it under the original license.
   [Crypt::Rijndael](http://search.cpan.org/~leont/Crypt-Rijndael-1.13/Rijndael.pm) and
   [Digest::HMAC](http://search.cpan.org/~gaas/Digest-HMAC-1.03/lib/Digest/HMAC.pm)
 
-Distribution-specific packages:
-* Debian/Ubuntu: `libnet-snmp-perl` and `libcrypt-des-perl libcrypt-rijndael-perl libdigest-hmac-perl`
-* RHEL/CentOS: `perl-Net-SNMP perl-Getopt-Long` and `perl-Crypt-DES perl-Crypt-Rijndael perl-Digest-HMAC`
+## Installation
 
-Perl, default directory and temp files location can be changed using the install.sh script.
+Detailed installation instructions can be found [here](doc/02-Installation.md).
 
-`utils.pm` from `Monitoring::Plugin::Perl` is no longer required.
+## Configuration
 
-## Documentation
+Proceed [here](doc/03-Configuration.md) to get details on the configuration with Icinga 2, Icinga 1.x, etc.
 
-The original documentation and sourcecode is located at
-[http://nagios.manubulon.com](http://nagios.manubulon.com).
-A website copy was added underneath the `doc/` directory.
+## FAQ
 
-## Support
 
-You may create [GitHub issues](https://github.com/dnsmichi/manubulon-snmp)
-as well. I do have a lot of things on my plate so best is to send in a tested (!) patch at the same time.
+## Thanks
 
-If you want to help maintain this project, just contact
-me on [twitter](https://twitter.com/dnsmichi) and I'll
-happily grant commit access.
+Patrick Proy for creating and maintaining the original plugins.
 
-You may head over to [monitoring-portal.org community](http://www.monitoring-portal.org)
-for questions and feedback.
+## Contributing
 
-The original support tracker is still located on [sourceforge](https://sourceforge.net/p/nagios-snmp/feature-requests/).
-
-## Development
-
-Fork this repository on Github and send in a PR.
+Fork this repository on GitHub and send in a PR.
 
 There's a `.perltidyrc` file in the main repository tree. If you are uncertain about the coding style,
 create your patch and then run:
 
-    $ perltidy -b plugins/*.pl
+```
+$ perltidy -b plugins/*.pl
+```
 
 This requires the `perltidy` module being installed.
