@@ -38,7 +38,7 @@ my $be_service_connect
 
 # Globals
 
-my $VERSION = "2.0.0";
+my $VERSION = "2.1.0";
 
 my $o_host      = undef;                                 # hostname
 my $o_community = undef;                                 # community

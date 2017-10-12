@@ -167,7 +167,7 @@ my $linux_misc_value = "1.3.6.1.4.1.2021.13.16.4.1.3";    # misc entry value
 
 # Globals
 
-my $VERSION = "2.0.0";
+my $VERSION = "2.1.0";
 
 my $o_host      = undef;                                  # hostname
 my $o_community = undef;                                  # community

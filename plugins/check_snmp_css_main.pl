@@ -35,7 +35,7 @@ my @css_svc_state_nag = (3, 2, 2, 3, 0, 2);
 
 # Globals
 
-my $VERSION = "2.0.0";
+my $VERSION = "2.1.0";
 
 my $o_host      = undef;                                    # hostname
 my $o_community = undef;                                    # community

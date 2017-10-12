@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_mem ##############
-my $VERSION = "2.0.0";
+my $VERSION = "2.1.0";
 
 # Date : 17 October 2007
 # Author  : Patrick Proy (nagios at proy.org)

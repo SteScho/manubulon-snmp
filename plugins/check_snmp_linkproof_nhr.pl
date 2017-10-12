@@ -29,7 +29,7 @@ my $lp_port  = "1.3.6.1.4.1.89.35.1.38.1.1.15";    # nhr users
 
 # Globals
 
-my $VERSION = "2.0.0";
+my $VERSION = "2.1.0";
 
 my $o_host      = undef;                           # hostname
 my $o_community = undef;                           # community

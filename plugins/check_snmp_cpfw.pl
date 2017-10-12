@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w 
 ############################## check_snmp_cpfw ##############
-my $VERSION = "2.0.0";
+my $VERSION = "2.1.0";
 
 # Date : Oct 20 2007
 # Author  : Patrick Proy (patrick at proy.org)
