@@ -36,12 +36,13 @@ yum -y install perl-Net-SNMP perl-Getopt-Long perl-Crypt-DES perl-Crypt-Rijndael
 Debian/Ubuntu:
 
 ```
-install -o root -g root -m750 plugins/*.pl /usr/lib/nagios/plugins/
+install -o root -g root -m755 plugins/*.pl /usr/lib/nagios/plugins/
 ```
+
 RHEL/CentOS/Fedora:
 
 ```
-install -o root -g root -m750 plugins/*.pl /usr/lib64/nagios/plugins/
+install -o root -g root -m755 plugins/*.pl /usr/lib64/nagios/plugins/
 ```
 
 Proceed with inspecting the plugins `--help` parameter in [this chapter](04-Plugins.md).
