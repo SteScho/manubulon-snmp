@@ -598,6 +598,15 @@ if (version->parse(Net::SNMP->VERSION) < 4) {
     $result = $session->get_request(@oids);
 } else {
     $result = $session->get_request(Varbindlist => \@oids);
+}
+
+if (!defined($result)) {
+    printf("ERROR getting OIDs: %s.\n", $session->error);
+    $session->close;
+    exit $ERRORS{"UNKNOWN"};
+}
+
+if (version->parse(Net::SNMP->VERSION) >= 4) {
     foreach my $key (sort keys %$result) {
 
         # Fix for filesystems larger 2 TB. More than 2 TB will cause an error because
@@ -611,12 +620,6 @@ if (version->parse(Net::SNMP->VERSION) < 4) {
         }
         verb("$key  x $$result{$key}");
     }
-}
-
-if (!defined($result)) {
-    printf("ERROR: Size table :%s.\n", $session->error);
-    $session->close;
-    exit $ERRORS{"UNKNOWN"};
 }
 
 $session->close;
