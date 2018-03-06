@@ -605,12 +605,10 @@ if (defined($o_netsnmp)) {
     }
     $n_output .= " ; " . $n_status;
     if (defined($o_perf)) {
-        if (defined($o_cache)) {
-            $n_output .= " | ram_used=" . ($$resultat{$nets_ram_total} - $$resultat{$nets_ram_free}) . ";";
-        } else {
-            $n_output .= " | ram_used="
-                . ($$resultat{$nets_ram_total} - $$resultat{$nets_ram_free} - $$resultat{$nets_ram_cache}) . ";";
-        }
+        my $perf_ramused = ($$resultat{$nets_ram_total} - $$resultat{$nets_ram_free});
+        $perf_ramused -= $$resultat{$nets_ram_cache} unless defined($o_cache);
+        $perf_ramused -= $$resultat{$nets_ram_buffer} if defined($o_buffer);
+        $n_output .= " | ram_used=$perf_ramused;";
         $n_output .= ($o_warnR == 0) ? ";" : round($o_warnR * $$resultat{$nets_ram_total} / 100, 0) . ";";
         $n_output .= ($o_critR == 0) ? ";" : round($o_critR * $$resultat{$nets_ram_total} / 100, 0) . ";";
         $n_output .= "0;" . $$resultat{$nets_ram_total} . " ";
