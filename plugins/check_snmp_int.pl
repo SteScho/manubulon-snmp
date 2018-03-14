@@ -632,35 +632,38 @@ foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
 
         # get the index number of the interface
         my @oid_list = split(/\./, $key);
-        $tindex[$num_int] = pop(@oid_list);
-
-        # get the full description
-        $descr[$num_int] = $$resultat{$key};
-
-        # Get rid of special caracters (specially for Windows)
-        $descr[$num_int] =~ s/[[:cntrl:]]//g;
-
-        # put the admin or oper oid in an array
-        $oids[$num_int]
-            = defined($o_admin)
-            ? $admin_table . $tindex[$num_int]
-            : $oper_table . $tindex[$num_int];
-
-        # Put the performance oid
-        if (defined($o_perf) || defined($o_checkperf)) {
-            $oid_perf_inoct[$num_int]  = $in_octet_table . $tindex[$num_int];
-            $oid_perf_outoct[$num_int] = $out_octet_table . $tindex[$num_int];
-            $oid_speed[$num_int]       = $speed_table . $tindex[$num_int];
-            $oid_speed_high[$num_int]  = $speed_table_64 . $tindex[$num_int];
-            if (defined($o_ext_checkperf) || defined($o_perfe)) {
-                $oid_perf_indisc[$num_int]  = $in_discard_table . $tindex[$num_int];
-                $oid_perf_outdisc[$num_int] = $out_discard_table . $tindex[$num_int];
-                $oid_perf_inerr[$num_int]   = $in_error_table . $tindex[$num_int];
-                $oid_perf_outerr[$num_int]  = $out_error_table . $tindex[$num_int];
+        my $int_index = pop(@oid_list);
+        if (defined($o_noreg) && ($num_int > 0)) {
+            if ($tindex[$num_int-1] < $int_index) {
+                $num_int = 0;
             }
         }
-        verb("Name : $descr[$num_int], Index : $tindex[$num_int]");
-        $num_int++;
+        if (!defined($o_noreg) || ($num_int == 0)) {
+            $tindex[$num_int] = $int_index; 
+            # get the full description
+            $descr[$num_int]=$$resultat{$key};
+            # Get rid of special caracters (specially for Windows)
+            $descr[$num_int] =~ s/[[:cntrl:]]//g;
+            # put the admin or oper oid in an array
+            $oids[$num_int]= defined ($o_admin) ? $admin_table . $tindex[$num_int] 
+			: $oper_table . $tindex[$num_int];
+
+            # Put the performance oid 
+            if (defined($o_perf) || defined($o_checkperf)) {
+                $oid_perf_inoct[$num_int]= $in_octet_table . $tindex[$num_int];
+                $oid_perf_outoct[$num_int]= $out_octet_table . $tindex[$num_int];
+                $oid_speed[$num_int]=$speed_table . $tindex[$num_int];
+                $oid_speed_high[$num_int]=$speed_table_64 . $tindex[$num_int];
+                if (defined($o_ext_checkperf) || defined($o_perfe)) {
+                    $oid_perf_indisc[$num_int]= $in_discard_table . $tindex[$num_int];
+                    $oid_perf_outdisc[$num_int]= $out_discard_table . $tindex[$num_int];
+                    $oid_perf_inerr[$num_int]= $in_error_table . $tindex[$num_int];
+                    $oid_perf_outerr[$num_int]= $out_error_table . $tindex[$num_int];
+                }
+            }
+            verb("Name : $descr[$num_int], Index : $tindex[$num_int]");
+            $num_int++;
+        }
     }
 }
 
