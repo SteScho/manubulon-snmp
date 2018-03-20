@@ -95,7 +95,7 @@ sub p_version { print "check_snmp_mem version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> [-I|-N|-E] [-f] [-m -b] [-t <timeout>] [-V]\n";
+"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> [-I|-N|-E] [-f[f]] [-m -b] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum {                     # Return true if arg is not a number
@@ -218,8 +218,8 @@ sub check_options {
         'memcache'    => \$o_cache,
         'b'           => \$o_buffer,
         'membuffer'   => \$o_buffer,
-        'f'           => \$o_perf,
-        'perfdata'    => \$o_perf
+        'f+'          => \$o_perf,
+        'perfdata+'   => \$o_perf
     );
     if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"} }
@@ -578,9 +578,7 @@ if (defined($o_netsnmp)) {
 
     $realused = ($$resultat{$nets_ram_total} - ($$resultat{$nets_ram_free} + $totalcachedbuffered))
         / $$resultat{$nets_ram_total};
-
     if ($$resultat{$nets_ram_total} == 0) { $realused = 0; }
-
     $swapused
         = ($$resultat{$nets_swap_total} == 0)
         ? 0
@@ -605,12 +603,11 @@ if (defined($o_netsnmp)) {
     }
     $n_output .= " ; " . $n_status;
     if (defined($o_perf)) {
-        if (defined($o_cache)) {
-            $n_output .= " | ram_used=" . ($$resultat{$nets_ram_total} - $$resultat{$nets_ram_free}) . ";";
-        } else {
-            $n_output .= " | ram_used="
-                . ($$resultat{$nets_ram_total} - $$resultat{$nets_ram_free} - $$resultat{$nets_ram_cache}) . ";";
-        }
+        my $perf_ramused = ($$resultat{$nets_ram_total} - $$resultat{$nets_ram_free});
+        $perf_ramused -= $$resultat{$nets_ram_cache}  if $o_perf > 1 or !defined($o_cache);
+        $perf_ramused -= $$resultat{$nets_ram_buffer} if $o_perf > 1 or defined($o_buffer);
+
+        $n_output .= " | ram_used=$perf_ramused;";
         $n_output .= ($o_warnR == 0) ? ";" : round($o_warnR * $$resultat{$nets_ram_total} / 100, 0) . ";";
         $n_output .= ($o_critR == 0) ? ";" : round($o_critR * $$resultat{$nets_ram_total} / 100, 0) . ";";
         $n_output .= "0;" . $$resultat{$nets_ram_total} . " ";
@@ -618,6 +615,11 @@ if (defined($o_netsnmp)) {
         $n_output .= ($o_warnS == 0) ? ";" : round($o_warnS * $$resultat{$nets_swap_total} / 100, 0) . ";";
         $n_output .= ($o_critS == 0) ? ";" : round($o_critS * $$resultat{$nets_swap_total} / 100, 0) . ";";
         $n_output .= "0;" . $$resultat{$nets_swap_total};
+
+        if ($o_perf > 1) {
+            $n_output .= " buffered=" . $$resultat{$nets_ram_buffer} . ';;;0;' . $$resultat{$nets_ram_total};
+            $n_output .= " cached="   . $$resultat{$nets_ram_cache}  . ';;;0;' . $$resultat{$nets_ram_total};
+        }
     }
     $session->close;
     print "$n_output \n";
