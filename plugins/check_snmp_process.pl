@@ -44,9 +44,9 @@ my $o_port      = 161;                                         # port
 my $o_domain    = 'udp/ipv4';                                  # Default to UDP over IPv4
 my $o_version2  = undef;                                       #use snmp v2c
 my $o_descr     = undef;                                       # description filter
-my $o_warn      = 0;                                           # warning limit
+my $o_warn      = undef;                                       # warning limit
 my @o_warnL     = undef;                                       # warning limits (min,max)
-my $o_crit      = 0;                                           # critical limit
+my $o_crit      = undef;                                       # critical limit
 my @o_critL     = undef;                                       # critical limits (min,max)
 my $o_help      = undef;                                       # wan't some help ?
 my $o_verb      = undef;                                       # verbose mode
@@ -74,17 +74,22 @@ my $o_octetlength = undef;
 my $o_mem     = undef;                                         # checks memory (max)
 my @o_memL    = undef;                                         # warn and crit level for mem
 my $o_mem_avg = undef;                                         # cheks memory average
+my $o_mem_sum = undef;                                         # checks memory total
 my $o_cpu     = undef;                                         # checks CPU usage
 my @o_cpuL    = undef;                                         # warn and crit level for cpu
-my $o_delta   = $delta_of_time_to_make_average;                # delta time for CPU check
+my $o_delta   = undef;                                         # delta time for CPU check
 
 # functions
 
 sub p_version { print "check_snmp_process version : $VERSION\n"; }
 
 sub print_usage {
-    print
-"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] [-P <IP Protocol>] -n <name> [-w <min_proc>[,<max_proc>] -c <min_proc>[,max_proc] ] [-m<warn Mb>,<crit Mb> -a -u<warn %>,<crit%> -d<delta> ] [-t <timeout>] [-o <octet_length>] [-f -A -F ] [-r] [-V] [-g]\n";
+    print "Usage: $0 [-v] -H <host> [-p <port>] [-P <IP Protocol>] "
+        . "((-C <snmp_community> [-2]) | (-l login -x passwd)) "
+        . "-n <name> [-f] [-A] [-r] [-w <min_proc>[,<max_proc>] -c <min_proc>[,<max_proc>]] "
+        . "[-m [<warnMB>,<critMB>] [-a|-T]] "
+        . "[-u [<warn%>,<crit%>] -d<delta>] "
+        . "[-t <timeout>] [-o <octet_length>] [-F] [-V] [-g]\n";
 }
 
 sub isnotnum {                                                 # Return true if arg is not a number
@@ -186,7 +191,7 @@ sub help {
    ex : "named.*-t /var/named/chroot" will only select named process with this parameter 
 -F, --perfout
    Add performance output
-   outputs : memory_usage, num_process, cpu_usage
+   outputs: num_processes, memory_usage (if -m), cpu_usage (if -u)
 -w, --warn=MIN[,MAX]
    Number of process that will cause a warning 
    -1 for no warning, MAX must be >0. Ex : -w-1,50
@@ -197,15 +202,21 @@ Notes on warning and critical :
    with the following options : -w m1,x1 -c m2,x2
    you must have : m2 <= m1 < x1 <= x2
    you can omit x1 or x2 or both
--m, --memory=WARN,CRIT
+-m, --memory[=WARN,CRIT]
    checks memory usage (default max of all process)
-   values are warning and critical values in Mb
+   WARN,CRIT values are warning and critical values in MB
+   if WARN,CRIT values are not given, just report
 -a, --average
    makes an average of memory used by process instead of max
--u, --cpu=WARN,CRIT
+   (implies -m, cannot be used with -T)
+-T, --total
+   checks the total memory used by processes instead of max
+   (implies -m, cannot be used with -a)
+-u, --cpu[=WARN,CRIT]
    checks cpu usage of all process
    values are warning and critical values in % of CPU usage
    if more than one CPU, value can be > 100% : 100%=1 CPU
+   if WARN,CRIT values are not given, just report
 -d, --delta=seconds
    make an average of <delta> seconds for CPU (default 300=5min)   
 -g, --getall
@@ -272,6 +283,8 @@ sub check_options {
         'memory:s'      => \$o_mem,
         'a'             => \$o_mem_avg,
         'average'       => \$o_mem_avg,
+        'T'             => \$o_mem_sum,
+        'total'         => \$o_mem_sum,
         'u:s'           => \$o_cpu,
         'cpu'           => \$o_cpu,
         '2'             => \$o_version2,
@@ -327,9 +340,11 @@ sub check_options {
 
     # Check compulsory attributes
     if (!defined($o_descr) || !defined($o_host)) { print_usage(); exit $ERRORS{"UNKNOWN"} }
-    @o_warnL = split(/,/, $o_warn);
-    @o_critL = split(/,/, $o_crit);
-    verb("$o_warn $o_crit $#o_warnL $#o_critL");
+
+    # Check warn/crit values
+    @o_warnL = split(/,/, ($o_warn // "0"));
+    @o_critL = split(/,/, ($o_crit // "0"));
+    verb("Warn: " . ($o_warn // "undef") . "; Crit: " . ($o_crit // "undef") . "; #Warn: " .  $#o_warnL . "; #Crit: " . $#o_critL);
     if (isnotnum($o_warnL[0]) || isnotnum($o_critL[0])) {
         print "Numerical values for warning and critical\n";
         print_usage();
@@ -348,7 +363,6 @@ sub check_options {
         exit $ERRORS{"UNKNOWN"};
     }
 
-    # Check min_crit < min warn < max warn < crit warn
     if ($o_warnL[0] < $o_critL[0]) {
         print " warn minimum must be >= crit minimum\n";
         print_usage();
@@ -371,7 +385,15 @@ sub check_options {
         exit $ERRORS{"UNKNOWN"};
     }
     #### Memory checks
-    if (defined($o_mem)) {
+    if (defined($o_mem_sum) && defined($o_mem_avg)) {
+        print "cannot test memory average and memory total\n";
+        print_usage();
+        exit $ERRORS{"UNKNOWN"};
+    }
+    if (defined($o_mem_sum) || defined($o_mem_avg)) {
+        $o_mem = $o_mem // "";
+    }
+    if (defined($o_mem) && length($o_mem)) {
         @o_memL = split(/,/, $o_mem);
         if ($#o_memL != 1) { print "2 values (warning,critical) for memory\n"; print_usage(); exit $ERRORS{"UNKNOWN"} }
         if (isnotnum($o_memL[0]) || isnotnum($o_memL[1])) {
@@ -386,7 +408,16 @@ sub check_options {
         }
     }
     #### CPU checks
-    if (defined($o_cpu)) {
+    if (defined($o_delta)) {
+        if (isnotnum($o_delta)) {
+            print "Numeric values for delta!\n";
+            print_usage();
+            exit $ERRORS{"UNKNOWN"};
+        }
+        $o_cpu = $o_cpu // "";
+    }
+    if (defined($o_cpu) && length($o_cpu)) {
+        $o_delta = $o_delta // $delta_of_time_to_make_average;
         @o_cpuL = split(/,/, $o_cpu);
         if ($#o_cpuL != 1) { print "2 values (warning,critical) for cpu\n"; print_usage(); exit $ERRORS{"UNKNOWN"} }
         if (isnotnum($o_cpuL[0]) || isnotnum($o_cpuL[1])) {
@@ -619,24 +650,11 @@ foreach my $key (keys %$resultat) {
     }
 }
 
-if ($num_int == 0) {
-    print "No process ", (defined($o_noreg)) ? "named " : "matching ", $o_descr, " found : ";
-    if ($o_critL[0] >= 0) {
-        print "CRITICAL\n";
-        exit $ERRORS{"CRITICAL"};
-    } elsif ($o_warnL[0] >= 0) {
-        print "WARNING\n";
-        exit $ERRORS{"WARNING"};
-    }
-    print "YOU told me it was : OK\n";
-    exit $ERRORS{"OK"};
-}
-
 my $result     = undef;
 my $num_int_ok = 0;
 
 # Splitting snmp request because can't use get_bulk_request with v1 protocol
-if (!defined($o_get_all)) {
+if ($num_int != 0 && !defined($o_get_all)) {
     if ($count_oid >= 50) {
         my @toid       = undef;
         my $tmp_num    = 0;
@@ -697,13 +715,21 @@ my $perf_output;
 my ($res_memory, $res_cpu) = (0, 0);
 my $memory_print = "";
 my $cpu_print    = "";
+
 ###### Checks memory usage
 
 if (defined($o_mem)) {
-    if (defined($o_mem_avg)) {
-        for (my $i = 0; $i < $num_int; $i++) { $res_memory += $result_cons{ $proc_mem_table . "." . $tindex[$i] }; }
-        $res_memory /= ($num_int_ok * 1024);
-        verb("Memory average : $res_memory");
+    if (defined($o_mem_avg) || defined($o_mem_sum)) {
+	verb("Check average: " . ($o_mem_avg // 0) . "; total: " . ($o_mem_sum // 0));
+        for (my $i = 0; $i < $num_int; $i++) { 
+            $res_memory += $result_cons{ $proc_mem_table . "." . $tindex[$i] }; 
+        }
+        $res_memory /= 1024;   # to Mbytes
+        verb("Memory total : $res_memory MB");
+        if (defined($o_mem_avg)) {
+            $res_memory /= $num_int_ok;
+            verb("Memory average : $res_memory MB");
+        }
     } else {
         for (my $i = 0; $i < $num_int; $i++) {
             $res_memory
@@ -714,17 +740,22 @@ if (defined($o_mem)) {
         $res_memory /= 1024;
         verb("Memory max : $res_memory");
     }
-    if ($res_memory > $o_memL[1]) {
-        $final_status = 2;
-        $memory_print = ", Mem : " . sprintf("%.1f", $res_memory) . "Mb > " . $o_memL[1] . " CRITICAL";
-    } elsif ($res_memory > $o_memL[0]) {
-        $final_status = 1;
-        $memory_print = ", Mem : " . sprintf("%.1f", $res_memory) . "Mb > " . $o_memL[0] . " WARNING";
-    } else {
-        $memory_print = ", Mem : " . sprintf("%.1f", $res_memory) . "Mb OK";
-    }
     if (defined($o_perf)) {
-        $perf_output = "'memory_usage'=" . sprintf("%.1f", $res_memory) . "MB;" . $o_memL[0] . ";" . $o_memL[1];
+        $perf_output = "'memory_usage'=" . sprintf("%.1f", $res_memory) . "MB";
+    }
+    if (length($o_mem)) {
+        if ($res_memory > $o_memL[1]) {
+            $final_status = 2;
+            $memory_print = ", Mem : " . sprintf("%.1f", $res_memory) . "MB > " . $o_memL[1] . " CRITICAL";
+        } elsif ($res_memory > $o_memL[0]) {
+            $final_status = 1;
+            $memory_print = ", Mem : " . sprintf("%.1f", $res_memory) . "MB > " . $o_memL[0] . " WARNING";
+        } else {
+            $memory_print = ", Mem : " . sprintf("%.1f", $res_memory) . "MB OK";
+        }
+        if (defined($o_perf)) {
+            $perf_output .= ";" . $o_memL[0] . ";" . $o_memL[1];
+        }
     }
 }
 
@@ -789,19 +820,24 @@ if (defined($o_cpu)) {
     if ($return != 0) { $cpu_print .= "! ERROR writing file $temp_file_name !"; $final_status = 3; }
     ##### Check values (if something to check...)
     if (defined($found_value)) {
-        if ($found_value > $o_cpuL[1]) {
-            $final_status = 2;
-            $cpu_print .= ", Cpu : " . sprintf("%.0f", $found_value) . "% > " . $o_cpuL[1] . " CRITICAL";
-        } elsif ($found_value > $o_cpuL[0]) {
-            $final_status = ($final_status == 2) ? 2 : 1;
-            $cpu_print .= ", Cpu : " . sprintf("%.0f", $found_value) . "% > " . $o_cpuL[0] . " WARNING";
-        } else {
-            $cpu_print .= ", Cpu : " . sprintf("%.0f", $found_value) . "% OK";
-        }
         if (defined($o_perf)) {
             if (!defined($perf_output)) { $perf_output = ""; }
             else                        { $perf_output .= " "; }
-            $perf_output .= "'cpu_usage'=" . sprintf("%.0f", $found_value) . "%;" . $o_cpuL[0] . ";" . $o_cpuL[1];
+            $perf_output .= "'cpu_usage'=" . sprintf("%.0f", $found_value) . "%";
+        }
+        if (length($o_cpu)) {
+            if ($found_value > $o_cpuL[1]) {
+                $final_status = 2;
+                $cpu_print .= ", CPU : " . sprintf("%.0f", $found_value) . "% > " . $o_cpuL[1] . " CRITICAL";
+            } elsif ($found_value > $o_cpuL[0]) {
+                $final_status = ($final_status == 2) ? 2 : 1;
+                $cpu_print .= ", CPU : " . sprintf("%.0f", $found_value) . "% > " . $o_cpuL[0] . " WARNING";
+            } else {
+                $cpu_print .= ", CPU : " . sprintf("%.0f", $found_value) . "% OK";
+            }
+            if (defined($o_perf)) {
+                $perf_output .= ";" . $o_cpuL[0] . ";" . $o_cpuL[1];
+            }
         }
     } else {
         if ($final_status == 0) { $final_status = 3 }
@@ -809,35 +845,48 @@ if (defined($o_cpu)) {
     }
 }
 
-print $num_int_ok, " process ", (defined($o_noreg)) ? "named " : "matching ", $o_descr, " ";
-
-#### Check for min and max number of process
-if ($num_int_ok <= $o_critL[0]) {
-    print "(<= ", $o_critL[0], " : CRITICAL)";
-    $final_status = 2;
-} elsif ($num_int_ok <= $o_warnL[0]) {
-    print "(<= ", $o_warnL[0], " : WARNING)";
-    $final_status = ($final_status == 2) ? 2 : 1;
-} else {
-    print "(> ", $o_warnL[0], ")";
+if ($num_int == 0) {
+    print "No processes ", (defined($o_noreg) ? "named " : "matching "), $o_descr, " found : ";
+    if ($o_critL[0] >= 0) {
+        print "CRITICAL";
+        $final_status = 2;
+    } elsif ($o_warnL[0] >= 0) {
+        print "WARNING";
+        $final_status = ($final_status == 2) ? 2 : 1;
+    }
 }
-if (defined($o_critL[1]) && ($num_int_ok > $o_critL[1])) {
-    print " (> ", $o_critL[1], " : CRITICAL)";
-    $final_status = 2;
-} elsif (defined($o_warnL[1]) && ($num_int_ok > $o_warnL[1])) {
-    print " (> ", $o_warnL[1], " : WARNING)";
-    $final_status = ($final_status == 2) ? 2 : 1;
-} elsif (defined($o_warnL[1])) {
-    print " (<= ", $o_warnL[1], "):OK";
+else {
+    print $num_int_ok, " process", ($num_int_ok == 1 ? " " : "es "), (defined($o_noreg) ? "named " : "matching "), $o_descr, " ";
+
+    #### Check for min and max number of process
+    if ($num_int_ok <= $o_critL[0]) {
+        print "(<= ", $o_critL[0], " : CRITICAL)";
+        $final_status = 2;
+    } elsif ($num_int_ok <= $o_warnL[0]) {
+        print "(<= ", $o_warnL[0], " : WARNING)";
+        $final_status = ($final_status == 2) ? 2 : 1;
+    } else {
+        print "(> ", $o_warnL[0], ")";
+    }
+    if (defined($o_critL[1]) && ($num_int_ok > $o_critL[1])) {
+        print " (> ", $o_critL[1], " : CRITICAL)";
+        $final_status = 2;
+    } elsif (defined($o_warnL[1]) && ($num_int_ok > $o_warnL[1])) {
+        print " (> ", $o_warnL[1], " : WARNING)";
+        $final_status = ($final_status == 2) ? 2 : 1;
+    } elsif (defined($o_warnL[1])) {
+        print " (<= ", $o_warnL[1], "):OK";
+    }
 }
 
 print $memory_print, $cpu_print;
 
 if (defined($o_perf)) {
-    if (!defined($perf_output)) { $perf_output = ""; }
-    else                        { $perf_output .= " "; }
-    $perf_output .= "'num_process'=" . $num_int_ok . ";" . $o_warnL[0] . ";" . $o_critL[0];
-    print " | ", $perf_output;
+    print " | 'num_process'=" . $num_int_ok;
+    print ";" . $o_warnL[0]     if defined($o_warn);
+    print ";"                   if defined($o_crit) && !defined($o_warn);
+    print ";" . $o_critL[0]     if defined($o_crit);
+    print " " . $perf_output    if length($perf_output // "");
 }
 print "\n";
 
