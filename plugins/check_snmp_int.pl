@@ -78,42 +78,42 @@ my $o_label             = undef;    # add label before speed (in, out, etc...).
 my $o_weather           = undef;    # output "weathermap" data for NagVis
 
 # Performance data options
-my $o_perf  = undef;      # Output performance data
-my $o_perfe = undef;      # Output discard/error also in perf data
-my $o_perfs = undef;      # include speed in performance output (-S)
-my $o_perfp = undef;      # output performance data in % of max speed (-y)
-my $o_perfr = undef;      # output performance data in bits/s or Bytes/s (-Y)
+my $o_perf  = undef;                # Output performance data
+my $o_perfe = undef;                # Output discard/error also in perf data
+my $o_perfs = undef;                # include speed in performance output (-S)
+my $o_perfp = undef;                # output performance data in % of max speed (-y)
+my $o_perfr = undef;                # output performance data in bits/s or Bytes/s (-Y)
 
 # Speed/error checks
-my $o_checkperf     = undef;    # checks in/out/err/disc values
-my $o_delta         = 300;      # delta of time of perfcheck (default 5min)
-my $o_ext_checkperf = undef;    # extended perf checks (+error+discard)
-my $o_warn_opt      = undef;    # warning options
-my $o_crit_opt      = undef;    # critical options
-my $o_kbits         = undef;    # Warn and critical in Kbits instead of KBytes
-my @o_warn          = undef;    # warning levels of perfcheck
-my @o_crit          = undef;    # critical levels of perfcheck
-my $o_highperf      = undef;    # Use 64 bits counters
-my $o_meg           = undef;    # output in MBytes or Mbits (-M)
-my $o_gig           = undef;    # output in GBytes or Gbits (-G)
-my $o_prct          = undef;    # output in % of max speed  (-u)
-my $o_use_ifname    = undef;    # use IF-MIB::ifName instead of IF-MIB::ifDescr
-my $o_use_ifalias   = undef;    # use IF-MIB::ifAlias instead of IF-MIB::ifDescr
+my $o_checkperf     = undef;        # checks in/out/err/disc values
+my $o_delta         = 300;          # delta of time of perfcheck (default 5min)
+my $o_ext_checkperf = undef;        # extended perf checks (+error+discard)
+my $o_warn_opt      = undef;        # warning options
+my $o_crit_opt      = undef;        # critical options
+my $o_kbits         = undef;        # Warn and critical in Kbits instead of KBytes
+my @o_warn          = undef;        # warning levels of perfcheck
+my @o_crit          = undef;        # critical levels of perfcheck
+my $o_highperf      = undef;        # Use 64 bits counters
+my $o_meg           = undef;        # output in MBytes or Mbits (-M)
+my $o_gig           = undef;        # output in GBytes or Gbits (-G)
+my $o_prct          = undef;        # output in % of max speed  (-u)
+my $o_use_ifname    = undef;        # use IF-MIB::ifName instead of IF-MIB::ifDescr
+my $o_use_ifalias   = undef;        # use IF-MIB::ifAlias instead of IF-MIB::ifDescr
 
-my $o_timeout = undef;          # Timeout (Default 5)
+my $o_timeout = undef;              # Timeout (Default 5)
 
 # SNMP Message size parameter (Makina Corpus contrib)
 my $o_octetlength = undef;
 
 # Login options specific
-my $o_community = undef;        # community
-my $o_version2  = undef;        #use snmp v2c
-my $o_login     = undef;        # Login for snmpv3
-my $o_passwd    = undef;        # Pass for snmpv3
-my $v3protocols = undef;        # V3 protocol list.
-my $o_authproto = 'md5';        # Auth protocol
-my $o_privproto = 'des';        # Priv protocol
-my $o_privpass  = undef;        # priv password
+my $o_community = undef;            # community
+my $o_version2  = undef;            #use snmp v2c
+my $o_login     = undef;            # Login for snmpv3
+my $o_passwd    = undef;            # Pass for snmpv3
+my $v3protocols = undef;            # V3 protocol list.
+my $o_authproto = 'md5';            # Auth protocol
+my $o_privproto = 'des';            # Priv protocol
+my $o_privpass  = undef;            # priv password
 
 # Readable names for counters (M. Berger contrib)
 my @countername = ("in=", "out=", "errors-in=", "errors-out=", "discard-in=", "discard-out=");
@@ -288,84 +288,84 @@ sub verb { my $t = shift; print $t, "\n" if defined($o_verb); }
 sub check_options {
     Getopt::Long::Configure("bundling");
     GetOptions(
-        'v'             => \$o_verb,
-        'verbose'       => \$o_verb,
-        'h'             => \$o_help,
-        'help'          => \$o_help,
-        'H:s'           => \$o_host,
-        'hostname:s'    => \$o_host,
-        'p:i'           => \$o_port,
-        'port:i'        => \$o_port,
-        'n:s'           => \$o_descr,
-        'name:s'        => \$o_descr,
-        'N'             => \$o_use_ifname,
-        'use-ifname'    => \$o_use_ifname,
-        'A'             => \$o_use_ifalias,
-        'use-ifalias'   => \$o_use_ifalias,
-        'C:s'           => \$o_community,
-        'community:s'   => \$o_community,
-        '2'             => \$o_version2,
-        'v2c'           => \$o_version2,
-        'l:s'           => \$o_login,
-        'login:s'       => \$o_login,
-        'x:s'           => \$o_passwd,
-        'passwd:s'      => \$o_passwd,
-        'X:s'           => \$o_privpass,
-        'privpass:s'    => \$o_privpass,
-        'L:s'           => \$v3protocols,
-        'protocols:s'   => \$v3protocols,
-        't:i'           => \$o_timeout,
-        'timeout:i'     => \$o_timeout,
-        'i'             => \$o_inverse,
-        'inverse'       => \$o_inverse,
-        'a'             => \$o_admin,
-        'admin'         => \$o_admin,
-        'r'             => \$o_noreg,
-        'noregexp'      => \$o_noreg,
-        'V'             => \$o_version,
-        'version'       => \$o_version,
-        'f'             => \$o_perf,
-        'perfparse'     => \$o_perf,
-        'perfdata'      => \$o_perf,
-        'e'             => \$o_perfe,
-        'error'         => \$o_perfe,
-        'k'             => \$o_checkperf,
-        'perfcheck'     => \$o_checkperf,
-        'q'             => \$o_ext_checkperf,
-        'extperfcheck'  => \$o_ext_checkperf,
-        'w:s'           => \$o_warn_opt,
-        'warning:s'     => \$o_warn_opt,
-        'c:s'           => \$o_crit_opt,
-        'critical:s'    => \$o_crit_opt,
-        'B'             => \$o_kbits,
-        'kbits'         => \$o_kbits,
-        's:i'           => \$o_short,
-        'short:i'       => \$o_short,
-        'g'             => \$o_highperf,
-        '64bits'        => \$o_highperf,
-        'S'             => \$o_perfs,
-        'intspeed'      => \$o_perfs,
-        'y'             => \$o_perfp,
-        'perfprct'      => \$o_perfp,
-        'Y'             => \$o_perfr,
-        'perfspeed'     => \$o_perfr,
-        'M'             => \$o_meg,
-        'mega'          => \$o_meg,
-        'G'             => \$o_gig,
-        'giga'          => \$o_gig,
-        'u'             => \$o_prct,
-        'prct'          => \$o_prct,
-        'o:i'           => \$o_octetlength,
-        'octetlength:i' => \$o_octetlength,
-        'label'         => \$o_label,
-        'd:i'           => \$o_delta,
-        'delta:i'       => \$o_delta,
-        'D'             => \$o_dormant,
-        'dormant'       => \$o_dormant,
-        'down'          => \$o_down,
-        'W'             => \$o_weather,
-        'weather'       => \$o_weather,
-        'ign-admindown' => \$o_ignore_admindown,
+        'v'              => \$o_verb,
+        'verbose'        => \$o_verb,
+        'h'              => \$o_help,
+        'help'           => \$o_help,
+        'H:s'            => \$o_host,
+        'hostname:s'     => \$o_host,
+        'p:i'            => \$o_port,
+        'port:i'         => \$o_port,
+        'n:s'            => \$o_descr,
+        'name:s'         => \$o_descr,
+        'N'              => \$o_use_ifname,
+        'use-ifname'     => \$o_use_ifname,
+        'A'              => \$o_use_ifalias,
+        'use-ifalias'    => \$o_use_ifalias,
+        'C:s'            => \$o_community,
+        'community:s'    => \$o_community,
+        '2'              => \$o_version2,
+        'v2c'            => \$o_version2,
+        'l:s'            => \$o_login,
+        'login:s'        => \$o_login,
+        'x:s'            => \$o_passwd,
+        'passwd:s'       => \$o_passwd,
+        'X:s'            => \$o_privpass,
+        'privpass:s'     => \$o_privpass,
+        'L:s'            => \$v3protocols,
+        'protocols:s'    => \$v3protocols,
+        't:i'            => \$o_timeout,
+        'timeout:i'      => \$o_timeout,
+        'i'              => \$o_inverse,
+        'inverse'        => \$o_inverse,
+        'a'              => \$o_admin,
+        'admin'          => \$o_admin,
+        'r'              => \$o_noreg,
+        'noregexp'       => \$o_noreg,
+        'V'              => \$o_version,
+        'version'        => \$o_version,
+        'f'              => \$o_perf,
+        'perfparse'      => \$o_perf,
+        'perfdata'       => \$o_perf,
+        'e'              => \$o_perfe,
+        'error'          => \$o_perfe,
+        'k'              => \$o_checkperf,
+        'perfcheck'      => \$o_checkperf,
+        'q'              => \$o_ext_checkperf,
+        'extperfcheck'   => \$o_ext_checkperf,
+        'w:s'            => \$o_warn_opt,
+        'warning:s'      => \$o_warn_opt,
+        'c:s'            => \$o_crit_opt,
+        'critical:s'     => \$o_crit_opt,
+        'B'              => \$o_kbits,
+        'kbits'          => \$o_kbits,
+        's:i'            => \$o_short,
+        'short:i'        => \$o_short,
+        'g'              => \$o_highperf,
+        '64bits'         => \$o_highperf,
+        'S'              => \$o_perfs,
+        'intspeed'       => \$o_perfs,
+        'y'              => \$o_perfp,
+        'perfprct'       => \$o_perfp,
+        'Y'              => \$o_perfr,
+        'perfspeed'      => \$o_perfr,
+        'M'              => \$o_meg,
+        'mega'           => \$o_meg,
+        'G'              => \$o_gig,
+        'giga'           => \$o_gig,
+        'u'              => \$o_prct,
+        'prct'           => \$o_prct,
+        'o:i'            => \$o_octetlength,
+        'octetlength:i'  => \$o_octetlength,
+        'label'          => \$o_label,
+        'd:i'            => \$o_delta,
+        'delta:i'        => \$o_delta,
+        'D'              => \$o_dormant,
+        'dormant'        => \$o_dormant,
+        'down'           => \$o_down,
+        'W'              => \$o_weather,
+        'weather'        => \$o_weather,
+        'ign-admindown'  => \$o_ignore_admindown,
         'ign-emptyalias' => \$o_ignore_emptyalias,
     );
     if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
@@ -656,7 +656,6 @@ if (defined($o_ignore_emptyalias)) {
     }
 }
 
-
 # Select interface by regexp of exact match
 # and put the oid to query in an array
 
@@ -664,20 +663,20 @@ verb("Filter : $o_descr");
 foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
     verb("OID : $key, Desc : $$resultat{$key}");
 
-    my $ignore = 0;
-    my $prefix = $query_table . ".";
+    my $ignore    = 0;
+    my $prefix    = $query_table . ".";
     my ($ifindex) = $key =~ /$prefix(\d+)$/;
 
     # if ign-admindown is set, check the ifIndex against admin status
     if (defined($o_ignore_admindown)) {
-	my $index = $admin_table . "." . $ifindex;
+        my $index     = $admin_table . "." . $ifindex;
         my $admstatus = $$admin_status_table{$index};
         $ignore = 1 if ($admstatus == 2);
     }
 
     # if ign-emptyalias is set, check the ifIndex against alias string
     if (defined($o_ignore_emptyalias)) {
-	my $index = $alias_table . "." . $ifindex;
+        my $index = $alias_table . "." . $ifindex;
         my $alias = $$interfaces_aliases{$index};
         $ignore = 1 if ($alias eq "");
     }
@@ -693,31 +692,36 @@ foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
         my @oid_list = split(/\./, $key);
         my $int_index = pop(@oid_list);
         if (defined($o_noreg) && ($num_int > 0)) {
-            if ($tindex[$num_int-1] < $int_index) {
+            if ($tindex[$num_int - 1] < $int_index) {
                 $num_int = 0;
             }
         }
         if (!defined($o_noreg) || ($num_int == 0)) {
-            $tindex[$num_int] = $int_index; 
+            $tindex[$num_int] = $int_index;
+
             # get the full description
-            $descr[$num_int]=$$resultat{$key};
+            $descr[$num_int] = $$resultat{$key};
+
             # Get rid of special caracters (specially for Windows)
             $descr[$num_int] =~ s/[[:cntrl:]]//g;
-            # put the admin or oper oid in an array
-            $oids[$num_int]= defined ($o_admin) ? $admin_table . "." . $tindex[$num_int]
-			: $oper_table . $tindex[$num_int];
 
-            # Put the performance oid 
+            # put the admin or oper oid in an array
+            $oids[$num_int]
+                = defined($o_admin)
+                ? $admin_table . "." . $tindex[$num_int]
+                : $oper_table . $tindex[$num_int];
+
+            # Put the performance oid
             if (defined($o_perf) || defined($o_checkperf)) {
-                $oid_perf_inoct[$num_int]= $in_octet_table . $tindex[$num_int];
-                $oid_perf_outoct[$num_int]= $out_octet_table . $tindex[$num_int];
-                $oid_speed[$num_int]=$speed_table . $tindex[$num_int];
-                $oid_speed_high[$num_int]=$speed_table_64 . $tindex[$num_int];
+                $oid_perf_inoct[$num_int]  = $in_octet_table . $tindex[$num_int];
+                $oid_perf_outoct[$num_int] = $out_octet_table . $tindex[$num_int];
+                $oid_speed[$num_int]       = $speed_table . $tindex[$num_int];
+                $oid_speed_high[$num_int]  = $speed_table_64 . $tindex[$num_int];
                 if (defined($o_ext_checkperf) || defined($o_perfe)) {
-                    $oid_perf_indisc[$num_int]= $in_discard_table . $tindex[$num_int];
-                    $oid_perf_outdisc[$num_int]= $out_discard_table . $tindex[$num_int];
-                    $oid_perf_inerr[$num_int]= $in_error_table . $tindex[$num_int];
-                    $oid_perf_outerr[$num_int]= $out_error_table . $tindex[$num_int];
+                    $oid_perf_indisc[$num_int]  = $in_discard_table . $tindex[$num_int];
+                    $oid_perf_outdisc[$num_int] = $out_discard_table . $tindex[$num_int];
+                    $oid_perf_inerr[$num_int]   = $in_error_table . $tindex[$num_int];
+                    $oid_perf_outerr[$num_int]  = $out_error_table . $tindex[$num_int];
                 }
             }
             verb("Name : $descr[$num_int], Index : $tindex[$num_int]");
@@ -875,16 +879,20 @@ for (my $i = 0; $i < $num_int; $i++) {
                         if (defined($o_ext_checkperf)) {
                             $checkperf_out[2]
                                 = (($$result{ $oid_perf_inerr[$i] } - $file_values[$j][3])
-                                / ($timenow - $file_values[$j][0])) * 60;
+                                / ($timenow - $file_values[$j][0]))
+                                * 60;
                             $checkperf_out[3]
                                 = (($$result{ $oid_perf_outerr[$i] } - $file_values[$j][4])
-                                / ($timenow - $file_values[$j][0])) * 60;
+                                / ($timenow - $file_values[$j][0]))
+                                * 60;
                             $checkperf_out[4]
                                 = (($$result{ $oid_perf_indisc[$i] } - $file_values[$j][5])
-                                / ($timenow - $file_values[$j][0])) * 60;
+                                / ($timenow - $file_values[$j][0]))
+                                * 60;
                             $checkperf_out[5]
                                 = (($$result{ $oid_perf_outdisc[$i] } - $file_values[$j][6])
-                                / ($timenow - $file_values[$j][0])) * 60;
+                                / ($timenow - $file_values[$j][0]))
+                                * 60;
                         }
                     }
                 }
@@ -1014,11 +1022,13 @@ for (my $i = 0; $i < $num_int; $i++) {
                     } else {                   # just convert from K|M|G bps
                         $warn_factor = (defined($o_meg)) ? 1048576 : (defined($o_gig)) ? 1073741824 : 1024;
                     }
-                    $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_Bps'=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";";
+                    $perf_out
+                        .= "'" . $descr[$i] =~ s/\./_/r . "_in_Bps'=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";";
                     $perf_out .= ($o_warn[0] != 0) ? $o_warn[0] * $warn_factor . ";" : ";";
                     $perf_out .= ($o_crit[0] != 0) ? $o_crit[0] * $warn_factor . ";" : ";";
                     $perf_out .= "0;" . $speed_real / 8 . " ";
-                    $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_Bps'=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";";
+                    $perf_out
+                        .= "'" . $descr[$i] =~ s/\./_/r . "_out_Bps'=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";";
                     $perf_out .= ($o_warn[1] != 0) ? $o_warn[1] * $warn_factor . ";" : ";";
                     $perf_out .= ($o_crit[1] != 0) ? $o_crit[1] * $warn_factor . ";" : ";";
                     $perf_out .= "0;" . $speed_real / 8 . " ";
@@ -1035,12 +1045,14 @@ for (my $i = 0; $i < $num_int; $i++) {
             $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
         }
         if (defined($o_perfs)) {
-	    my $speed_real = "" unless (defined($speed_real));
+            my $speed_real = "" unless (defined($speed_real));
             $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_speed_bps'=" . $speed_real . " ";
         }
         if (defined($o_weather) && $usable_data == 1) {
-            $perf_out .= "in=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
-            $perf_out .= "out=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
+            $perf_out
+                .= "in=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
+            $perf_out
+                .= "out=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
         }
     }
 }
