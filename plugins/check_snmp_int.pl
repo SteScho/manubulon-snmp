@@ -718,7 +718,7 @@ my ($print_out, $perf_out) = (undef, undef);
 # make all checks and output for all interfaces
 for (my $i = 0; $i < $num_int; $i++) {
     $print_out .= ", " if (defined($print_out));
-    $perf_out  .= " "  if (defined($perf_out));
+    
     my $usable_data = 1;
 
     # Get the status of the current interface
@@ -726,7 +726,10 @@ for (my $i = 0; $i < $num_int; $i++) {
         = defined($o_admin)
         ? $$result{ $admin_table . $tindex[$i] }
         : $$result{ $oper_table . $tindex[$i] };
-
+    
+    # Add spaces only if necessary
+    $perf_out .= " " if (defined ($perf_out) && $int_status==2 ) ;
+    
     # Make the bandwith & error checks if necessary
     if (defined($o_checkperf) && $int_status == 1) {
         $temp_file_name = $descr[$i];
