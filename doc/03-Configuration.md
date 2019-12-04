@@ -102,3 +102,14 @@ apply Service "snmp-storage-" for (storage_name => config in host.vars.snmp_stor
 
 You need to write a check command definition and use that in your service definitions.
 Please refer to [this documentation](http://nagios.manubulon.com/index_commands.html).
+
+# For the basedir patch to check_snmp_int.pl, add the following to command-plugins-manubulon.conf
+
+ "-b" = { 
+        value = "$snmp_interface_basedir$" 
+        description = "Basedir and template name for state files" 
+  } 
+  "--file-history" = { 
+        value = "$snmp_interface_filehist$" 
+        description = "How many records to keep in each state file" 
+  } 

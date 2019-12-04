@@ -17,10 +17,6 @@ use strict;
 use Net::SNMP;
 use Getopt::Long;
 
-############### BASE DIRECTORY FOR TEMP FILE ########
-my $o_base_dir   = "/tmp/tmp_Icinga_int.";
-my $file_history = 200;                      # number of data to keep in files.
-
 # Icinga specific
 my %ERRORS = ('OK' => 0, 'WARNING' => 1, 'CRITICAL' => 2, 'UNKNOWN' => 3, 'DEPENDENT' => 4);
 
@@ -74,6 +70,8 @@ my $o_noreg   = undef;    # Do not use Regexp for name
 my $o_short   = undef;    # set maximum of n chars to be displayed
 my $o_label   = undef;    # add label before speed (in, out, etc...).
 my $o_weather = undef;    # output "weathermap" data for NagVis
+my $o_base_dir = "/tmp/tmp_Icinga_int."; # base directory to use for tmp files
+my $o_file_hist = "200"; # number of data to keep in files
 
 # Performance data options
 my $o_perf  = undef;      # Output performance data
@@ -153,7 +151,7 @@ sub write_file {
     # Input : file , rows, items, array of value : [line][item]
     # Returns : 0 / OK, 1 / error
     my ($file_out, $rows, $item, @file_values) = @_;
-    my $start_line = ($rows > $file_history) ? $rows - $file_history : 0;
+    my $start_line = ($rows > $o_file_hist) ? $rows - $o_file_hist : 0;
     if (open(FILE2, ">" . $file_out)) {
         for (my $i = $start_line; $i < $rows; $i++) {
             for (my $j = 0; $j < $item; $j++) {
@@ -173,7 +171,7 @@ sub p_version { print "check_snmp_int version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-N -A -i -a -D --down] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V]\n";
+"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>)  [-p <port>] -n <name in desc_oid> [-N -A -i -a -D --down] [-r] [-f[eSyY]] [-k[qBMGu] -g -w<warn levels> -c<crit levels> -d<delta>] [-o <octet_length>] [-t <timeout>] [-s] --label [-V] --basedir </path/to/basedir.> --file-history <num of files>\n";
 }
 
 sub isnnum {    # Return true if arg is not a number
@@ -271,6 +269,13 @@ sub help {
    timeout for SNMP in seconds (Default: 5)   
 -V, --version
    prints version number
+-b, --basedir=/path/to/basedir (default "/tmp/tmp_Icinga_int.")
+   Path to use to save perfdata. The value given will have the hostname and
+   interface name appended to it. For example, a value of "/tmp/foo" will write 
+   a file "/tmp/fooswitch01.161.GigabitEthernet1_0_1". This script will not
+   create the parent directory.
+--file-history=number of records to keep in statefile (default 200)
+
 Note : when multiple interface are selected with regexp, 
        all be must be up (or down with -i) to get an OK result.
 EOT
@@ -358,7 +363,10 @@ sub check_options {
         'dormant'       => \$o_dormant,
         'down'          => \$o_down,
         'W'             => \$o_weather,
-        'weather'       => \$o_weather
+        'weather'       => \$o_weather,
+        'b=s'           => \$o_base_dir,
+        'basedir=s'     => \$o_base_dir,
+        'file-history=i' => \$o_file_hist
     );
     if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"} }
@@ -995,22 +1003,22 @@ alarm(0);
 if ($num_ok == $num_int) {
     if ($final_status == 0) {
         print $print_out, ":", $num_ok, " UP: OK";
-        if (defined($o_perf)) { print " | ", $perf_out; }
+        if (defined($o_perf) && defined($perf_out)) { print " | ", $perf_out; } #$perf_out isn't defined with a negated interface
         print "\n";
         exit $ERRORS{"OK"};
     } elsif ($final_status == 1) {
         print $print_out, ":(", $num_ok, " UP): WARNING";
-        if (defined($o_perf)) { print " | ", $perf_out; }
+        if (defined($o_perf) && defined($perf_out)) { print " | ", $perf_out; }
         print "\n";
         exit $ERRORS{"WARNING"};
     } elsif ($final_status == 2) {
         print $print_out, ":(", $num_ok, " UP): CRITICAL";
-        if (defined($o_perf)) { print " | ", $perf_out; }
+        if (defined($o_perf) && defined($perf_out)) { print " | ", $perf_out; }
         print "\n";
         exit $ERRORS{"CRITICAL"};
     } else {
         print $print_out, ":(", $num_ok, " UP): UNKNOWN";
-        if (defined($perf_out)) { print " | ", $perf_out; }
+        if (defined($perf_out) && defined($perf_out)) { print " | ", $perf_out; }
         print "\n";
         exit $ERRORS{"UNKNOWN"};
     }
