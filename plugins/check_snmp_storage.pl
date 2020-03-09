@@ -73,6 +73,7 @@ my $o_noreg       = undef;                       # Do not use Regexp for name
 my $o_sum         = undef;                       # add all storage before testing
 my $o_index       = undef;                       # Parse index instead of description
 my $o_negate      = undef;                       # Negate the regexp if set
+my $o_okifempty   = undef;                       # Consider OK if no disks found
 my $o_timeout     = 5;                           # Default 5s Timeout
 my $o_perf        = undef;                       # Output performance data
 my $o_short       = undef;                       # Short output parameters
@@ -98,7 +99,7 @@ sub p_version { print "$Name version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] [-P <protocol>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
+"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] [-P <protocol>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-O] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
 }
 
 sub round ($$) {
@@ -180,6 +181,8 @@ warn if %used > warn and critical if %used > crit
 -e, --exclude
    Select all storages except the one(s) selected by -m
    No action on storage type selection
+-O, --okifempty
+   Consider OK instead of UNKNOWN if no storage found with given criteria
 -T, --type=TYPE
    pl : calculate percent left
    pu : calculate percent used (Default)
@@ -279,6 +282,8 @@ sub check_options {
         'index'         => \$o_index,
         'e'             => \$o_negate,
         'exclude'       => \$o_negate,
+        'O'             => \$o_okifempty,
+        'okifempty'     => \$o_okifempty,
         'V'             => \$o_version,
         'version'       => \$o_version,
         'q:s'           => \$o_storagetype,
@@ -590,7 +595,10 @@ foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
     }
 }
 verb("storages selected : $num_int");
-if ($num_int == 0) { print "Unknown storage : $o_descr : ERROR\n"; exit $ERRORS{"UNKNOWN"}; }
+if ($num_int == 0) {
+    if ($o_okifempty) { print "No storage found matching given criteria, but future new disks will be monitored\n"; exit $ERRORS{"OK"}; }
+    else { print "Unknown storage : $o_descr : ERROR\n"; exit $ERRORS{"UNKNOWN"}; }
+}
 
 my $result = undef;
 
