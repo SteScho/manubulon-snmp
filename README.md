@@ -42,18 +42,12 @@ You will find a copy of this license in the LICENSE file included in the source 
 
 ## Support
 
-Join the [Icinga community channels](https://www.icinga.com/about/get-involved/) for questions.
-
 > **Note**
 >
-> This project is not actively maintained nor has the author access to specific network/server hardware.
-> Patches for most common bugs in the old `nagios-snmp` project have been applied and new v2.x versions have
-> been released.
+> **This project is not actively maintained and will be archived in the future.**
 >
-> In case of bugs, please look into the existing code, create a patch and discuss with other community members.
->
-> If you want to help maintain this project, just contact me on [twitter](https://twitter.com/dnsmichi) and I'll
-> happily grant you access.
+> **If you want to maintain this project in the future, contact me on [twitter](https://twitter.com/dnsmichi) and I'll
+> happily transfer the ownership.**
 
 ## Requirements
 
