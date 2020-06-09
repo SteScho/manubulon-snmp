@@ -42,13 +42,6 @@ You will find a copy of this license in the LICENSE file included in the source 
 
 ## Support
 
-> **Note**
->
-> **This project is not actively maintained and will be archived in the future.**
->
-> **If you want to maintain this project in the future, contact me on [twitter](https://twitter.com/dnsmichi) and I'll
-> happily transfer the ownership.**
-
 ## Requirements
 
 * Perl in `/usr/bin/perl`
@@ -75,6 +68,7 @@ Proceed [here](doc/03-Configuration.md) to get details on the configuration with
 ## Thanks
 
 Patrick Proy for creating and maintaining the original plugins.
+[Michael Friedrich](https://twitter.com/dnsmichi) for maintaing the CVS import and adding community patches.
 
 ## Contributing
 
