@@ -1,0 +1,192 @@
+<HTML>
+
+<HEAD>
+
+<TITLE>Nagios plugins</TITLE>
+
+<META NAME="Keywords" CONTENT="nagios,plugins,perl,snmp,proy">
+
+<STYLE type="text/css">
+
+<!--
+
+        .Default { font-family: verdana,arial,serif; font-size: 10pt; }
+
+        .ProgramTitle { font-family: verdana,arial,serif; font-size: 18pt; font-weight: bold;}
+
+        .Copyright { font-family: verdana,arial,serif; font-size: 10pt;}
+
+        .Email { font-family: verdana,arial,serif; font-size: 10pt;}
+
+        .NewsItem { font-family: verdana,arial,serif; font-size: 8pt; }
+
+        .NewsItemOdd { font-family: verdana,arial,serif; font-size: 8pt; background-color: #DBDBDB;}
+
+        .NewsItemEven { font-family: verdana,arial,serif; font-size: 8pt; background-color: #C4C2C2;}
+
+        .NewsItemUrgent { font-family: verdana,arial,serif; font-size: 8pt; background-color: #ccff99;}
+
+        .NewsItemDate { font-family: verdana,arial,serif; font-size: 8pt; font-weight: bold; }
+
+        .SectionTitle { font-family: verdana,arial,serif; font-size: 9pt; font-weight: bold; text-decoration: underline;}
+
+        .SectionBody { font-family: verdana,arial,serif; font-size: 8pt; }
+
+        .ModificationDate { font-family: verdana,arial,serif; font-size: 7pt; }
+
+        .Disclaimer { font-family: verdana,arial,serif; font-size: 8pt; }
+
+		A.SideNavBarItem { font-family: verdana,arial,serif; background-color : black; color: #e7e7e7; font-size: 9pt; font-weight: bold; text-decoration: none; }
+
+		A.SideNavBarItem:Hover { font-family: verdana,arial,serif; background-color : black; color: #ccff33; font-size: 9pt; font-weight: bold; text-decoration: none; }
+
+		A.SideNavBarHotItem { font-family: verdana,arial,serif; background-color : black; color: #ffcc66; font-size: 9pt; font-weight: bold; text-decoration: none; }
+
+		A.SideNavBarHotItem:Hover { font-family: verdana,arial,serif; background-color : black; color: #ccff33; font-size: 9pt; font-weight: bold; text-decoration: none; }
+
+-->      
+
+</STYLE>
+
+</HEAD>
+
+<body  background="img/sideback.jpg" bgcolor="#FFFFFF" text="black" class="Default">
+
+<!--   background="img/sideback.jpg" -->
+
+<table border="0" height="1477">
+
+  <tr> 
+
+    <td valign=top> 
+
+      <!-- Begin Side Bar -->
+
+      <table border="0" width="125" valign=top>
+
+        <tr> 
+
+          <td><a href="index.html" class="SideNavBarItem" >Home</a></td>
+
+        </tr>
+
+        <tr> 
+
+          <td></td>
+
+        </tr>
+
+        <tr> 
+
+          <td><BR>
+
+          </td>
+
+        </tr>
+
+        <tr> 
+
+          <td> </td>
+
+        </tr>
+
+      </table>
+
+      <!-- End Side Bar -->
+
+    </td>
+
+    <td valign=top> 
+
+      <table border="0" valign=top height="1452">
+
+        <tr> 
+
+          <td class="ProgramTitle"> Plugins in C </td>
+
+        </tr>
+
+        <tr> 
+
+          <td><p class="SectionTitle"> Last update : Jun 9 2007</p>
+
+          </td>
+
+        </tr>
+
+        <tr> 
+
+          <td align="left" valign="top"> 
+
+            <p class="SectionTitle">Description :</p>
+
+            <p class="SectionBody">Three scripts have been rewriten in C : check_snmp_int, check_snmp_process, check_snmp_storage </p>
+
+            <p class="SectionBody"> New features in the C plugins :<br>
+              <br>
+              - Cache management : the SNMP queries for index search, which are often the biggest ones, can now be cached on disk. Speed gain from this can be up to 10 times on big switches using snmp_int.<br>
+            - Support for other languages (for now only french po file has been done)</p>
+            <p class="SectionBody">Perl and C plugins have exactly the same options (except -K added in the C plugins), so you can use the same help pages. </p>
+            <p class="SectionBody"><a href="nagios-plugins-snmp-0.6.0.tgz" class="SectionTitle">download version 0.6.0</a></p>
+            <p class="SectionTitle">How to install : </p>
+            <p class="SectionBody"><strong>Requirements to compile</strong> : net-snmp-devel </p>
+            <p class="SectionBody">As a non-priviledge user, run ./configure scripts with following arguments : </p>
+            <p class="SectionBody">--prefix=&lt;DIR&gt; [ default : /usr/local/nagios/ ] : Intallation directory. The plugins will go in &lt;DIR&gt;/libexec and the language files in &lt;DIR&gt;/share/locale/...<br>
+              --with-basetmpdir=&lt;DIR&gt; [default=/tmp] :
+              Where the plugins will put temporary files if needed.
+              Not all the plugins will store temporary files.<br>
+              --with-cachedir=&lt;DIR&gt; [default=[basetmpdir]/cache]
+              Where the plugins will put cache files with snmp index</p>
+            <p class="SectionBody">Then run : <br>
+              make</p>
+            <p class="SectionBody">Then, as root : <br>
+              make install</p>
+            <p class="SectionBody">To create the basetmpdir and cachedir if they don't exist, you can run : <br>
+              make install-tmp<br>
+              or create the two directories by hand with nagios user as owner or 777 mode.</p>
+            <p class="SectionBody">That's all ! </p>
+            <p class="SectionTitle">Details on the caching option </p>
+            <p class="SectionBody">With the new C plugins, you can cache SNMP index queries.</p>
+            <p class="SectionBody">Each time you run a script, it gets all the index table of what you are looking for (interface, storage, etc...). </p>
+            <p class="SectionBody">This can be really big requests for example if you have a core LAN switch with 80 interfaces. 
+              As the interface index don't change very often, I added a caching of these queries so the only thing the script does to select an interface is read the cache file on disk. <br>
+              Also, if you have more than one service on this host, every script (checking the same type of data) will be able to read this file. </p>
+            <p class="SectionBody">All you have to do is put the '-K' option, with the default time validity of the cache file in minutes. The default time to live is 15 minutes, meaning that the index will be read every 15 minutes only. </p>
+            <p class="SectionBody">If you have several services doing the same types of checks on the same host, the index will still be read once only within these 15 minutes. </p>
+            <p class="SectionBody">&nbsp;</p>          </td>
+        </tr>
+
+        <tr> 
+
+          <td> 
+
+            <p class="SectionBody">This project is hosted on : <br>
+
+              <A href="http://sourceforge.net/projects/nagios-snmp">http://sourceforge.net/projects/nagios-snmp</A> 
+
+            </p>
+
+            <p class="SectionBody"> Nagios and the Nagios logo are registered 
+
+              trademarks of Ethan Galstad.</p>
+
+          </td>
+
+        </tr>
+
+      </table>
+
+    </td>
+
+  </tr>
+
+</table>
+
+<p>&nbsp;</p>
+
+</BODY>
+
+</HTML>
+
+
+

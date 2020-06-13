@@ -1,0 +1,341 @@
+<HTML>
+<HEAD>
+<TITLE>Nagios plugins</TITLE>
+<META NAME="Keywords" CONTENT="nagios,plugins,perl,snmp,proy">
+<STYLE type="text/css">
+<!--
+        .Default { font-family: verdana,arial,serif; font-size: 10pt; }
+        .ProgramTitle { font-family: verdana,arial,serif; font-size: 18pt; font-weight: bold;}
+        .Copyright { font-family: verdana,arial,serif; font-size: 10pt;}
+        .Email { font-family: verdana,arial,serif; font-size: 10pt;}
+        .NewsItem { font-family: verdana,arial,serif; font-size: 8pt; }
+        .NewsItemOdd { font-family: verdana,arial,serif; font-size: 8pt; background-color: #DBDBDB;}
+        .NewsItemEven { font-family: verdana,arial,serif; font-size: 8pt; background-color: #C4C2C2;}
+        .NewsItemUrgent { font-family: verdana,arial,serif; font-size: 8pt; background-color: #ccff99;}
+        .NewsItemDate { font-family: verdana,arial,serif; font-size: 8pt; font-weight: bold; }
+        .SectionTitle { font-family: verdana,arial,serif; font-size: 9pt; font-weight: bold; text-decoration: underline;}
+        .SectionBody { font-family: verdana,arial,serif; font-size: 8pt; }
+        .ModificationDate { font-family: verdana,arial,serif; font-size: 7pt; }
+        .Disclaimer { font-family: verdana,arial,serif; font-size: 8pt; }
+		A.SideNavBarItem { font-family: verdana,arial,serif; background-color : black; color: #e7e7e7; font-size: 9pt; font-weight: bold; text-decoration: none; }
+		A.SideNavBarItem:Hover { font-family: verdana,arial,serif; background-color : black; color: #ccff33; font-size: 9pt; font-weight: bold; text-decoration: none; }
+		A.SideNavBarHotItem { font-family: verdana,arial,serif; background-color : black; color: #ffcc66; font-size: 9pt; font-weight: bold; text-decoration: none; }
+		A.SideNavBarHotItem:Hover { font-family: verdana,arial,serif; background-color : black; color: #ccff33; font-size: 9pt; font-weight: bold; text-decoration: none; }
+-->      
+
+</STYLE>
+<meta name="verify-v1" content="oc1W1zshyeM6LnxmwbIRhb01jp95LBJoKCmUXn2LTkY=" />
+</HEAD>
+<body  background="img/sideback.jpg" bgcolor="#FFFFFF" text="black" class="Default">
+<!--   background="img/sideback.jpg" -->
+<table width="100%" border="0">
+    <td valign=top><!-- Begin Side Bar -->
+      <table border="0" width="130" valign=top>
+        <tr>
+          <td><a class="SideNavBarHotItem" >This site :</a></td>
+        </tr>
+        <tr>
+          <td><a href="index.html" class="SideNavBarItem" >Home</a></td>
+        </tr>
+        <tr>
+          <td><a href="index_snmp.html" class="SideNavBarItem" >Nagios plugins</a></td>
+        </tr>
+        <tr>
+          <td><a href="index_info.html" class="SideNavBarItem" >Info on snmp</a></td>
+        </tr>
+        <tr>
+          <td><a href="index_commands.html" class="SideNavBarItem" > Nagios config</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://nagios.manubulon.com/wiki/index.php/Faq-url" class="SideNavBarItem" > FAQ</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://sourceforge.net/projects/nagios-snmp/" class="SideNavBarItem" > Project page on SourceForge</a> </td>
+        </tr>
+        <tr>
+          <td><font color="#FFFFFF">-----------</font></td>
+        </tr>
+        <tr>
+          <td><a class="SideNavBarHotItem" >Links :</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://www.nagios.org/" class="SideNavBarItem" >Nagios
+
+            Home</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://sourceforge.net/projects/nagiosplugins" class="SideNavBarItem" >Nagios
+            Plugins</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://www.oreon.org" class="SideNavBarItem" >Oreon project</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://www.nagiosexchange.org" class="SideNavBarItem" >NagiosExchange</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://forums.opsyx.com/viewforum.php?f=1" class="SideNavBarItem" >Opsyx
+            forum</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://forum.2037.org/" class="SideNavBarItem" >Forum 2037</a></td>
+        </tr>
+        <tr>
+          <td><font color="#FFFFFF">-----------</font></td>
+        </tr>
+        <tr>
+          <td><a class="SideNavBarHotItem" >Others :</a></td>
+        </tr>
+<tr>
+<td>
+</td>
+</tr>
+        <tr>
+          <td><font color="#FFFFFF">-----------</font></td>
+        </tr>
+        <tr>
+          <td><A href="http://sourceforge.net/projects/nagios-snmp">http://sourceforge.net/projects/nagios-snmp</A> </td>
+        </tr>
+      </table>
+      <!-- End Side Bar -->
+   </td>	
+
+    <td valign=top><table width="100%" border="0" valign=top>
+        <tr>
+          <td class="ProgramTitle" colspan="2"> My plugins for <img src="img/smalllogo7.jpg" border="0" alt="Nagios"> </td>
+        </tr>
+        <tr>
+          <td colspan="2"><p class="SectionTitle" align="right">Last update : Oct 12 2007</p>
+            <p class="SectionTitle">Lastest updates : </p>
+            <p class="SectionBody">I've set up a wiki for the FAQ and the nagios config so users can contribute : <a href="http://nagios.manubulon.com/wiki">http://nagios.manubulon.com/wiki</a> </p>
+            <p class="SectionBody">------------</p>
+            <p class="SectionBody">Three scripts have been rewriten in C : check_snmp_int, check_snmp_process, check_snmp_storage<br>
+            Have a look at the <a href="package_c.html">C plugin page</a> </p>
+            <p class="SectionTitle">About the scripts</p>
+            <p class="SectionBody"><br>
+              The general idea of these scripts is to check as many things as 
+              possible with snmp : disks, memory, load, interface, running procsses,               
+              etc...<br>
+            </p>
+            <p class="SectionBody">The other idea is to select (or exclude) disks, 
+              interfaces, process using regular expressions <br>
+              <br>
+              - it is possible to test more than one disk/int/process in one Nagios 
+              check (ex : eth* instead of eth0,eth1,eth2,...)<br>
+              <br>
+              - you only have to provide a unique part of the name to select a 
+              disk/int/process (ex : &quot;^C:&quot; instead of &quot;C:\ Label: 
+              Serial Number xxxxxxx&quot; makes it easy to use on multiple Windows 
+              hosts). </p>
+            <p class="SectionBody">Most of these scripts can output performance data. </p>
+            <p class="SectionTitle"> <a href="index_snmp.html">Perl plugins main page </a> </p>
+            <p class="SectionBody"><a href="index_info.html"><span class="SectionTitle">Information 
+              on useful parts of mibs (currently MIB-2,Net-SNMP,Cisco,CheckPoint)</span></a><span class="SectionTitle">.</span></p>
+            <p class="SectionBody"><span class="SectionTitle"><a href="index_commands.html">Configurations 
+              examples for Nagios with the scripts.<br>
+              </a></span></p>
+            <p class="SectionBody"><span class="SectionTitle"><a href="faq.html">FAQ</a></span></p>
+            <p class="SectionBody"><a href="http://sourceforge.net/projects/nagios-snmp" class="SectionTitle">Get 
+              
+              support, subscribe to mailing-list, etc..</a></p>
+            <hr>
+            <p class="SectionTitle">Go to the <a href="index_snmp.html">perl plugins 
+              main page </a> for more details and compatibility matrix <br>
+              or here is a brief description of the scripts : </p>
+            <p class="SectionTitle">You can also download the all the plugins 
+              with install script : <a href="nagios-snmp-plugins.1.1.1.tgz">nagios-snmp-plugins.1.1.1.tgz</a><br>
+            </p>
+            <table border="1" class="SectionBody" cellspacing="0">
+              <tr>
+                <td height="20"><b>Script detail page</b></td>
+                <td height="20"><b>Description</b></td>
+                <td height="20"><b>performance<br>
+                  output </b></td>
+                <td height="20"><b>Supported platforms / snmp agents</b></td>
+                <td class="SectionBody" height="20"><b>Download</b></td>
+                <td class="SectionBody" height="20"><b>Version</b></td>
+              </tr>
+              <tr>
+                <td><b>Full C package</b></td>
+                <td><p>All the rewritten scripts in C :<br>
+                  check_snmp_int, check_snmp_process, check_snmp_storage<br>
+</p>
+                </td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td><a href="nagios-plugins-snmp-0.6.0.tgz">nagios-plugins-snmp-0.6.0.tgz</a></td>
+                <td>0.6.0</td>
+              </tr>
+              <tr>
+                <td><b>Full perl package</b></td>
+                <td>All the scripts with install script in a tgz file or in a 
+                  rpm file for FC6.</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td><p><a href="nagios-snmp-plugins.1.1.1.tgz">nagios-snmp-plugins.1.1.1.tgz</a></p>
+                  <p><a href="nagios-plugins-snmp-extras-1.1-1.noarch.rpm">nagios-plugins-snmp-extras-1.1-1.noarch.rpm</a></p></td>
+                <td>1.1.1</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_storage.html">check_snmp_storage</a></td>
+                <td>checks storages (disks, swap, memory, etc...)</td>
+                <td>Yes</td>
+                <td>All MIB-2 compliant</td>
+                <td><a href="check_snmp_storage.pl">check_snmp_storage.pl</a> </td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_int.html">check_snmp_int</a></td>
+                <td>checks interface states, usage on hosts, switch, routers, 
+                  etc....</td>
+                <td>Yes</td>
+                <td>All MIB-2 compliant</td>
+                <td><a href="check_snmp_int.pl">check_snmp_int.pl </a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_process.html">check_snmp_process</a></td>
+                <td>checks if process are running, the number that are running, 
+                  memory and cpu used.</td>
+                <td>No</td>
+                <td>All MIB-2 compliant</td>
+                <td><a href="check_snmp_process.pl">check_snmp_process.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_load.html">check_snmp_load</a></td>
+                <td>checks the load or the cpu of a machine</td>
+                <td>Yes</td>
+                <td>Linux, Windows, Cisco, AS400, HP Procurve, LinkProof, Blucoat, 
+                  Nokia, Fortinet, Netscreen,HP-UX.</td>
+                <td><a href="check_snmp_load.pl">check_snmp_load.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_vrrp.html">check_snmp_vrrp</a></td>
+                <td>checks the interface state of vrrp cluster</td>
+                <td>No</td>
+                <td>Nokia IP (VRRP &amp; Clustering), LinkProof, Alteon</td>
+                <td><a href="check_snmp_vrrp.pl">check_snmp_vrrp.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_cpfw.html">check_snmp_cpfw</a></td>
+                <td>checks Checkpoint Firewall-1 status </td>
+                <td>Yes</td>
+                <td>Checkpoint Firewall-1</td>
+                <td><a href="check_snmp_cpfw.pl">check_snmp_cpfw.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_mem.html">check_snmp_mem</a></td>
+                <td>Checks memory and swap usage</td>
+                <td>Yes</td>
+                <td>Linux/Net-snmp, Cisco, HP Switch</td>
+                <td><a href="check_snmp_mem.pl">check_snmp_mem.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_windows.html">check_snmp_win</a></td>
+                <td>Checks windows services</td>
+                <td>No</td>
+                <td>Windows</td>
+                <td><a href="check_snmp_win.pl">check_snmp_win.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_css.html">check_snmp_css</a></td>
+                <td>Checks css services state</td>
+                <td>No</td>
+                <td>CSS</td>
+                <td><a href="check_snmp_css.pl">check_snmp_css.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td><a href="snmp_env.html">check_snmp_env</a></td>
+                <td>Checks environemental status (fan, temp, power supply).</td>
+                <td>No</td>
+                <td>Cisco, Nokia, Bluecoat, IronPort, Foundry</td>
+                <td><a href="check_snmp_env.pl">check_snmp_env.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>check_snmp_nsbox</td>
+                <td>Checks nsbox vhost &amp; diode status.</td>
+                <td>No</td>
+                <td>NetSecureOne Netbox</td>
+                <td><a href="check_snmp_nsbox.pl">check_snmp_nsbox.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>check_snmp_boostedge</td>
+                <td>Checks Boostedge services</td>
+                <td>No</td>
+                <td>Boostedge</td>
+                <td><a href="check_snmp_boostedge.pl">check_snmp_boostedge.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>check_snmp_linkproof_nhr</td>
+                <td>Checks linkproof NHR</td>
+                <td>No</td>
+                <td>Radware Linkproof</td>
+                <td><a href="check_snmp_linkproof_nhr.pl">check_snmp_linkproof_nhr.pl</a></td>
+                <td>&nbsp;</td>
+              </tr>
+            </table>
+            <p class="SectionBody">Try &lt;script&gt; -h for help.<br>
+              More information on the <a href="index_snmp.html">main plugin page</a><br>
+            </p>
+            <p class="SectionBody"><b><a href="http://nagios-snmp.cvs.sourceforge.net/nagios-snmp/">Get latest CVS 
+              versions </a>: </b>In case I told you so, or you want to see how 
+              the plugins will be in next version</p>
+            <hr>
+            <p class="SectionBody">To contact me :
+              <script type="text/javascript">
+//<![CDATA[
+
+function hiveware_enkoder(){var i,j,x,y,x=
+"x=\"783d2233467d3278633431343d5c22793e63233c7a233735373e28283c673734386770" +
+"7329363765376a3e313c363766386a3d792f353366386d666f683838333775693c6a3a3835" +
+"372c3e332a363339337c7a2c3e33346437766f667432333137646271663938333729282628" +
+"363737342c792f7465366433766374753337653773296a2d32373a37332a2a3c643835377e" +
+"7a5c223b67346237793d2727663732373b783d7538373a376e657363673834356170652831" +
+"38313878293b66333767386f7228693a3366373d303b69673833373c782e6c38366433656e" +
+"677433333138683b692b35373a382b297b6a353764373d782e633634653668617243643333" +
+"366f6465416433333474286929663766372d313b693237383766286a3c3a3767383332296a" +
+"343531382b3d3934313833373b792b3d67383a3353747269663767386e672e663337383472" +
+"6f6d436433673768617243323466336f64652833333a346a297d79223b6a3d6576616c2878" +
+"2e636861724174283029293b783d782e7375627374722831293b793d27273b666f7228693d" +
+"303b693c782e6c656e6774683b692b3d38297b792b3d782e73756273747228692c34293b7d" +
+"666f7228693d343b693c782e6c656e6774683b692b3d38297b792b3d782e73756273747228" +
+"692c34293b7d793d792e737562737472286a293b\";y='';for(i=0;i<x.length;i+=2){y" +
+"+=unescape('%'+x.substr(i,2));}y";
+while(x=eval(x));}hiveware_enkoder();
+//]]>
+</script>
+            <p class="SectionBody"><b>Thanks to all of you for your small or big 
+              contributions, or simply your feedbacks :</b> <br>
+              <br>
+              Christoph Maser, Alexius Ludeman, John Vincent, Anti Andreimann, 
+              Matteo Contri, Sean Finney, Eric Poelke, Russel Adams, Vincent Carpentier, 
+              Kaya, Dimo Velev, Jan Jungmann, DonKiShoot, Makina Corpus.<br>
+              <br>
+              And all the others I forgot !! </p>
+            <hr>
+          </td>
+        </tr>
+        <tr>
+          <td><p class="SectionBody">All code here is under GPL licence. </p>
+            <p class="SectionBody">This project is hosted on : <br>
+              <A href="http://sourceforge.net/projects/nagios-snmp">http://sourceforge.net/projects/nagios-snmp</p></td>
+          <td><p class="SectionBody"> Nagios and the Nagios logo are registered 
+              trademarks of Ethan Galstad.</p></td>
+        </tr>
+      </table></td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<a href="http://nagios.proy.org/stats.php"></a>
+</BODY>
+</HTML>

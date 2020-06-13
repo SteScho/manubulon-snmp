@@ -1,0 +1,593 @@
+<HTML>
+<HEAD>
+<TITLE>Nagios plugins</TITLE>
+<META NAME="Keywords" CONTENT="nagios,plugins,perl,snmp,proy">
+<STYLE type="text/css">
+<!--
+        .Default { font-family: verdana,arial,serif; font-size: 10pt; }
+        .ProgramTitle { font-family: verdana,arial,serif; font-size: 18pt; font-weight: bold;}
+        .Copyright { font-family: verdana,arial,serif; font-size: 10pt;}
+        .Email { font-family: verdana,arial,serif; font-size: 10pt;}
+        .NewsItem { font-family: verdana,arial,serif; font-size: 8pt; }
+        .NewsItemOdd { font-family: verdana,arial,serif; font-size: 8pt; background-color: #DBDBDB;}
+        .NewsItemEven { font-family: verdana,arial,serif; font-size: 8pt; background-color: #C4C2C2;}
+        .NewsItemUrgent { font-family: verdana,arial,serif; font-size: 8pt; background-color: #ccff99;}
+        .NewsItemDate { font-family: verdana,arial,serif; font-size: 8pt; font-weight: bold; }
+        .SectionTitle { font-family: verdana,arial,serif; font-size: 9pt; font-weight: bold; text-decoration: underline;}
+        .SectionBody { font-family: verdana,arial,serif; font-size: 8pt; }
+        .ModificationDate { font-family: verdana,arial,serif; font-size: 7pt; }
+        .Disclaimer { font-family: verdana,arial,serif; font-size: 8pt; }
+		A.SideNavBarItem { font-family: verdana,arial,serif; background-color : black; color: #e7e7e7; font-size: 9pt; font-weight: bold; text-decoration: none; }
+		A.SideNavBarItem:Hover { font-family: verdana,arial,serif; background-color : black; color: #ccff33; font-size: 9pt; font-weight: bold; text-decoration: none; }
+		A.SideNavBarHotItem { font-family: verdana,arial,serif; background-color : black; color: #ffcc66; font-size: 9pt; font-weight: bold; text-decoration: none; }
+		A.SideNavBarHotItem:Hover { font-family: verdana,arial,serif; background-color : black; color: #ccff33; font-size: 9pt; font-weight: bold; text-decoration: none; }
+-->      
+</STYLE>
+</HEAD>
+<body  background="img/sideback.jpg" bgcolor="#FFFFFF" text="black" class="Default">
+<table width="100%" border="0">
+  <tr> 
+    <td valign=top><!-- Begin Side Bar -->
+      <table border="0" width="130" valign=top>
+        <tr>
+          <td><a class="SideNavBarHotItem" >This site :</a></td>
+        </tr>
+        <tr>
+          <td><a href="index.html" class="SideNavBarItem" >Home</a></td>
+        </tr>
+        <tr>
+          <td><a href="index_snmp.html" class="SideNavBarItem" >Nagios plugins</a></td>
+        </tr>
+        <tr>
+          <td><a href="index_info.html" class="SideNavBarItem" >Info on snmp</a></td>
+        </tr>
+        <tr>
+          <td><a href="index_commands.html" class="SideNavBarItem" > Nagios config</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://nagios.manubulon.com/wiki/index.php/Faq-url" class="SideNavBarItem" > FAQ</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://sourceforge.net/projects/nagios-snmp/" class="SideNavBarItem" > Project page on SourceForge</a> </td>
+        </tr>
+        <tr>
+          <td><font color="#FFFFFF">-----------</font></td>
+        </tr>
+        <tr>
+          <td><a class="SideNavBarHotItem" >Links :</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://www.nagios.org/" class="SideNavBarItem" >Nagios
+
+            Home</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://sourceforge.net/projects/nagiosplugins" class="SideNavBarItem" >Nagios
+            Plugins</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://www.oreon.org" class="SideNavBarItem" >Oreon project</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://www.nagiosexchange.org" class="SideNavBarItem" >NagiosExchange</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://forums.opsyx.com/viewforum.php?f=1" class="SideNavBarItem" >Opsyx
+            forum</a></td>
+        </tr>
+        <tr>
+          <td><a href="http://forum.2037.org/" class="SideNavBarItem" >Forum 2037</a></td>
+        </tr>
+        <tr>
+          <td><font color="#FFFFFF">-----------</font></td>
+        </tr>
+        <tr>
+          <td><a class="SideNavBarHotItem" >Others :</a></td>
+        </tr>
+<tr>
+<td>
+</td>
+</tr>
+        <tr>
+          <td><font color="#FFFFFF">-----------</font></td>
+        </tr>
+        <tr>
+          <td><A href="http://sourceforge.net/projects/nagios-snmp">http://sourceforge.net/projects/nagios-snmp</A> </td>
+        </tr>
+      </table>
+      <!-- End Side Bar -->
+   </td>	
+
+    <td valign=top> 
+      <table width="100%" border="0" valign=top>
+        <tr> 
+          <td class="ProgramTitle"> My plugins for <img src="img/smalllogo7.jpg" border="0" alt="Nagios"> 
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <p class="SectionTitle" align="right">Last update : Jan 14 2006</p>
+            <p class="SectionTitle">Information on SNMP</p>
+            <p class="SectionBody"><a href="index_info.html#snmplogin">Snmp login with v1,v2c, 
+              V3</a></p>
+            <p class="SectionBody">These are interesting parts - for me - of different 
+              mibs.<br>
+              <br>
+              <a href="index_info.html#mib2">MIB-2</a><br>
+              <a href="index_info.html#netsnmp">Net-SNMP/UCD-SNMP</a><br>
+              <a href="index_info.html#cisco">Cisco</a><br>
+              <a href="index_info.html#checkpoint">CheckPoint</a> <br>
+              <a href="index_info.html#hp">Hewlett Packard</a></p>
+          </td>
+        </tr>
+        <tr> 
+          <td valign="top" height="562" class="SectionBody"> 
+            <p class="SectionTitle">&nbsp;</p>
+            <p class="SectionTitle"><a name="snmplogin"></a>Snmp login with v1,v2c, 
+              V3</p>
+            <p class="SectionBody">There is 3 version of snmp :</p>
+            <p class="SectionBody"><b>V1</b> : you need a community to log in 
+              :<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt; <b>-C &lt;community&gt;</b></p>
+            <p class="SectionBody"><b>V2c</b> : you need a community to log in 
+              :<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt; <b>-C &lt;community&gt;</b> 
+              <b>-2</b></p>
+            <p class="SectionBody"><b>V3</b> : you need a login and password. 
+              You can either encrypt data (AuthPriv) or not (AuthNoPriv). Authentication 
+              is encrypted in any case : NoAuthNoPriv is not supported, and is 
+              useless anyway : use snmpv1 in this case.</p>
+            <p class="SectionBody"><b>AuthNoPriv :</b> Data is sent in clear, 
+              login and password are encrypted.<br>
+              With default protocol (md5) :<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt; <b>-l login -x passwd <br>
+              </b>With sha protocol :<b> <br>
+              </b>&nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt; -l login -x passwd <b>-L 
+              sha</b></p>
+            <p class="SectionBody"><b>AuthPriv :</b> Data, login and password 
+              are encrypted<br>
+              With default protocol (md5,des) :<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt; <b>-l login -x passwd -X 
+              privpasswd<br>
+              </b>With md5 for logging and aes for encrypting :<b> <br>
+              </b>&nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt; -l login -x passwd -X 
+              privpasswd <b>-L md5,aes</b></p>
+            <p class="SectionTitle">&nbsp;</p>
+            <hr>
+            <p><span class="SectionTitle"><a name="mib2"></a>MIB-2</span><br>
+            </p>
+            <p><b>Interface :</b></p>
+            <p>1.3.6.1.2.1.2.2.1 : interface table<br>
+            </p>
+            <table width="80%" border="1" class="SectionBody" cellspacing="0">
+              <tr> 
+                <td><b>OID</b></td>
+                <td><b>Type </b></td>
+                <td><b>Description</b></td>
+              </tr>
+              <tr> 
+                <td>.1.X</td>
+                <td>Int</td>
+                <td>Index</td>
+              </tr>
+              <tr> 
+                <td>.2.X</td>
+                <td>string</td>
+                <td>Description</td>
+              </tr>
+              <tr> 
+                <td>.3.X</td>
+                <td>??</td>
+                <td>Type : 6=ethernet,23=ppp, 24=loopback, 27=atm</td>
+              </tr>
+              <tr> 
+                <td>.4.X</td>
+                <td>&nbsp;</td>
+                <td>MTU</td>
+              </tr>
+              <tr> 
+                <td>.5.X</td>
+                <td>&nbsp;</td>
+                <td>Speed</td>
+              </tr>
+              <tr> 
+                <td>.6.X</td>
+                <td>&nbsp;</td>
+                <td>Phys address</td>
+              </tr>
+              <tr> 
+                <td>.7.X</td>
+                <td>&nbsp;</td>
+                <td>Administrative status (1=&gt;'UP',2=&gt;'DOWN',3=&gt;'TESTING')</td>
+              </tr>
+              <tr> 
+                <td>.8.X</td>
+                <td>&nbsp;</td>
+                <td>Operational status (cf admin status)</td>
+              </tr>
+              <tr> 
+                <td>.9.X</td>
+                <td>Counter</td>
+                <td>Input Octets</td>
+              </tr>
+              <tr> 
+                <td>.13.X</td>
+                <td>Counter</td>
+                <td>Output Octets</td>
+              </tr>
+            </table>
+            <p> <b>Storages :</b></p>
+            <p>1.3.6.1.2.1.25.2.2.0 : system memory<br>
+              1.3.6.1.2.1.25.2.3.1 : storage table<br>
+            </p>
+            <table width="80%" border="1" class="SectionBody" cellspacing="0">
+              <tr> 
+                <td><b>OID</b></td>
+                <td><b>Type </b></td>
+                <td><b>Description</b></td>
+              </tr>
+              <tr> 
+                <td>.1.X</td>
+                <td>Int</td>
+                <td>Index</td>
+              </tr>
+              <tr> 
+                <td>.2.X</td>
+                <td>OID</td>
+                <td>Type : points on OID</td>
+              </tr>
+              <tr> 
+                <td>.3.X</td>
+                <td>string</td>
+                <td>Description</td>
+              </tr>
+              <tr> 
+                <td>.4.X</td>
+                <td>Int</td>
+                <td>Allocation unit</td>
+              </tr>
+              <tr> 
+                <td>.5.X</td>
+                <td>Int</td>
+                <td>Size</td>
+              </tr>
+              <tr> 
+                <td>.6.X</td>
+                <td>Int</td>
+                <td>Used</td>
+              </tr>
+              <tr> 
+                <td>.7.X</td>
+                <td>Counter32</td>
+                <td>Allocation failures</td>
+              </tr>
+            </table>
+            <p><b>CPU<br>
+              </b><br>
+              1.3.6.1.2.1.25.3.3.1 : CPU table<br>
+            </p>
+            <table width="80%" border="1" class="SectionBody" cellspacing="0">
+              <tr> 
+                <td><b>OID</b></td>
+                <td><b>Type </b></td>
+                <td><b>Description</b></td>
+              </tr>
+              <tr> 
+                <td>.X.4</td>
+                <td>OID</td>
+                <td>Type (hrProcessorFrwID)</td>
+              </tr>
+              <tr> 
+                <td>.X.5</td>
+                <td>Int</td>
+                <td>%used on 1 min (hrProcessorLoad)</td>
+              </tr>
+            </table>
+            <p>&nbsp; </p>
+          </td>
+        </tr>
+        <tr> 
+          <td valign="top" height="562" class="SectionBody"> 
+            <hr>
+            <p class="SectionTitle"><a name="netsnmp"></a>Net-SNMP</p>
+            <p class="SectionBody"><b>Load</b></p>
+            <p class="SectionBody">1.3.6.1.4.1.2021.10.1 : load table<br>
+            </p>
+            <table width="80%" border="1" class="SectionBody" cellspacing="0">
+              <tr> 
+                <td><b>OID</b></td>
+                <td><b>Type </b></td>
+                <td><b>Description</b></td>
+              </tr>
+              <tr> 
+                <td>.1.X</td>
+                <td>Int</td>
+                <td>Index</td>
+              </tr>
+              <tr> 
+                <td>.2.X</td>
+                <td>string</td>
+                <td>Description (Load-1, Load-5, Load 15)</td>
+              </tr>
+              <tr> 
+                <td>.3.X</td>
+                <td>string</td>
+                <td>Load (decimal)</td>
+              </tr>
+            </table>
+            <p class="SectionBody"><b>Memory</b></p>
+            <p class="SectionBody">1.3.6.1.4.1.2021.4 : memory table</p>
+            <table width="80%" border="1" class="SectionBody" cellspacing="0">
+              <tr> 
+                <td><b>OID</b></td>
+                <td><b>Type </b></td>
+                <td><b>Description</b></td>
+              </tr>
+              <tr> 
+                <td>.1.X</td>
+                <td>Int</td>
+                <td>Index</td>
+              </tr>
+              <tr> 
+                <td>.2.X</td>
+                <td>string</td>
+                <td>Error name</td>
+              </tr>
+              <tr> 
+                <td>.3.X</td>
+                <td>Int</td>
+                <td>TotalSwap</td>
+              </tr>
+              <tr> 
+                <td>.4.X</td>
+                <td>Int</td>
+                <td>AvailSwap</td>
+              </tr>
+              <tr> 
+                <td>.5.X</td>
+                <td>Int</td>
+                <td>TotalReal</td>
+              </tr>
+              <tr> 
+                <td>.6.X</td>
+                <td>Int</td>
+                <td>AvailReal</td>
+              </tr>
+              <tr> 
+                <td>.11.X</td>
+                <td>Int</td>
+                <td>TotalFree</td>
+              </tr>
+              <tr> 
+                <td>.13.X</td>
+                <td>Int</td>
+                <td>memShared</td>
+              </tr>
+              <tr> 
+                <td>.14.X</td>
+                <td>Int</td>
+                <td>memBuffer</td>
+              </tr>
+              <tr> 
+                <td>.15.X</td>
+                <td>Int</td>
+                <td>memCached</td>
+              </tr>
+            </table>
+            <p><b>CPU</b></p>
+            <p class="SectionBody">1.3.6.1.4.1.2021.11 : CPU table<br><br>
+            <table width="80%" border="1" class="SectionBody" cellspacing="0">
+              <tr> 
+                <td><b>OID</b></td>
+                <td><b>Type </b></td>
+                <td><b>Description</b></td>
+              </tr>
+              <tr> 
+                <td>.1.X</td>
+                <td>Int</td>
+                <td>Index</td>
+              </tr>
+              <tr> 
+                <td>.2.X</td>
+                <td>string</td>
+                <td>Description</td>
+              </tr>
+              <tr> 
+                <td>.3.X</td>
+                <td>Int</td>
+                <td>SwapIn</td>
+              </tr>
+              <tr> 
+                <td>.4.X</td>
+                <td>Int</td>
+                <td>SwapOut</td>
+              </tr>
+              <tr> 
+                <td>.5.X</td>
+                <td>Int</td>
+                <td>IOSent</td>
+              </tr>
+              <tr> 
+                <td>.6.X</td>
+                <td>Int</td>
+                <td>IOReceive</td>
+              </tr>
+              <tr> 
+                <td>.7.X</td>
+                <td>Int</td>
+                <td>SysInterrupts</td>
+              </tr>
+              <tr> 
+                <td>.8.X</td>
+                <td>Int</td>
+                <td>SysContext</td>
+              </tr>
+              <tr> 
+                <td>.9.X</td>
+                <td>Int</td>
+                <td>CpuUser</td>
+              </tr>
+              <tr> 
+                <td>.10.X</td>
+                <td>Int</td>
+                <td>CpuSystem</td>
+              </tr>
+              <tr> 
+                <td>.11.X</td>
+                <td>Int</td>
+                <td>CpuIdle</td>
+              </tr>
+              <tr> 
+                <td>.50.X</td>
+                <td>Counter32</td>
+                <td>User</td>
+              </tr>
+              <tr> 
+                <td>.51.X</td>
+                <td>Counter32</td>
+                <td>Nice</td>
+              </tr>
+              <tr> 
+                <td>.52.X</td>
+                <td>Counter32</td>
+                <td>System</td>
+              </tr>
+              <tr> 
+                <td>.53.X</td>
+                <td>Counter32</td>
+                <td>Idle</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr> 
+          <td valign="top" height="562"> 
+            <hr>
+            <p class="SectionTitle"><a name="cisco"></a>Cisco</p>
+            <p class="SectionBody">Generic for routers and switch</p>
+            <p class="SectionBody">Cisco CPU load (5min %) : 1.3.6.1.4.1.9.2.1.58.0<br>
+              Cisco CPU load (1min %) : 1.3.6.1.4.1.9.2.1.57.0<br>
+              Cisco CPU load (5sec %) : 1.3.6.1.4.1.9.2.1.56.0<br>
+            </p>
+            <p class="SectionBody"><span class="SectionBody"><b>Memory : </b></span></p>
+            <p class="SectionBody"><span class="SectionBody">1.3.6.1.4.1.9.9.48.1 
+              : cisco memory pool <br>
+              1.3.6.1.4.1.9.9.48.1.1.1 : pool table.poolentry</span></p>
+            <p><span class="SectionBody">.1 : type<br>
+              .2 : name<br>
+              .3 : alternate<br>
+              .4 : valid<br>
+              .5 : used<br>
+              .6 : free<br>
+              .7 : max free<br>
+              <br>
+              Routeurs : 2 entry : memory IO and Processor<br>
+              Pix : 1 entry PIX Memory</span><br>
+              <span class="SectionBody"><br>
+              <b>CPU</b></span></p>
+            <p><span class="SectionBody">1.3.6.1.4.1.9.9.109.1.1.1.1 : cpmCPUTotalEntry<br>
+              1 : index<br>
+              2 : phys index<br>
+              3 : total 5s<br>
+              4 : total 1m<br>
+              5 : total 5m<br>
+              6 : total 5s (new)<br>
+              7 : total 1m (new)<br>
+              8 : total 5m (new)</span></p>
+          </td>
+        </tr>
+        <tr> 
+          <td class="SectionBody"> 
+            <hr>
+            <p class="SectionTitle"><a name="checkpoint"></a>Checkpoint </p>
+            <p><b>FW : 1.3.6.1.4.1.2620.1.1</b><br>
+              <br>
+              .1.0 : Installed : policy state<br>
+              .2.0 : &lt;string&gt; : filter name<br>
+              .3.0 : &lt;Mon Oct 4 11:34:08 2004&gt; : date install<br>
+              .4.0 : Packets Accept (counter)<br>
+              .5.0 : Packets Rejected (counter)<br>
+              .6.0 : Packets Dropped (counter)<br>
+              .7.0 : Packets Logged (counter)<br>
+              .25.3.0 : Connexions<br>
+              .25.4.0 : Connexions peak </p>
+            <p class="SectionBody"><span class="SectionBody"><b>HA</b> :<br>
+              1.3.6.1.4.1.2620.1.5.5.0 : yes : ha active<br>
+              1.3.6.1.4.1.2620.1.5.6.0 : active : ha state<br>
+              1.3.6.1.4.1.2620.1.5.7.0 : OK : ha blocking state<br>
+              1.3.6.1.4.1.2620.1.5.11.0 : &quot;Sync only&quot; (Nokia vrp) : 
+              ha Working mode<br>
+              1.3.6.1.4.1.2620.1.5.102.0 : OK : ha status</span></p>
+            <p class="SectionBody"><span class="SectionBody">1.3.6.1.4.1.2620.1.5.13.1 
+              : table status<br>
+              .1.X.0 : index<br>
+              .2.X.0 : Nom : <br>
+              Synchronization<br>
+              Filter<br>
+              cphad<br>
+              fwd<br>
+              .3.X.0 : State : &quot;OK&quot; / ??<br>
+              .4.X.0 : haProblemPriority<br>
+              .5.X.0 : haProblemVerified<br>
+              .6.X.0 : haProblemDescr</span></p>
+            <p class="SectionBody"><span class="SectionBody"><br>
+              <b>SVN </b>:<br>
+              1.3.6.1.4.1.2620.1.6.102.0 : OK : SVN status code</span></p>
+            <p class="SectionBody"><span class="SectionBody"><br>
+              <b>Management :</b> <br>
+              </span></p>
+            <p class="SectionBody"><span class="SectionBody">1.3.6.1.4.1.2620.1.7.5.0 
+              : &quot;active&quot; : mgmt state<br>
+              1.3.6.1.4.1.2620.1.7.6.0 : 1 : mgmt is alive<br>
+              1.3.6.1.4.1.2620.1.7.102.0 : status descr<br>
+              1.3.6.1.4.1.2620.1.7.103.0 : status long descr </span></p>
+            <p class="SectionBody">1.3.6.1.4.1.2620.1.7.7.0 : mgmt table clients 
+              : <br>
+              .1.X.1.0 : index<br>
+              .1.X.2.0 : client Name<br>
+              .1.X.3.0 : client host<br>
+              .1.X.4.0 : mgClientDbLock<br>
+              .1.X.5.0 : mgApplicationType<br>
+              <b> </b> </p>
+          </td>
+        </tr>
+        <tr> 
+          <td class="SectionBody"> 
+            <hr>
+            <p class="SectionTitle"><a name="hp"></a>Hewlett Packard</p>
+            <p> <br>
+              1.3.6.1.4.1.11.2.14.11.5.1.1.2.1.1.1.6.1 : Free memory<br>
+              1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0 : CPU<br>
+              1.3.6.1.4.1.11.2.14.11.1.2.6.1.4.1 : FAN<br>
+              1.3.6.1.4.1.11.2.14.11.1.2.6.1.4.2 : Power<br>
+              1.3.6.1.4.1.11.2.14.11.1.2.6.1.4.4 : Temperature <br>
+            </p>
+  	    <p> <b> HP Procurve switch memory check </b> <br><br>
+1.3.6.1.4.1.11.2.14.11.5.1.1.2.2.1.1 : HP memory pool <br>
+mem pool.1 : memory slot index<br>
+mem pool.2 : hpGlobalMemSlabCnt <br>
+mem pool.3 : Free segments<br>
+mem pool.4 : hpGlobalMemAllocSegCnt<br>
+mem pool.5 : Total Bytes<br>
+mem pool.6 : Free Bytes<br>
+mem pool.7 : hpGlobalMemAllocBytes<br>
+            </td>
+        </tr>
+        <tr> 
+          <td> 
+            <hr>
+            <p class="SectionBody">This project is hosted on : <br>
+              <A href="http://sourceforge.net/projects/nagios-snmp">http://sourceforge.net/projects/nagios-snmp</A> 
+            </p>
+            <p class="SectionBody"> Nagios and the Nagios logo are registered 
+              trademarks of Ethan Galstad.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+</BODY>
+</HTML>
+
