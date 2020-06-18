@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_storage ##############
-# Version : 1.3.3
+# Version : 2.1.0
 # Date :  Jun 1 2007
 # Author  : Patrick Proy ( patrick at proy.org)
 # Help : http://nagios.manubulon.com
