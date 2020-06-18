@@ -47,24 +47,25 @@ my $win_serv_uninst = '1.3.6.1.4.1.77.1.2.3.1.4';
 
 my $Name = 'check_snmp_win';
 
-my $o_host      = undef;        # hostname
-my $o_community = undef;        # community
-my $o_port      = 161;          # port
-my $o_version2  = undef;        #use snmp v2c
-my $o_descr     = undef;        # description filter
-my @o_descrL    = undef;        # Service descriprion list.
-my $o_showall   = undef;        # Show all services even if OK
-my $o_type      = "service";    # Check type (service, ...)
-my $o_number    = undef;        # Number of service for warn and crit levels
-my $o_help      = undef;        # wan't some help ?
-my $o_verb      = undef;        # verbose mode
-my $o_version   = undef;        # print version
-my $o_noreg     = undef;        # Do not use Regexp for name
-my $o_timeout   = 5;            # Default 5s Timeout
+my $o_host        = undef;        # hostname
+my $o_community   = undef;        # community
+my $o_port        = 161;          # port
+my $o_version2    = undef;        # use snmp v2c
+my $o_descr       = undef;        # description filter
+my @o_descrL      = undef;        # Service descriprion list.
+my $o_showall     = undef;        # Show all services even if OK
+my $o_type        = "service";    # Check type (service, ...)
+my $o_number      = undef;        # Number of service for warn and crit levels
+my $o_help        = undef;        # wan't some help ?
+my $o_verb        = undef;        # verbose mode
+my $o_version     = undef;        # print version
+my $o_noreg       = undef;        # Do not use Regexp for name
+my $o_timeout     = 5;            # Default 5s Timeout
+my $o_octetlength = undef;        # SNMP max message size
 
 # SNMP V3 specific
-my $o_login  = undef;           # snmp v3 login
-my $o_passwd = undef;           # snmp v3 passwd
+my $o_login  = undef;             # snmp v3 login
+my $o_passwd = undef;             # snmp v3 passwd
 
 # functions
 
@@ -72,7 +73,7 @@ sub p_version { print "$Name version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name>[,<name2] [-T=service] [-r] [-s] [-N=<n>] [-t <timeout>] [-V]\n";
+"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd) [-p <port>] -n <name>[,<name2] [-T=service] [-r] [-s] [-N=<n>] [-t <timeout>] [-o <octet_length>] [-V]\n";
 }
 
 sub isnotnum {                  # Return true if arg is not a number
@@ -128,6 +129,8 @@ sub help {
    Do not use regexp to match NAME in service description.
 -t, --timeout=INTEGER
    timeout for SNMP in seconds (Default: 5)
+-o, --octetlength=INTEGER
+   SNMP max message size (484-65535)
 -V, --version
    prints version number
 Note :   
@@ -162,36 +165,38 @@ sub decode_utf8 {    # just replaces UFT8 caracters by "."
 sub check_options {
     Getopt::Long::Configure("bundling");
     GetOptions(
-        'v'           => \$o_verb,
-        'verbose'     => \$o_verb,
-        'h'           => \$o_help,
-        'help'        => \$o_help,
-        'H:s'         => \$o_host,
-        'hostname:s'  => \$o_host,
-        'p:i'         => \$o_port,
-        'port:i'      => \$o_port,
-        'C:s'         => \$o_community,
-        'community:s' => \$o_community,
-        'l:s'         => \$o_login,
-        'login:s'     => \$o_login,
-        'x:s'         => \$o_passwd,
-        'passwd:s'    => \$o_passwd,
-        't:i'         => \$o_timeout,
-        'timeout:i'   => \$o_timeout,
-        'n:s'         => \$o_descr,
-        'name:s'      => \$o_descr,
-        'r'           => \$o_noreg,
-        'noregexp'    => \$o_noreg,
-        'T:s'         => \$o_type,
-        'type:s'      => \$o_type,
-        'N:i'         => \$o_number,
-        'number:i'    => \$o_number,
-        '2'           => \$o_version2,
-        'v2c'         => \$o_version2,
-        's'           => \$o_showall,
-        'showall'     => \$o_showall,
-        'V'           => \$o_version,
-        'version'     => \$o_version
+        'v'             => \$o_verb,
+        'verbose'       => \$o_verb,
+        'h'             => \$o_help,
+        'help'          => \$o_help,
+        'H:s'           => \$o_host,
+        'hostname:s'    => \$o_host,
+        'p:i'           => \$o_port,
+        'port:i'        => \$o_port,
+        'C:s'           => \$o_community,
+        'community:s'   => \$o_community,
+        'l:s'           => \$o_login,
+        'login:s'       => \$o_login,
+        'x:s'           => \$o_passwd,
+        'passwd:s'      => \$o_passwd,
+        't:i'           => \$o_timeout,
+        'timeout:i'     => \$o_timeout,
+        'n:s'           => \$o_descr,
+        'name:s'        => \$o_descr,
+        'r'             => \$o_noreg,
+        'noregexp'      => \$o_noreg,
+        'T:s'           => \$o_type,
+        'type:s'        => \$o_type,
+        'N:i'           => \$o_number,
+        'number:i'      => \$o_number,
+        '2'             => \$o_version2,
+        'v2c'           => \$o_version2,
+        'o:i'           => \$o_octetlength,
+        'octetlength:i' => \$o_octetlength,
+        's'             => \$o_showall,
+        'showall'       => \$o_showall,
+        'V'             => \$o_version,
+        'version'       => \$o_version
     );
     if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"} }
@@ -220,6 +225,13 @@ sub check_options {
             print_usage();
             exit $ERRORS{"UNKNOWN"};
         }
+    }
+
+    # Octet length check
+    if (defined($o_octetlength) && (isnotnum($o_octetlength) || $o_octetlength > 65535 || $o_octetlength < 484)) {
+        print "octet length must be in range 484 .. 65535\n";
+        print_usage();
+        exit $ERRORS{'UNKNOWN'};
     }
 
 }
@@ -283,8 +295,19 @@ if (!defined($session)) {
     exit $ERRORS{"UNKNOWN"};
 }
 
-$session->max_msg_size(5000);
-verb($session->max_msg_size);
+if (defined($o_octetlength)) {
+    my $oct_resultat = undef;
+    my $oct_test     = $session->max_msg_size();
+    verb(" actual max octets:: $oct_test");
+    $oct_resultat = $session->max_msg_size($o_octetlength);
+    if (!defined($oct_resultat)) {
+        printf("ERROR: Session settings : %s.\n", $session->error);
+        $session->close;
+        exit $ERRORS{"UNKNOWN"};
+    }
+    $oct_test = $session->max_msg_size();
+    verb(" new max octets:: $oct_test");
+}
 
 # Look for process in name or path name table
 my $resultat = undef;
