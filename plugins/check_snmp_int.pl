@@ -35,7 +35,7 @@ my $descr_table        = '1.3.6.1.2.1.2.2.1.2';
 my $name_table         = '1.3.6.1.2.1.31.1.1.1.1';
 my $alias_table        = '.1.3.6.1.2.1.31.1.1.1.18';
 my $oper_table         = '1.3.6.1.2.1.2.2.1.8.';
-my $admin_table        = '1.3.6.1.2.1.2.2.1.7.';
+my $admin_table        = '1.3.6.1.2.1.2.2.1.7';
 my $speed_table        = '1.3.6.1.2.1.2.2.1.5.';
 my $speed_table_64     = '1.3.6.1.2.1.31.1.1.1.15.';
 my $in_octet_table     = '1.3.6.1.2.1.2.2.1.10.';
@@ -60,20 +60,22 @@ my %status = (
 # Globals
 
 # Standard options
-my $o_host    = undef;    # hostname
-my $o_port    = 161;      # port
-my $o_descr   = undef;    # description filter
-my $o_help    = undef;    # wan't some help ?
-my $o_admin   = undef;    # admin status instead of oper
-my $o_inverse = undef;    # Critical when up
-my $o_dormant = undef;    # Dormant state is OK
-my $o_down    = undef;    # Down state is OK
-my $o_verb    = undef;    # verbose mode
-my $o_version = undef;    # print version
-my $o_noreg   = undef;    # Do not use Regexp for name
-my $o_short   = undef;    # set maximum of n chars to be displayed
-my $o_label   = undef;    # add label before speed (in, out, etc...).
-my $o_weather = undef;    # output "weathermap" data for NagVis
+my $o_host              = undef;    # hostname
+my $o_port              = 161;      # port
+my $o_descr             = undef;    # description filter
+my $o_help              = undef;    # wan't some help ?
+my $o_admin             = undef;    # admin status instead of oper
+my $o_inverse           = undef;    # Critical when up
+my $o_dormant           = undef;    # Dormant state is OK
+my $o_down              = undef;    # Down state is OK
+my $o_ignore_admindown  = undef;    # Ignore interfaces in admin down state
+my $o_ignore_emptyalias = undef;    # ignore interfaces with empty alias (interface description string)
+my $o_verb              = undef;    # verbose mode
+my $o_version           = undef;    # print version
+my $o_noreg             = undef;    # Do not use Regexp for name
+my $o_short             = undef;    # set maximum of n chars to be displayed
+my $o_label             = undef;    # add label before speed (in, out, etc...).
+my $o_weather           = undef;    # output "weathermap" data for NagVis
 
 # Performance data options
 my $o_perf  = undef;      # Output performance data
@@ -224,6 +226,10 @@ sub help {
    Dormant state is an OK state
 --down
    Down state is an OK state
+--ign-admindown
+   Ignore interfaces in Admin down state
+--ign-emptyalias
+   Ignore interfaces having empty alias (port description)
 -o, --octetlength=INTEGER
   max-size of the SNMP message, usefull in case of Too Long responses.
   Be carefull with network filters. Range 484 - 65535, default are
@@ -358,7 +364,9 @@ sub check_options {
         'dormant'       => \$o_dormant,
         'down'          => \$o_down,
         'W'             => \$o_weather,
-        'weather'       => \$o_weather
+        'weather'       => \$o_weather,
+        'ign-admindown' => \$o_ignore_admindown,
+        'ign-emptyalias' => \$o_ignore_emptyalias,
     );
     if (defined($o_help))    { help();      exit $ERRORS{"UNKNOWN"} }
     if (defined($o_version)) { p_version(); exit $ERRORS{"UNKNOWN"} }
@@ -489,6 +497,14 @@ sub check_options {
         print_usage();
         exit $ERRORS{"UNKNOWN"};
     }
+
+    #### check if --admin and --ign-admindown are put together.
+    #### --ign-admindown expects the open_state of the port to be used
+    if (defined($o_ignore_admindown) && defined($o_admin)) {
+        print "ERROR: --ign-admindown and -a are mutually exclusive. Please select only one.\n\n";
+        print_usage();
+        exit $ERRORS{"UNKNOWN"};
+    }
 }
 
 ########## MAIN #######
@@ -616,6 +632,31 @@ if (defined($o_highperf)) {
     $in_octet_table  = $in_octet_table_64;
 }
 
+# If --ign-admindown is set, we need to have admin status table
+my $admin_status_table;
+if (defined($o_ignore_admindown)) {
+    $admin_status_table = $session->get_table(Baseoid => $admin_table);
+
+    if (!defined($admin_status_table)) {
+        printf("ERROR: Admin status table : %s.\n", $session->error);
+        $session->close;
+        exit $ERRORS{"UNKNOWN"};
+    }
+}
+
+# If --ign-emptyalias is set, we need to have aliases table
+my $interfaces_aliases;
+if (defined($o_ignore_emptyalias)) {
+    $interfaces_aliases = $session->get_table(Baseoid => $alias_table);
+
+    if (!defined($interfaces_aliases)) {
+        printf("ERROR: Alias status table : %s.\n", $session->error);
+        $session->close;
+        exit $ERRORS{"UNKNOWN"};
+    }
+}
+
+
 # Select interface by regexp of exact match
 # and put the oid to query in an array
 
@@ -623,12 +664,30 @@ verb("Filter : $o_descr");
 foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
     verb("OID : $key, Desc : $$resultat{$key}");
 
+    my $ignore = 0;
+    my $prefix = $query_table . ".";
+    my ($ifindex) = $key =~ /$prefix(\d+)$/;
+
+    # if ign-admindown is set, check the ifIndex against admin status
+    if (defined($o_ignore_admindown)) {
+	my $index = $admin_table . "." . $ifindex;
+        my $admstatus = $$admin_status_table{$index};
+        $ignore = 1 if ($admstatus == 2);
+    }
+
+    # if ign-emptyalias is set, check the ifIndex against alias string
+    if (defined($o_ignore_emptyalias)) {
+	my $index = $alias_table . "." . $ifindex;
+        my $alias = $$interfaces_aliases{$index};
+        $ignore = 1 if ($alias eq "");
+    }
+
     # test by regexp or exact match
     my $test
         = defined($o_noreg)
         ? $$resultat{$key} eq $o_descr
         : $$resultat{$key} =~ /$o_descr/;
-    if ($test) {
+    if ($test && !$ignore) {
 
         # get the index number of the interface
         my @oid_list = split(/\./, $key);
@@ -645,7 +704,7 @@ foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
             # Get rid of special caracters (specially for Windows)
             $descr[$num_int] =~ s/[[:cntrl:]]//g;
             # put the admin or oper oid in an array
-            $oids[$num_int]= defined ($o_admin) ? $admin_table . $tindex[$num_int] 
+            $oids[$num_int]= defined ($o_admin) ? $admin_table . "." . $tindex[$num_int]
 			: $oper_table . $tindex[$num_int];
 
             # Put the performance oid 
@@ -724,7 +783,7 @@ for (my $i = 0; $i < $num_int; $i++) {
     # Get the status of the current interface
     my $int_status
         = defined($o_admin)
-        ? $$result{ $admin_table . $tindex[$i] }
+        ? $$result{ $admin_table . "." . $tindex[$i] }
         : $$result{ $oper_table . $tindex[$i] };
     
     # Add spaces only if necessary
@@ -979,6 +1038,7 @@ for (my $i = 0; $i < $num_int; $i++) {
             $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
         }
         if (defined($o_perfs)) {
+	    my $speed_real = "" unless (defined($speed_real));
             $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_speed_bps'=" . $speed_real . " ";
         }
         if (defined($o_weather) && $usable_data == 1) {
