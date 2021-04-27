@@ -1038,7 +1038,7 @@ for (my $i = 0; $i < $num_int; $i++) {
             $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
         }
         if (defined($o_perfs)) {
-	    my $speed_real = "" unless (defined($speed_real));
+	    $speed_real = "" unless (defined($speed_real));
             $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_speed_bps'=" . $speed_real . " ";
         }
         if (defined($o_weather) && $usable_data == 1) {
