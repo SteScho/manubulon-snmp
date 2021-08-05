@@ -964,7 +964,7 @@ for (my $i = 0; $i < $num_int; $i++) {
     }
 
     # Get rid of special caracters for performance in description
-    $descr[$i] =~ s/'\/\(\)/_/g;
+    $descr[$i] =~ s/['\/\(\).]/_/g;
     if (($int_status == $ok_val) || (defined($o_down) && $int_status == 2) || (defined($o_dormant) && $int_status == 5))
     {
         $num_ok++;
@@ -979,12 +979,12 @@ for (my $i = 0; $i < $num_int; $i++) {
                     $warn_factor /= $speed_real;
                     $warn_factor *= 100;    # now turn into displayed % : 0,1 = 10%
                 }
-                $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_prct'=";
+                $perf_out .= "'" . $descr[$i] . "_in_prct'=";
                 $perf_out .= sprintf("%.0f", $checkperf_out_raw[0] * 800 / $speed_real) . "%;";
                 $perf_out .= ($o_warn[0] != 0) ? sprintf("%.0f", $o_warn[0] * $warn_factor) . ";" : ";";
                 $perf_out .= ($o_crit[0] != 0) ? sprintf("%.0f", $o_crit[0] * $warn_factor) . ";" : ";";
                 $perf_out .= "0;100 ";
-                $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_prct'=";
+                $perf_out .= "'" . $descr[$i] . "_out_prct'=";
                 $perf_out .= sprintf("%.0f", $checkperf_out_raw[1] * 800 / $speed_real) . "%;";
                 $perf_out .= ($o_warn[1] != 0) ? sprintf("%.0f", $o_warn[1] * $warn_factor) . ";" : ";";
                 $perf_out .= ($o_crit[1] != 0) ? sprintf("%.0f", $o_crit[1] * $warn_factor) . ";" : ";";
@@ -1000,12 +1000,12 @@ for (my $i = 0; $i < $num_int; $i++) {
                     } else {                   # just convert from K|M|G bps
                         $warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
                     }
-                    $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_bps'=";
+                    $perf_out .= "'" . $descr[$i] . "_in_bps'=";
                     $perf_out .= sprintf("%.0f", $checkperf_out_raw[0] * 8) . ";";
                     $perf_out .= ($o_warn[0] != 0) ? $o_warn[0] * $warn_factor . ";" : ";";
                     $perf_out .= ($o_crit[0] != 0) ? $o_crit[0] * $warn_factor . ";" : ";";
                     $perf_out .= "0;" . $speed_real . " ";
-                    $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_bps'=";
+                    $perf_out .= "'" . $descr[$i] . "_out_bps'=";
                     $perf_out .= sprintf("%.0f", $checkperf_out_raw[1] * 8) . ";";
                     $perf_out .= ($o_warn[1] != 0) ? $o_warn[1] * $warn_factor . ";" : ";";
                     $perf_out .= ($o_crit[1] != 0) ? $o_crit[1] * $warn_factor . ";" : ";";
@@ -1017,29 +1017,29 @@ for (my $i = 0; $i < $num_int; $i++) {
                     } else {                   # just convert from K|M|G bps
                         $warn_factor = (defined($o_meg)) ? 1048576 : (defined($o_gig)) ? 1073741824 : 1024;
                     }
-                    $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_Bps'=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";";
+                    $perf_out .= "'" . $descr[$i] . "_in_Bps'=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";";
                     $perf_out .= ($o_warn[0] != 0) ? $o_warn[0] * $warn_factor . ";" : ";";
                     $perf_out .= ($o_crit[0] != 0) ? $o_crit[0] * $warn_factor . ";" : ";";
                     $perf_out .= "0;" . $speed_real / 8 . " ";
-                    $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_Bps'=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";";
+                    $perf_out .= "'" . $descr[$i] . "_out_Bps'=" . sprintf("%.0f", $checkperf_out_raw[1]) . ";";
                     $perf_out .= ($o_warn[1] != 0) ? $o_warn[1] * $warn_factor . ";" : ";";
                     $perf_out .= ($o_crit[1] != 0) ? $o_crit[1] * $warn_factor . ";" : ";";
                     $perf_out .= "0;" . $speed_real / 8 . " ";
                 }
             }
         } else {    # output in octet counter
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_octet'=" . $$result{ $oid_perf_inoct[$i] } . "c ";
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_octet'=" . $$result{ $oid_perf_outoct[$i] } . "c ";
+            $perf_out .= "'" . $descr[$i] . "_in_octet'=" . $$result{ $oid_perf_inoct[$i] } . "c ";
+            $perf_out .= "'" . $descr[$i] . "_out_octet'=" . $$result{ $oid_perf_outoct[$i] } . "c ";
         }
         if (defined($o_perfe)) {
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_error'=" . $$result{ $oid_perf_inerr[$i] } . "c ";
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_in_discard'=" . $$result{ $oid_perf_indisc[$i] } . "c ";
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_error'=" . $$result{ $oid_perf_outerr[$i] } . "c ";
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
+            $perf_out .= "'" . $descr[$i] . "_in_error'=" . $$result{ $oid_perf_inerr[$i] } . "c ";
+            $perf_out .= "'" . $descr[$i] . "_in_discard'=" . $$result{ $oid_perf_indisc[$i] } . "c ";
+            $perf_out .= "'" . $descr[$i] . "_out_error'=" . $$result{ $oid_perf_outerr[$i] } . "c ";
+            $perf_out .= "'" . $descr[$i] . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
         }
         if (defined($o_perfs)) {
 	    $speed_real = "" unless (defined($speed_real));
-            $perf_out .= "'" . $descr[$i] =~ s/\./_/r . "_speed_bps'=" . $speed_real . " ";
+            $perf_out .= "'" . $descr[$i] . "_speed_bps'=" . $speed_real . " ";
         }
         if (defined($o_weather) && $usable_data == 1) {
             $perf_out .= "in=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
