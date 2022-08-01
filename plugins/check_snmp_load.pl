@@ -81,6 +81,12 @@ my $bluecoat_cpu = "1.3.6.1.4.1.3417.2.4.1.1.1.4.1";          # Bluecoat %cpu us
 # Fortigate CPU
 my $fortigate_cpu = ".1.3.6.1.4.1.12356.1.8.0";               # Fortigate CPU % usage
 
+# Fortigate CPU
+my $fortigate43_cpu = "1.3.6.1.4.1.12356.101.4.1.3.0";        # Fortigate 4.3 firmware CPU % usage
+
+# Fortigate CPU
+my $fortiswitch_cpu = ".1.3.6.1.4.1.12356.106.4.1.2.0";       # Fortiswitch CPU % usage
+
 # Linkproof Appliance
 my $linkproof_cpu = "1.3.6.1.4.1.89.35.1.55.0";               # CPU RE (Routing Engine Tasks)
 
@@ -95,12 +101,12 @@ my $hpux_load_15_min = "1.3.6.1.4.1.11.2.3.1.1.5.0";
 
 # valid values
 my @valid_types
-    = ("stand", "netsc", "netsl", "as400", "cisco", "cata", "cisg", "nsc", "fg", "bc", "nokia", "hp", "lp", "hpux", "n5k");
+    = ("stand", "netsc", "netsl", "as400", "cisco", "cata", "cisg", "nsc", "fg", "fg43", "fs", "bc", "nokia", "hp", "lp", "hpux", "n5k");
 
 # CPU OID array
 my %cpu_oid = (
     "netsc", $ns_cpu_idle,  "as400", $as400_cpu,     "bc", $bluecoat_cpu,  "nokia", $nokia_cpu,
-    "hp",    $procurve_cpu, "lp",    $linkproof_cpu, "fg", $fortigate_cpu, "n5k",   $n5k_cpu
+    "hp",    $procurve_cpu, "lp",    $linkproof_cpu, "fg", $fortigate_cpu, "fg43", $fortigate43_cpu, "fs", $fortiswitch_cpu, "n5k",   $n5k_cpu
 );
 
 # Globals
@@ -113,7 +119,7 @@ my $o_help      = undef;         # wan't some help ?
 my $o_verb      = undef;         # verbose mode
 my $o_version   = undef;         # print version
 
-# check type  : stand | netsc |  netsl | as400 | cisco | cata | cisg | nsc | fg | bc | nokia | hp | lp  | hpux
+# check type  : stand | netsc |  netsl | as400 | cisco | cata | cisg | nsc | fg | fg43| fs | bc | nokia | hp | lp  | hpux
 my $o_check_type = "stand";
 
 # End compatibility
@@ -139,7 +145,7 @@ sub p_version { print "check_snmp_load version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|cisg|nsc|fg|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
+"Usage: $0 [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>])  [-p <port>] [-P <protocol>] -w <warn level> -c <crit level> -T=[stand|netsl|netsc|as400|cisco|cata|cisg|nsc|fg|fg43|fs|bc|nokia|hp|lp|hpux] [-f] [-t <timeout>] [-V]\n";
 }
 
 sub isnnum {                     # Return true if arg is not a number
@@ -201,6 +207,8 @@ sub help {
 		cisg  : Cisco small business (SG500) CPU usage (1,5 & 15 minutes values)
 		nsc   : NetScreen CPU usage
 		fg    : Fortigate CPU usage
+		fg43  : Fortigate CPU usage for 4.3 firmware
+		fs    : Fortiswitch CPU usage
 		bc    : Bluecoat CPU usage
 		nokia : Nokia CPU usage
 		hp    : HP procurve switch CPU usage
@@ -806,8 +814,8 @@ if ($o_check_type eq "nsc") {
     exit $exit_val;
 }
 
-################## CPU for : AS/400 , Netsnmp, HP, Bluecoat, linkproof, fortigate  ###########
-if ($o_check_type =~ /netsc|as400|bc|nokia|^hp$|lp|fg/) {
+################## CPU for : AS/400 , Netsnmp, HP, Bluecoat, linkproof, fortigate, fortigate43, fortiswitch  ###########
+if ($o_check_type =~ /netsc|as400|bc|nokia|^hp$|lp|fg|fg43|fs/) {
 
     # Get load table
     my @oidlist = $cpu_oid{$o_check_type};
@@ -965,4 +973,3 @@ print " < $o_warn% : OK" if ($exit_val eq $ERRORS{"OK"});
     ? print " | cpu_prct_used=$cpu_used%;$o_warn;$o_crit\n"
     : print "\n";
 exit $exit_val;
-
