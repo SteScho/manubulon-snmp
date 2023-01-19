@@ -3,6 +3,7 @@
 # Version : 2.1.0
 # Date :  Jun 1 2007
 # Author  : Patrick Proy ( patrick at proy.org)
+#           Copyright (C) 2020 Informatyka Boguslawski sp. z o.o. sp.k., http://www.ib.pl/
 # Help : http://nagios.manubulon.com
 # License : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO :
@@ -19,13 +20,21 @@ use Getopt::Long;
 my %ERRORS = ('OK' => 0, 'WARNING' => 1, 'CRITICAL' => 2, 'UNKNOWN' => 3, 'DEPENDENT' => 4);
 
 # SNMP Datas
-my $storage_table     = '1.3.6.1.2.1.25.2.3.1';
-my $storagetype_table = '1.3.6.1.2.1.25.2.3.1.2';
-my $index_table       = '1.3.6.1.2.1.25.2.3.1.1';
-my $descr_table       = '1.3.6.1.2.1.25.2.3.1.3';
-my $size_table        = '1.3.6.1.2.1.25.2.3.1.5.';
-my $used_table        = '1.3.6.1.2.1.25.2.3.1.6.';
-my $alloc_units       = '1.3.6.1.2.1.25.2.3.1.4.';
+
+my $hrStorageTable_storage_table     = '1.3.6.1.2.1.25.2.3.1';
+my $hrStorageTable_storagetype_table = '1.3.6.1.2.1.25.2.3.1.2';
+my $hrStorageTable_index_table       = '1.3.6.1.2.1.25.2.3.1.1';
+my $hrStorageTable_descr_table       = '1.3.6.1.2.1.25.2.3.1.3';
+my $hrStorageTable_size_table        = '1.3.6.1.2.1.25.2.3.1.5.';
+my $hrStorageTable_used_table        = '1.3.6.1.2.1.25.2.3.1.6.';
+my $hrStorageTable_alloc_units       = '1.3.6.1.2.1.25.2.3.1.4.';
+
+my $dskTable_storage_table = '1.3.6.1.4.1.2021.9.1';
+my $dskTable_index_table = '1.3.6.1.4.1.2021.9.1.1';
+my $dskTable_descr_table = '1.3.6.1.4.1.2021.9.1.2';
+my $dskTable_size_table = '1.3.6.1.4.1.2021.9.1.6.';
+my $dskTable_avail_table = '1.3.6.1.4.1.2021.9.1.7.';
+my $dskTable_used_table = '1.3.6.1.4.1.2021.9.1.8.';
 
 #Storage types definition  - from /usr/share/snmp/mibs/HOST-RESOURCES-TYPES.txt
 my %hrStorage;
@@ -80,6 +89,8 @@ my $o_short       = undef;                       # Short output parameters
 my @o_shortL      = undef;                       # output type,where,cut
 my $o_reserve     = 0;                           # % reserved blocks (A. Greiner-B\ufffdr patch)
 my $o_giga        = undef;                       # output and levels in gigabytes instead of megabytes
+my $o_dsktable    = undef;                       # use dskTable instead of default hrStorageTable
+
 
 # SNMPv3 specific
 my $o_login     = undef;                         # Login for snmpv3
@@ -99,7 +110,7 @@ sub p_version { print "$Name version : $VERSION\n"; }
 
 sub print_usage {
     print
-"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] [-P <protocol>] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-O] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
+"Usage: $Name [-v] -H <host> -C <snmp_community> [-2] | (-l login -x passwd [-X pass -L <authp>,<privp>]) [-p <port>] [-P <protocol>] [-u] -m <name in desc_oid> [-q storagetype] -w <warn_level> -c <crit_level> [-t <timeout>] [-T pl|pu|bl|bu ] [-r -s -i -G] [-e] [-O] [-S 0|1[,1,<car>]] [-o <octet_length>] [-R <% reserved>]\n";
 }
 
 sub round ($$) {
@@ -145,13 +156,13 @@ warn if %used > warn and critical if %used > crit
 -2, --v2c
    Use snmp v2c
 -l, --login=LOGIN ; -x, --passwd=PASSWD
-   Login and auth password for snmpv3 authentication 
-   If no priv password exists, implies AuthNoPriv 
+   Login and auth password for snmpv3 authentication
+   If no priv password exists, implies AuthNoPriv
 -X, --privpass=PASSWD
    Priv password for snmpv3 (AuthPriv protocol)
 -L, --protocols=<authproto>,<privproto>
    <authproto> : Authentication protocol (md5|sha : default md5)
-   <privproto> : Priv protocole (des|aes : default des) 
+   <privproto> : Priv protocole (des|aes : default des)
 -x, --passwd=PASSWD
    Password for snmpv3 authentication
 -p, --port=PORT
@@ -162,6 +173,8 @@ warn if %used > warn and critical if %used > crit
     'udp/ipv6'  : UDP over IPv6
     'tcp/ipv4'  : TCP over IPv4
     'tcp/ipv6'  : TCP over IPv6
+-u, --dsktable
+   use dskTable instead of default hrStorageTable; cannot be used with -q
 -m, --name=NAME
    Name in description OID (can be mounpoints '/home' or 'Swap Space'...)
    This is treated as a regexp : -m /var will match /var , /var/log, /opt/var ...
@@ -190,10 +203,10 @@ warn if %used > warn and critical if %used > crit
    bu : calculate MegaBytes used
 -w, --warn=INTEGER
    percent / MB of disk used to generate WARNING state
-   you can add the % sign 
+   you can add the % sign
 -c, --critical=INTEGER
    percent / MB of disk used to generate CRITICAL state
-   you can add the % sign 
+   you can add the % sign
 -R, --reserved=INTEGER
    % reserved blocks for superuser
    For ext2/3 filesystems, it is 5% by default
@@ -205,29 +218,29 @@ warn if %used > warn and critical if %used > crit
    <type>: Make the output shorter :
      0 : only print the global result except the disk in warning or critical
          ex: "< 80% : OK"
-     1 : Don't print all info for every disk 
+     1 : Don't print all info for every disk
          ex : "/ : 66 %used  (<  80) : OK"
    <where>: (optional) if = 1, put the OK/WARN/CRIT at the beginning
    <cut>: take the <n> first caracters or <n> last if n<0
 -o, --octetlength=INTEGER
   max-size of the SNMP message, usefull in case of Too Long responses.
   Be carefull with network filters. Range 484 - 65535, default are
-  usually 1472,1452,1460 or 1440.   
+  usually 1472,1452,1460 or 1440.
 -t, --timeout=INTEGER
    timeout for SNMP in seconds (Default: 5)
 -V, --version
    prints version number
-Note : 
+Note :
   with T=pu or T=bu : OK < warn < crit
   with T=pl ot T=bl : crit < warn < OK
-  
+
   If multiple storage are selected, the worse condition will be returned
   i.e if one disk is critical, the return is critical
- 
-  example : 
-  Browse storage list : <script> -C <community> -H <host> -m <anything> -w 1 -c 2 -v 
-  the -m option allows regexp in perl format : 
-  Test drive C,F,G,H,I on Windows 	: -m ^[CFGHI]:    
+
+  example :
+  Browse storage list : <script> -C <community> -H <host> -m <anything> -w 1 -c 2 -v
+  the -m option allows regexp in perl format :
+  Test drive C,F,G,H,I on Windows 	: -m ^[CFGHI]:
   Test all mounts containing /var      	: -m /var
   Test all mounts under /var      	: -m ^/var
   Test only /var                 	: -m /var -r
@@ -270,6 +283,8 @@ sub check_options {
         'warn:s'        => \$o_warn,
         't:i'           => \$o_timeout,
         'timeout:i'     => \$o_timeout,
+        'u'             => \$o_dsktable,
+        'dsktable64'    => \$o_dsktable,
         'm:s'           => \$o_descr,
         'name:s'        => \$o_descr,
         'T:s'           => \$o_type,
@@ -404,6 +419,14 @@ sub check_options {
         print_usage();
         exit $ERRORS{"UNKNOWN"};
     }
+
+    # disallow using -u and -q together
+    if (defined($o_dsktable) && defined($o_storagetype)) {
+        print "Parameters -u and -q cannot be used together!\n";
+        print_usage();
+        exit $ERRORS{"UNKNOWN"}
+    }
+
 }
 
 ########## MAIN #######
@@ -507,6 +530,30 @@ if (defined($o_octetlength)) {
 my $resultat = undef;
 my $stype    = undef;
 
+my $storage_table;
+my $index_table;
+my $descr_table;
+my $size_table;
+my $used_table;
+my $alloc_units;
+
+if (defined($o_dsktable)) {
+    $storage_table = $dskTable_storage_table;
+    $index_table = $dskTable_index_table;
+    $descr_table = $dskTable_descr_table;
+    $size_table = $dskTable_size_table;
+    $used_table = $dskTable_used_table;
+    $alloc_units = 'dummy';
+}
+else {
+    $storage_table = $hrStorageTable_storage_table;
+    $index_table = $hrStorageTable_index_table;
+    $descr_table = $hrStorageTable_descr_table;
+    $size_table = $hrStorageTable_size_table;
+    $used_table = $hrStorageTable_used_table;
+    $alloc_units = $hrStorageTable_alloc_units;
+}
+
 # Get rid of UTF8 translation in case of accentuated caracters (thanks to Dimo Velev).
 $session->translate(Net::SNMP->TRANSLATE_NONE);
 if (defined($o_index)) {
@@ -526,9 +573,9 @@ if (defined($o_index)) {
 #get storage typetable for reference
 if (defined($o_storagetype)) {
     if (version->parse(Net::SNMP->VERSION) < 4) {
-        $stype = $session->get_table($storagetype_table);
+        $stype = $session->get_table($hrStorageTable_storagetype_table);
     } else {
-        $stype = $session->get_table(Baseoid => $storagetype_table);
+        $stype = $session->get_table(Baseoid => $hrStorageTable_storagetype_table);
     }
 }
 if (!defined($resultat) | (!defined($stype) && defined($o_storagetype))) {
@@ -573,7 +620,7 @@ foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
 
         # Check if storage type is OK
         if (defined($o_storagetype)) {
-            my ($skey) = $storagetype_table . "." . $tindex[$num_int];
+            my ($skey) = $hrStorageTable_storagetype_table . "." . $tindex[$num_int];
             verb("   OID : $skey, Storagetype: $hrStorage{$$stype{$skey}} ?= $o_storagetype");
             if ($hrStorage{ $$stype{$skey} } !~ $o_storagetype) {
                 $test = undef;
@@ -587,7 +634,12 @@ foreach my $key (sort { $$resultat{$a} cmp $$resultat{$b} } keys %$resultat) {
             # put the oid in an array
             $oids[$count_oid++] = $size_table . $tindex[$num_int];
             $oids[$count_oid++] = $used_table . $tindex[$num_int];
-            $oids[$count_oid++] = $alloc_units . $tindex[$num_int];
+            if (!defined($o_dsktable)) {
+                $oids[$count_oid++] = $alloc_units . $tindex[$num_int];
+            }
+            else {
+                $oids[$count_oid++] = $dskTable_avail_table . $tindex[$num_int];
+            }
 
             verb("   Name : $descr[$num_int], Index : $tindex[$num_int]");
             $num_int++;
@@ -635,9 +687,17 @@ $session->close;
 # Only a few ms left...
 alarm(0);
 
+# dskTable use fixed 1kB unit
+if (defined($o_dsktable)) {
+    for (my $i = 0; $i < $num_int; $i++) {
+        $$result{ $alloc_units . $tindex[$i] } = 1024;
+    }
+}
+
 # Sum everything if -s and more than one storage
 if (defined($o_sum) && ($num_int > 1)) {
     verb("Adding all entries");
+
     $$result{ $size_table . $tindex[0] } *= $$result{ $alloc_units . $tindex[0] };
     $$result{ $used_table . $tindex[0] } *= $$result{ $alloc_units . $tindex[0] };
     $$result{ $alloc_units . $tindex[0] } = 1;
@@ -670,6 +730,9 @@ for ($i = 0; $i < $num_int; $i++) {
     verb("Size :  $$result{$size_table . $tindex[$i]}");
     verb("Used : $$result{$used_table . $tindex[$i]}");
     verb("Alloc : $$result{$alloc_units . $tindex[$i]}");
+    if (defined($o_dsktable)) {
+        verb("Avail : $$result{$dskTable_avail_table . $tindex[$i]}");
+    }
 
     if (   !defined($$result{ $size_table . $tindex[$i] })
         || !defined($$result{ $used_table . $tindex[$i] })
@@ -691,12 +754,24 @@ for ($i = 0; $i < $num_int; $i++) {
         $pu = 0;
     }
     my $bu = $$result{ $used_table . $tindex[$i] } * $$result{ $alloc_units . $tindex[$i] } / $output_metric_val;
-    my $pl = 100 - $pu;
-    my $bl
-        = (
-        ($$result{ $size_table . $tindex[$i] } * ((100 - $o_reserve) / 100) - ($$result{ $used_table . $tindex[$i] }))
-        * $$result{ $alloc_units . $tindex[$i] }
+
+    # in dskTable mode get available storage from SNMP to avoid problems with filesystems like btrfs
+    # where available may be 0 but size-used is still > 0
+    my $pl;
+    my $bl;
+    if (defined($o_dsktable)) {
+        $pl = $$result{ $dskTable_avail_table . $tindex[$i] } * 100
+           / ($$result{ $size_table . $tindex[$i] } * (100 - $o_reserve) / 100);
+        $bl = $$result{ $dskTable_avail_table . $tindex[$i] } * $$result{ $alloc_units . $tindex[$i] }
+            / $output_metric_val;
+    }
+    else {
+        $pl = 100 - $pu;
+        $bl = (
+            ($$result{ $size_table . $tindex[$i] } * ((100 - $o_reserve) / 100) - ($$result{ $used_table . $tindex[$i] }))
+            * $$result{ $alloc_units . $tindex[$i] }
             / $output_metric_val);
+    }
 
     # add a ' ' if some data exists in $perf_out
     $perf_out .= " " if (defined($perf_out));
@@ -717,7 +792,7 @@ for ($i = 0; $i < $num_int; $i++) {
             || (($pu >= $o_warn) && ($locstate = $warn_state = 1));
         if (defined($o_shortL[2])) { }
         if (!defined($o_shortL[0]) || ($locstate == 1)) {    # print full output if warn or critical state
-            $output .= sprintf("%s: %.0f%%used(%.0f%sB/%.0f%sB) ", $descr[$i], $pu, $bu, $output_metric, $to,
+            $output .= sprintf("%s: %.0f%% used (%.0f%sB/%.0f%sB) ", $descr[$i], $pu, $bu, $output_metric, $to,
                 $output_metric);
         } elsif ($o_shortL[0] == 1) {
             $output .= sprintf("%s: %.0f%% ", $descr[$i], $pu);
@@ -732,7 +807,7 @@ for ($i = 0; $i < $num_int; $i++) {
             || (($bu >= $o_warn) && ($locstate = $warn_state = 1));
         if (!defined($o_shortL[0]) || ($locstate == 1)) {    # print full output if warn or critical state
             $output
-                .= sprintf("%s: %.0f%sBused/%.0f%sB (%.0f%%) ", $descr[$i], $bu, $output_metric, $to, $output_metric,
+                .= sprintf("%s: %.0f%sB used / %.0f%sB (%.0f%%) ", $descr[$i], $bu, $output_metric, $to, $output_metric,
                 $pu);
         } elsif ($o_shortL[0] == 1) {
             $output .= sprintf("%s: %.0f%sB ", $descr[$i], $bu, $output_metric);
@@ -747,7 +822,7 @@ for ($i = 0; $i < $num_int; $i++) {
             || (($bl <= $o_warn) && ($locstate = $warn_state = 1));
         if (!defined($o_shortL[0]) || ($locstate == 1)) {    # print full output if warn or critical state
             $output
-                .= sprintf("%s: %.0f%sBleft/%.0f%sB (%.0f%%) ", $descr[$i], $bl, $output_metric, $to, $output_metric,
+                .= sprintf("%s: %.0f%sB left / %.0f%sB (%.0f%%) ", $descr[$i], $bl, $output_metric, $to, $output_metric,
                 $pl);
         } elsif ($o_shortL[0] == 1) {
             $output .= sprintf("%s: %.0f%sB ", $descr[$i], $bl, $output_metric);
@@ -761,7 +836,7 @@ for ($i = 0; $i < $num_int; $i++) {
         (($pl <= $o_crit) && ($locstate = $crit_state = 1))
             || (($pl <= $o_warn) && ($locstate = $warn_state = 1));
         if (!defined($o_shortL[0]) || ($locstate == 1)) {    # print full output if warn or critical state
-            $output .= sprintf("%s: %.0f%%left(%.0f%sB/%.0f%sB) ", $descr[$i], $pl, $bl, $output_metric, $to,
+            $output .= sprintf("%s: %.0f%% left (%.0f%sB/%.0f%sB) ", $descr[$i], $pl, $bl, $output_metric, $to,
                 $output_metric);
         } elsif ($o_shortL[0] == 1) {
             $output .= sprintf("%s: %.0f%% ", $descr[$i], $pl);
