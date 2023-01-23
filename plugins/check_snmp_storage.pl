@@ -3,7 +3,6 @@
 # Version : 2.1.0
 # Date :  Jun 1 2007
 # Author  : Patrick Proy ( patrick at proy.org)
-#           Copyright (C) 2020 Informatyka Boguslawski sp. z o.o. sp.k., http://www.ib.pl/
 # Help : http://nagios.manubulon.com
 # License : GPL - http://www.fsf.org/licenses/gpl.txt
 # TODO :
