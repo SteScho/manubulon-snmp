@@ -262,11 +262,11 @@ sub help {
    -G : Make the warning and critical levels in Gbps (with -B) or GBps
    -M : Make the warning and critical levels in Mbps (with -B) or MBps
    -u : Make the warning and critical levels in % of reported interface speed.
--w, --warning=input,output[,error in,error out,discard in,discard out]
+-w, --warning=input,output[,error in,error out,discard in,discard out,interface speed]
    warning level for input / output bandwidth (0 for no warning)
      unit depends on B,M,G,u options
    warning for error & discard input / output in error/min (need -q)
--c, --critical=input,output[,error in,error out,discard in,discard out]
+-c, --critical=input,output[,error in,error out,discard in,discard out,interface speed]
    critical level for input / output bandwidth (0 for no critical)
      unit depends on B,M,G,u options
    critical for error & discard input / output in error/min (need -q)
@@ -945,6 +945,19 @@ for (my $i = 0; $i < $num_int; $i++) {
                     $print_out .= sprintf("%s%.1f", $checkperf_out_desc, $checkperf_out[$l]);
                 }
                 if ($l == 0 || $l == 1) { $print_out .= $speed_unit; }
+            }
+            if (defined($o_perfs) && defined($o_ext_checkperf)) {
+                $print_out .= "/";
+                # $speed_real < 1000000000
+                if (($o_crit[6] != 0) && ($speed_real < $o_crit[6])) {
+                    $final_status = 2;
+                    $print_out .= sprintf("CRIT Speed %.1f", $speed_real);
+                } elsif (($o_warn[6] != 0) && ($speed_real < $o_warn[6])) {
+                    $final_status = ($final_status == 2) ? 2 : 1;
+                    $print_out .= sprintf("WARN Speed %.1f", $speed_real);
+                } else {
+                    $print_out .= sprintf("Speed %.1f", $speed_real);
+                }
             }
             $print_out .= ")";
         } else {    # Return unknown when no data
