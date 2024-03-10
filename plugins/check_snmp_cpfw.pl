@@ -77,6 +77,7 @@ my $o_host      = undef;                                 # hostname
 my $o_community = undef;                                 # community
 my $o_version2  = undef;                                 # Version 2
 my $o_port      = 161;                                   # port
+my $o_domain    = 'udp/ipv4';                            # protocol
 my $o_help      = undef;                                 # wan't some help ?
 my $o_verb      = undef;                                 # verbose mode
 my $o_version   = undef;                                 # print version
@@ -154,6 +155,14 @@ sub help {
    performance data output (only works with -c)
 -P, --port=PORT
    SNMP port (Default 161)
+--protocol=PROTOCOL
+   Network protocol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
+
+   Network protocol (Default udp/ipv4)
 -t, --timeout=INTEGER
    timeout for SNMP (Default: Nagios default)   
 -V, --version
@@ -175,6 +184,7 @@ sub check_options {
         'hostname:s'   => \$o_host,
         'P:i'          => \$o_port,
         'port:i'       => \$o_port,
+        'protocol:s'   => \$o_domain,
         'C:s'          => \$o_community,
         'community:s'  => \$o_community,
         '2'            => \$o_version2,
@@ -315,7 +325,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -port         => $o_port,
             -authpassword => $o_passwd,
             -authprotocol => $o_authproto,
-            -timeout      => $o_timeout
+            -timeout      => $o_timeout,
+            -domain       => $o_domain
         );
     } else {
         verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
@@ -328,7 +339,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -authprotocol => $o_authproto,
             -privpassword => $o_privpass,
             -privprotocol => $o_privproto,
-            -timeout      => $o_timeout
+            -timeout      => $o_timeout,
+            -domain       => $o_domain
         );
     }
 } else {
@@ -341,7 +353,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -version   => 2,
             -community => $o_community,
             -port      => $o_port,
-            -timeout   => $o_timeout
+            -timeout   => $o_timeout,
+            -domain    => $o_domain
         );
     } else {
 
@@ -351,7 +364,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -hostname  => $o_host,
             -community => $o_community,
             -port      => $o_port,
-            -timeout   => $o_timeout
+            -timeout   => $o_timeout,
+            -domain    => $o_domain
         );
     }
 }
