@@ -207,13 +207,13 @@ Usage: ./check_snmp_int.pl [-v] -H <host> -C <snmp_community> [-2] | (-l login -
    -G : Make the warning and critical levels in Gbps (with -B) or GBps
    -M : Make the warning and critical levels in Mbps (with -B) or MBps
    -u : Make the warning and critical levels in % of reported interface speed.
--w, --warning=input,output[,error in,error out,discard in,discard out]
+-w, --warning=input,output[,error in,error out,discard in,discard out,interface speed]
    warning level for input / output bandwidth (0 for no warning)
-     unit depends on B,M,G,u options
+     unit depends on B,M,G,u options and interface speed is in bps
    warning for error & discard input / output in error/min (need -q)
--c, --critical=input,output[,error in,error out,discard in,discard out]
+-c, --critical=input,output[,error in,error out,discard in,discard out,interface speed]
    critical level for input / output bandwidth (0 for no critical)
-     unit depends on B,M,G,u options
+     unit depends on B,M,G,u options and interface speed is in bps
    critical for error & discard input / output in error/min (need -q)
 -s, --short=int
    Make the output shorter : only the first <n> chars of the interface(s)

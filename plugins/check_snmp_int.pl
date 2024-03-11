@@ -262,11 +262,11 @@ sub help {
    -G : Make the warning and critical levels in Gbps (with -B) or GBps
    -M : Make the warning and critical levels in Mbps (with -B) or MBps
    -u : Make the warning and critical levels in % of reported interface speed.
--w, --warning=input,output[,error in,error out,discard in,discard out]
+-w, --warning=input,output[,error in,error out,discard in,discard out,interface speed]
    warning level for input / output bandwidth (0 for no warning)
      unit depends on B,M,G,u options
    warning for error & discard input / output in error/min (need -q)
--c, --critical=input,output[,error in,error out,discard in,discard out]
+-c, --critical=input,output[,error in,error out,discard in,discard out,interface speed]
    critical level for input / output bandwidth (0 for no critical)
      unit depends on B,M,G,u options
    critical for error & discard input / output in error/min (need -q)
@@ -452,8 +452,8 @@ sub check_options {
     }
     if (defined($o_checkperf)) {
         @o_warn = split(/,/, $o_warn_opt);
-        if (defined($o_ext_checkperf) && ($#o_warn != 5)) {
-            print "6 warning levels for extended checks \n";
+        if (defined($o_ext_checkperf) && (($#o_warn < 5) || ($#o_warn > 6))) {
+            print "6 or 7 warning levels for extended checks err val: $#o_warn \n";
             print_usage();
             exit $ERRORS{"UNKNOWN"};
         }
@@ -465,8 +465,8 @@ sub check_options {
         @o_crit = split(/,/, $o_crit_opt);
 
         #verb(" $o_crit_opt :: $#o_crit : @o_crit");
-        if (defined($o_ext_checkperf) && ($#o_crit != 5)) {
-            print "6 critical levels for extended checks \n";
+        if (defined($o_ext_checkperf) && (($#o_crit < 5) || ($#o_crit > 6))) {
+            print "6 or 7 critical levels for extended checks err val: $#o_crit \n";
             print_usage();
             exit $ERRORS{"UNKNOWN"};
         }
@@ -476,10 +476,18 @@ sub check_options {
             exit $ERRORS{"UNKNOWN"};
         }
         for (my $i = 0; $i <= $#o_warn; $i++) {
-            if (($o_crit[$i] != 0) && ($o_warn[$i] > $o_crit[$i])) {
-                print "Warning must be < Critical level \n";
-                print_usage();
-                exit $ERRORS{"UNKNOWN"};
+            if ($i != 6) {
+                if (($o_crit[$i] != 0) && ($o_warn[$i] > $o_crit[$i])) {
+                    print "Warning must be < Critical level \n";
+                    print_usage();
+                    exit $ERRORS{"UNKNOWN"};
+                }
+            } else {
+                if (($o_crit[$i] != 0) && ($o_warn[$i] < $o_crit[$i])) {
+                    print "Warning must be > Critical level \n";
+                    print_usage();
+                    exit $ERRORS{"UNKNOWN"};
+                }
             }
         }
         if (   (defined($o_meg) && defined($o_gig))
@@ -946,6 +954,18 @@ for (my $i = 0; $i < $num_int; $i++) {
                 }
                 if ($l == 0 || $l == 1) { $print_out .= $speed_unit; }
             }
+            if (defined($o_perfs) && defined($o_ext_checkperf)) {
+                $print_out .= "/";
+                if (defined($o_crit[6]) && ($o_crit[6] != 0) && ($speed_real < $o_crit[6])) {
+                    $final_status = 2;
+                    $print_out .= sprintf("CRIT %.0fbps", $speed_real);
+                } elsif (defined($o_warn[6]) && ($o_warn[6] != 0) && ($speed_real < $o_warn[6])) {
+                    $final_status = ($final_status == 2) ? 2 : 1;
+                    $print_out .= sprintf("WARN %.0fbps", $speed_real);
+                } else {
+                    $print_out .= sprintf("%.0fbps", $speed_real);
+                }
+            }
             $print_out .= ")";
         } else {    # Return unknown when no data
             $print_out .= " No usable data on file (" . $n_rows . " rows) ";
@@ -1039,7 +1059,10 @@ for (my $i = 0; $i < $num_int; $i++) {
         }
         if (defined($o_perfs)) {
 	    $speed_real = "" unless (defined($speed_real));
-            $perf_out .= "'" . $descr[$i] . "_speed_bps'=" . $speed_real . " ";
+            $perf_out .= "'" . $descr[$i] . "_speed_bps'=" . $speed_real . ";";
+            $perf_out .= defined($o_warn[6]) ? $o_warn[6] . ";" : ";";
+            $perf_out .= defined($o_crit[6]) ? $o_crit[6] . ";" : ";";
+            $perf_out .= "; ";
         }
         if (defined($o_weather) && $usable_data == 1) {
             $perf_out .= "in=" . sprintf("%.0f", $checkperf_out_raw[0]) . ";;;0;" . sprintf("%.0f", $speed_real / 8) . " ";
