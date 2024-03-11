@@ -62,6 +62,7 @@ my %status = (
 # Standard options
 my $o_host              = undef;    # hostname
 my $o_port              = 161;      # port
+my $o_domain            = 'udp/ipv4'; # protocol
 my $o_descr             = undef;    # description filter
 my $o_help              = undef;    # wan't some help ?
 my $o_admin             = undef;    # admin status instead of oper
@@ -208,6 +209,14 @@ sub help {
    <privproto> : Priv protocole (des|aes : default des) 
 -P, --port=PORT
    SNMP port (Default 161)
+--protocol=PROTOCOL
+   Network protocol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
+
+   Network protocol (Default udp/ipv4)
 -n, --name=NAME
    Name in description OID (eth0, ppp0 ...).
    This is treated as a regexp : -n eth will match eth0,eth1,...
@@ -298,6 +307,7 @@ sub check_options {
         'hostname:s'    => \$o_host,
         'p:i'           => \$o_port,
         'port:i'        => \$o_port,
+        'protocol:s'    => \$o_domain,
         'n:s'           => \$o_descr,
         'name:s'        => \$o_descr,
         'N'             => \$o_use_ifname,
@@ -546,7 +556,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -username     => $o_login,
             -authpassword => $o_passwd,
             -authprotocol => $o_authproto,
-            -timeout      => $o_timeout
+            -timeout      => $o_timeout,
+            -domain       => $o_domain
         );
     } else {
         verb("SNMPv3 AuthPriv login : $o_login, $o_authproto, $o_privproto");
@@ -559,7 +570,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -authprotocol => $o_authproto,
             -privpassword => $o_privpass,
             -privprotocol => $o_privproto,
-            -timeout      => $o_timeout
+            -timeout      => $o_timeout,
+            -domain       => $o_domain
         );
     }
 } else {
@@ -572,7 +584,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -version   => 2,
             -community => $o_community,
             -port      => $o_port,
-            -timeout   => $o_timeout
+            -timeout   => $o_timeout,
+            -domain    => $o_domain
         );
     } else {
 
@@ -582,7 +595,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -hostname  => $o_host,
             -community => $o_community,
             -port      => $o_port,
-            -timeout   => $o_timeout
+            -timeout   => $o_timeout,
+            -domain    => $o_domain
         );
     }
 }

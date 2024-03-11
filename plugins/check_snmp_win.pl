@@ -50,6 +50,7 @@ my $Name = 'check_snmp_win';
 my $o_host        = undef;        # hostname
 my $o_community   = undef;        # community
 my $o_port        = 161;          # port
+my $o_domain      = 'udp/ipv4';   # protocol
 my $o_version2    = undef;        # use snmp v2c
 my $o_descr       = undef;        # description filter
 my @o_descrL      = undef;        # Service descriprion list.
@@ -115,6 +116,14 @@ sub help {
    Password for snmpv3 authentication
 -p, --port=PORT
    SNMP port (Default 161)
+--protocol=PROTOCOL
+   Network protocol to be used
+   ['udp/ipv4'] : UDP over IPv4
+    'udp/ipv6'  : UDP over IPv6
+    'tcp/ipv4'  : TCP over IPv4
+    'tcp/ipv6'  : TCP over IPv6
+
+   Network protocol (Default udp/ipv4)
 -T, --type=service
    Check type : 
      - service (default) checks service
@@ -173,6 +182,7 @@ sub check_options {
         'hostname:s'    => \$o_host,
         'p:i'           => \$o_port,
         'port:i'        => \$o_port,
+        'protocol:s'    => \$o_domain,
         'C:s'           => \$o_community,
         'community:s'   => \$o_community,
         'l:s'           => \$o_login,
@@ -265,7 +275,8 @@ if (defined($o_login) && defined($o_passwd)) {
         -authpassword => $o_passwd,
         -authprotocol => 'md5',
         -privpassword => $o_passwd,
-        -timeout      => $o_timeout
+        -timeout      => $o_timeout,
+        -domain       => $o_domain
     );
 } else {
     if (defined($o_version2)) {
@@ -276,7 +287,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -version   => 2,
             -community => $o_community,
             -port      => $o_port,
-            -timeout   => $o_timeout
+            -timeout   => $o_timeout,
+            -domain    => $o_domain
         );
     } else {
 
@@ -285,7 +297,8 @@ if (defined($o_login) && defined($o_passwd)) {
             -hostname  => $o_host,
             -community => $o_community,
             -port      => $o_port,
-            -timeout   => $o_timeout
+            -timeout   => $o_timeout,
+            -domain    => $o_domain
         );
     }
 }
