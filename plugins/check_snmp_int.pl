@@ -266,10 +266,12 @@ sub help {
    warning level for input / output bandwidth (0 for no warning)
      unit depends on B,M,G,u options
    warning for error & discard input / output in error/min (need -q)
+   warning level for interface speed only in K|M|G Bits/s (0 for no warning)
 -c, --critical=input,output[,error in,error out,discard in,discard out,interface speed]
    critical level for input / output bandwidth (0 for no critical)
      unit depends on B,M,G,u options
    critical for error & discard input / output in error/min (need -q)
+   critical level for interface speed only in K|M|G Bits/s (0 for no critical)
 -s, --short=int
    Make the output shorter : only the first <n> chars of the interface(s)
    If the number is negative, then get the <n> LAST caracters.
@@ -955,16 +957,18 @@ for (my $i = 0; $i < $num_int; $i++) {
                 if ($l == 0 || $l == 1) { $print_out .= $speed_unit; }
             }
             if (defined($o_perfs) && defined($o_ext_checkperf)) {
+                my $warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
                 $print_out .= "/";
-                if (defined($o_crit[6]) && ($o_crit[6] != 0) && ($speed_real < $o_crit[6])) {
+                if (defined($o_crit[6]) && ($o_crit[6] != 0) && ($speed_real / $warn_factor < $o_crit[6])) {
                     $final_status = 2;
-                    $print_out .= sprintf("CRIT %.0fbps", $speed_real);
-                } elsif (defined($o_warn[6]) && ($o_warn[6] != 0) && ($speed_real < $o_warn[6])) {
+                    $print_out .= sprintf("CRIT %.0f", $speed_real / $warn_factor);
+                } elsif (defined($o_warn[6]) && ($o_warn[6] != 0) && ($speed_real / $warn_factor < $o_warn[6])) {
                     $final_status = ($final_status == 2) ? 2 : 1;
-                    $print_out .= sprintf("WARN %.0fbps", $speed_real);
+                    $print_out .= sprintf("WARN %.0f", $speed_real / $warn_factor);
                 } else {
-                    $print_out .= sprintf("%.0fbps", $speed_real);
+                    $print_out .= sprintf("%.0f", $speed_real / $warn_factor);
                 }
+                $print_out .= (defined($o_meg)) ? "Mbps" : (defined($o_gig)) ? "Gbps" : "kbps";
             }
             $print_out .= ")";
         } else {    # Return unknown when no data
@@ -1058,10 +1062,10 @@ for (my $i = 0; $i < $num_int; $i++) {
             $perf_out .= "'" . $descr[$i] . "_out_discard'=" . $$result{ $oid_perf_outdisc[$i] } . "c ";
         }
         if (defined($o_perfs)) {
-	    $speed_real = "" unless (defined($speed_real));
+            my $warn_factor = (defined($o_meg)) ? 1000000 : (defined($o_gig)) ? 1000000000 : 1000;
             $perf_out .= "'" . $descr[$i] . "_speed_bps'=" . $speed_real . ";";
-            $perf_out .= defined($o_warn[6]) ? $o_warn[6] . ";" : ";";
-            $perf_out .= defined($o_crit[6]) ? $o_crit[6] . ";" : ";";
+            $perf_out .= defined($o_warn[6]) ? $o_warn[6] * $warn_factor . ";" : ";";
+            $perf_out .= defined($o_crit[6]) ? $o_crit[6] * $warn_factor . ";" : ";";
             $perf_out .= "; ";
         }
         if (defined($o_weather) && $usable_data == 1) {
