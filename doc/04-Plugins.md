@@ -211,10 +211,12 @@ Usage: ./check_snmp_int.pl [-v] -H <host> -C <snmp_community> [-2] | (-l login -
    warning level for input / output bandwidth (0 for no warning)
      unit depends on B,M,G,u options and interface speed is in bps
    warning for error & discard input / output in error/min (need -q)
+   warning level for interface speed only in K|M|G Bits/s (0 for no warning)
 -c, --critical=input,output[,error in,error out,discard in,discard out,interface speed]
    critical level for input / output bandwidth (0 for no critical)
      unit depends on B,M,G,u options and interface speed is in bps
    critical for error & discard input / output in error/min (need -q)
+   critical level for interface speed only in K|M|G Bits/s (0 for no critical)
 -s, --short=int
    Make the output shorter : only the first <n> chars of the interface(s)
    If the number is negative, then get the <n> LAST caracters.
